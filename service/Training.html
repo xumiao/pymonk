@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <title>TRAINING STUDIO</title>
+    <link href="static/css/bootstrap.css" rel="stylesheet">
+    <link href="static/css/bootstrap-responsive.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="static/css/dataTables.bootstrap.css">
+
+    <!-- Pines for Notification -->
+    <link href="static/css/jquery.pnotify.default.css" media="all" rel="stylesheet" type="text/css" />
+    <!-- Include this file if you are using Pines Icons. -->
+    <link href="static/css/jquery.pnotify.default.icons.css" media="all" rel="stylesheet" type="text/css" />
+
+    <link href="static/css/style.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<!-- Navigation Bar :: Begin -->
+<div class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+        <div class="container">
+            <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <div class="nav-collapse collapse">
+            <a class="brand" href="#">TRAINING STUDIO</a>
+                <ul class="nav" id="selected-panda">
+                    <li class="active"><a href="#">Classifier</a></li>
+                    <li><span id="panda-name"></span></li>
+                    <li><span id="panda-className"></span></li>
+                    <li><span id="panda-accuracy"></span></li>
+                    <li><span id="panda-experience"></span></li>
+                </ul>
+                <div class="btn-toolbar">
+                    <button class="pull-right btn btn-primary" id="testPanda">Test Classifier</button>
+                    <button class="pull-right btn btn-primary" id="savePanda">Save Classifier</button>
+                    <button class="pull-right btn btn-primary" id="trainPanda">Train Classifier</button>
+                </div>
+            </div><!--/.nav-collapse -->
+        </div>
+    </div>
+</div>
+<!-- Navigation Bar :: End -->
+
+<!-- Modal -->
+<!-- Modal Dialog :: Add Panda :: Begin -->
+<div id="modal-add-panda" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="myModalLabel">Add New Classifier</h3>
+    </div>
+    <div class="modal-body">
+        <form id="modal-form-add-panda" class="form-horizontal" accept-charset="UTF-8" data-remote="true">
+            <div class="control-group">
+                <label for="pandaName" class="control-label">Name</label>
+                <input type="text" placeholder="Type Classifier Name here..." name="pandaName" id="pandaName" class="form-control required span3" rel="3" />
+            </div>
+            <div class="control-group">
+                <label for="className" class="control-label">Class Name</label>
+                <input type="text" placeholder="Type Class Name here (e.g. upperLip)..." name="className" id="className" class="form-control required span3" rel="3" />
+            </div>
+            <div class="control-group">
+                <label for="pandaType" class="col-lg-2 control-label">Type</label>
+                <select name="pandaType" class="span3" id="pandaType" rel="3">
+                    <option value="RandomForest">Random Forest</option>
+                    <option value="KernelSVM">Kernel SVM</option>
+                    <option value="LinearSVM">Linear SVM</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="slicing" class="control-label">Slicing</label>
+                <input type="text" placeholder="Slicing conditions for data" name="slicing" id="slicing" class="form-control required span3" rel="3" />
+            </div>
+            <div class="control-group">
+                <label for="parameters" class="control-label">Parameters</label>
+                <input type="text" placeholder="Parameters" name="parameters" id="parameters" class="form-control required span3" rel="3" />
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        <button id="modal-form-add-panda-submit" class='btn btn-primary' data-loading-text="Adding..." href="#">Add</button>
+    </div>
+</div>
+<!-- Modal Dialog :: Add Panda :: End -->
+
+<!-- Modal Dialog :: Testing :: Begin -->
+<div id="modal-testing" class="modal hide fade large" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3>Testing Report</h3>
+    </div>
+    <div class="modal-body" id="panda-training">
+        <form id="form-panda-testing" class="form-horizontal" accept-charset="UTF-8" data-remote="true">
+            <p>Under construction</p>
+            <div class="control-group">
+                <div class="row">
+                    <div class="span6">
+                        <textarea id="zet-cat-sentence" rows="10"></textarea>
+                    </div>
+
+                    <div class="span4">
+                        <!-- <div id="testing-result" style="color:blue"></div>-->
+                        <svg class="testing-result"></svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <button id="btn-start-testing" type="button" class="btn btn-primary" data-loading-text="Working...">Begin...</button>
+            </div>
+            <!--
+            <div class="control-group">
+                <div id="category" style="color:blue"></div>
+            </div>
+            -->
+        </form>
+    </div>
+
+    <div class="modal-footer">
+        <!-- <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button> -->
+    </div>
+
+</div>
+<!-- Modal Dialog :: Testing :: End -->
+
+<div id="dynamic" style="margin:0 auto;width:90%">
+    <center><h2>Classifiers</h2></center>
+    <!-- Pandas Table :: Begin -->
+    <table border="0" class="table table-bordered table-striped" id="pandas">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>ClassName</th>
+            <th>Slicing</th>
+            <th>Parameters</th>
+            <th>Accuracy</th>
+            <th>#Samples</th>
+            <th>Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        
+        </tbody>
+        <tfoot>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>ClassName</th>
+            <th>Slicing</th>
+            <th>Parameters</th>
+            <th>Accuracy</th>
+            <th>#Samples</th>
+            <th>Status</th>
+        </tr>
+        </tfoot>
+    </table>
+    <!-- Pandas Table :: End -->
+
+    <center><h2>Videos</h2></center>
+
+    <!-- Entity Table :: Begin -->
+    <table border="0" class="table table-bordered table-striped" id="entity-items">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Subject</th>
+          <th>Age</th>
+          <th>Gender</th>
+          <th>Distance</th>
+          <th>Accuracy</th>
+          <th>#Frames</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+      <tfoot>
+        <tr>
+          <th>ID</th>
+          <th>Subject</th>
+          <th>Age</th>
+          <th>Gender</th>
+          <th>Distance</th>
+          <th>Accuracy</th>
+          <th>#Frames</th>
+        </tr>
+      </tfoot>
+    </table>
+    <!-- Entity Table :: End -->
+
+    <center><h2>Frames</h2></center>
+
+    <!-- Frame Table :: Begin -->
+    <table border="0" class="table table-bordered table-striped" id="frames">
+        <thead>
+            <tr>
+            <th></th>
+            <th width="10%">Frame No.</th>
+            <th width="35%">IR</th>
+            <th width="35%">Color</th>
+            <th width="10%">Score</th>
+            <th width="10%">Label</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+        <tfoot>
+        <tr>
+          <th></th>
+          <th>Frame No.</th>
+          <th>IR</th>
+          <th>Color</th>
+          <th>Score</th>
+          <th>Label</th>
+        </tr>
+        </tfoot>
+    </table>
+</div>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+<script src="static/js/jquery.js"></script>
+<script src="static/js/jquery.i18n.min.js"></script>
+<script src="static/js/bootstrap-transition.js"></script>
+<script src="static/js/bootstrap-alert.js"></script>
+<script src="static/js/bootstrap-modal.js"></script>
+<script src="static/js/bootstrap-dropdown.js"></script>
+<script src="static/js/bootstrap-scrollspy.js"></script>
+<script src="static/js/bootstrap-tab.js"></script>
+<script src="static/js/bootstrap-tooltip.js"></script>
+<script src="static/js/bootstrap-popover.js"></script>
+<script src="static/js/bootstrap-button.js"></script>
+<script src="static/js/bootstrap-collapse.js"></script>
+<script src="static/js/bootstrap-carousel.js"></script>
+<script src="static/js/bootstrap-typeahead.js"></script>
+
+<script type="text/javascript" src="static/js/jquery.pnotify.min.js"></script>
+<script type="text/javascript" src="static/jquery.dataTables-dev.js" ></script>
+<script type="text/javascript" src="static/js/dataTables.bootstrap.js"></script>
+<script type="text/javascript" src="static/js/TableTools.js"></script>
+<script type="text/javascript" src="static/js/fnReloadAjax.js"></script>
+<script type="text/javascript" src="static/js/datatables.Selectable.js"></script>
+<script type="text/javascript" src="static/js/jquery.groupToggle.js"></script>
+
+<script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+<script type="text/javascript" src="static/js/nv.d3.min.js"></script>
+<script type="text/javascript" src="static/my-nvd3-panda-details.js"></script>
+
+<script type="text/javascript" src="static/pandaTable.js"></script>
+<script type="text/javascript" src="static/entityTable.js"></script>
+<script type="text/javascript" src="static/frameTable.js"></script>
+<script type="text/javascript" src="static/navibar.js"></script>
+
+<script type="text/javascript">
+    var svcs_host = "http://10.137.168.196:8080";
+    var className = "upperLip";
+    var frameTableObj = null;
+    var pandaTableObj = null;
+    var entityTableObj = null;
+</script>
+
+<script type="text/javascript">
+    $(document).ready( function () {
+       var entityCollectionName = "MouthBig";
+
+       frameTableObj = new FrameTable({
+            "svcs_host": svcs_host,
+            "table_selector" : "#frames",
+            "collection_name" : entityCollectionName,
+            "columns" : ["FrameId", "FrameNum","IRMouth", "ColorMouth","Score","Label"],
+            "className" : className,
+        });
+
+        entityTableObj = new EntityTable({
+            "svcs_host": svcs_host,
+            "table_selector" : "#entity-items",
+            "collection_name" : entityCollectionName,
+            "columns" : ["Subject","Age","Gender","Distance","Accuracy","#Frames"],
+        });
+
+        pandaTableObj = new PandaTable({
+            "svcs_host": svcs_host,
+            "collection_name": entityCollectionName,
+            "table_selector" : "#pandas",
+        });
+
+        /*
+         * Interactive UI functions
+         */
+
+        frameTableObj.settings.fnOnClickLabel = function (_settings, _frameId, _tagAction) {
+            $.get(_settings.svcs_host + "/panda.rpy/tag",
+                    {
+                        "entityCollectionName" : _settings.collection_name,
+                        "entityId"             : _settings.entityId,
+                        "className"            : _settings.className,
+                        "frameId"              : _frameId,
+                        "tagAction"            : _tagAction
+                    }).done(function (data) {
+                        d = $.parseJSON(data)
+                        $.pnotify({
+                            title: d.className,
+                            text: " Relative to MidMouth : " + d.target,
+                            styling: 'bootstrap',
+                            delay: 1000
+                        });
+                    }).error(function () {
+                        $.pnotify({
+                            title: d.className,
+                            text: 'Failed to label frame ' + _frameId + "!",
+                            type: 'error',
+                            delay: 1000
+                        });
+                    });
+        };
+
+        entityTableObj.settings.fnOnClickRow = function (oData) {
+            var currId = frameTableObj.settings.entityId;
+            var newId = oData["id"];
+            if (currId != newId){
+                if (currId != ""){
+                    $.get(frameTableObj.settings.svcs_host + "/entity.rpy/save",
+                        {
+                            "entityCollectionName" : frameTableObj.settings.collection_name,
+                            "entityId" : currId
+                        }).done(function () {
+                            $.pnotify({
+                                title: 'Entity',
+                                text: currId + " Saved!",
+                                styling: 'bootstrap',
+                                delay: 1000
+                            });
+                        }).error(function () {
+                            $.pnotify({
+                                title: 'Entity',
+                                text: 'Failed to save ' + currId + "!",
+                                type: 'error',
+                                delay: 1000
+                            });
+                        });
+                }
+                frameTableObj.settings.entityId = newId;
+                frameTableObj.oTable.fnReloadAjax(null,
+                    function () {
+                        console.log("frames reloaded ");
+                    }
+                );
+            }
+        }
+
+        pandaTableObj.settings.fnOnClickRow = function ( oData ) {
+            entityTableObj.settings.pandaId = oData["id"];
+            frameTableObj.settings.className = oData["className"];
+            className = oData["className"];
+            entityTableObj.oTable.fnReloadAjax();
+            
+        };
+
+    });
+</script>
+
+</body>
+</html>
+
