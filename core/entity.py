@@ -4,9 +4,9 @@ Created on Fri Nov 08 19:51:22 2013
 The general object used in MONK
 @author: xm
 """
-import pyximport; pyximport.install(setup_args={"include_dirs":'.'}, reload_support=True)
-from math.flexible_vector import FlexibleVector
-from core.monk import MONKObject, monkObjectFactory
+import pyximport; pyximport.install(setup_args={"include_dirs":'.', 'options': { 'build_ext': { 'compiler': 'mingw32' }}}, reload_support=True)
+from pymonk.math.flexible_vector import FlexibleVector
+from pymonk.core.monk import MONKObject, monkObjectFactory
 
 class Entity(MONKObject):
     def __restore__(self):

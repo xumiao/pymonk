@@ -4,11 +4,11 @@ Created on Fri Nov 08 19:52:01 2013
 The complex problem solver that manage a team of pandas. 
 @author: xm
 """
-from core.monk import *
-from utils.utils import GetIds
+from pymonk.core.monk import *
+from pymonk.utils.utils import GetIds
 from datetime import datetime
 from bson.objectid import ObjectId
-from utils.math import sigmoid
+from pymonk.cmath import sigmoid
 
 class Turtle(MONKObject):
     def __restore__(self):
