@@ -5,10 +5,10 @@ Created on Thu Dec 12 07:27:15 2013
 @author: xm
 """
 import pyximport; pyximport.install(setup_args={"include_dirs":'.'}, reload_support=True)
-from core.monkvector import matching, difference
-from core.entity import Entity
-from core.monk import *
-from utils.utils import GetIds
+from pymonk.math.flexible_vector import matching, difference
+from pymonk.core.entity import Entity
+from pymonk.core.monk import *
+from pymonk.utils.utils import GetIds
 
 class Relation(Entity):
     def __restore__(self):

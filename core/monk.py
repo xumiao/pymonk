@@ -5,9 +5,9 @@ The project object
 @author: xm
 """
 import os
-from core.uid import UID
-from core.crane import Crane
-from utils.utils import *
+from pymonk.core.uid import UID
+from pymonk.core.crane import Crane
+from pymonk.utils.utils import *
 from bson.objectid import ObjectId
 from pymongo.son_manipulator import SONManipulator
 
@@ -110,6 +110,7 @@ class Configuration(object):
         self.relationCollectionName = 'RelationStore'
         self.dataMaxCacheSize = -1
         self.dataMaxCacheTime = -1
+        self.logFileName = 'log'
         self.parse(configurationFileName)
         
     def parse(self, configurationFileName):

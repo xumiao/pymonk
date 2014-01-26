@@ -39,13 +39,10 @@ class Crane(object):
             return None
             
     def _getAll(self, keys):
-        objs = []
-        remains = []
-        for key in keys:
-            if key in self._cache:
-                objs.append(self._cache[key])
-            else:
-                remains.append(key)
+        keyset  = set(keys)
+        found   = keyset.intersection(self._cache.viewkeys)
+        objs    = map(lambda key: self._cache[key], found)
+        remains = map(lambda key: self._cache[key], keyset.difference(found))
         return objs, remains
         
     def _putOne(self, obj):

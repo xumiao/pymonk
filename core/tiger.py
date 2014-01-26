@@ -5,11 +5,11 @@ A superviser to break down problems into binary ones to solve.
 It is based on SPN (sum product network) to formulate the reduction rules.
 @author: xm
 """
-from core.monk import *
-from utils.utils import GetIds
+from pymonk.core.monk import *
+from pymonk.utils.utils import GetIds
 from datetime import datetime
 from bson.objectid import ObjectId
-from utils.math import sigmoid
+from pymonk.math import sigmoid
 
 class Tiger(MONKObject):
     def __restore__(self):
