@@ -110,6 +110,7 @@ class Configuration(object):
         self.relationCollectionName = 'RelationStore'
         self.dataMaxCacheSize = -1
         self.dataMaxCacheTime = -1
+        self.logFileName = 'log'
         self.parse(configurationFileName)
         
     def parse(self, configurationFileName):
