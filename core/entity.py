@@ -4,20 +4,22 @@ Created on Fri Nov 08 19:51:22 2013
 The general object used in MONK
 @author: xm
 """
-import pyximport; pyximport.install(setup_args={"include_dirs":'.', 'options': { 'build_ext': { 'compiler': 'mingw32' }}}, reload_support=True)
 from pymonk.math.flexible_vector import FlexibleVector
-from pymonk.core.monk import MONKObject, monkObjectFactory
+from pymonk.core.monk import *
+
+__FEATURES = '_features'
+__RAWS     = '_raws'
 
 class Entity(MONKObject):
     def __restore__(self):
         super(Entity, self).__restore__()
-        if '_features' in self.__dict__:
+        if __FEATURES in self.__dict__:
             f = FlexibleVector()
             f.update(self._features)
             self._features = f
         else:
             self._features = FlexibleVector()
-        if '_raws' not in self.__dict__:
+        if __RAWS not in self.__dict__:
             self._raws = {}
         
     def __defaults__(self):
@@ -27,8 +29,8 @@ class Entity(MONKObject):
         
     def generic(self):
         result = super(Entity, self).generic()
-        result["_type"].append("Entity")
-        result["_features"] = self._features.generic()
+        self.appendType(result)
+        result[__FEATURES] = self._features.generic()
         return result
     
     def __contains__(self, key):
@@ -44,7 +46,7 @@ class Entity(MONKObject):
         if rawKey in self._raws:
             return self._raws[rawKey]
         else:
-            return ""
+            return __DEFAULT_EMPTY
     
     def setRaw(self, rawKey, rawValue):
         if isinstance(rawKey, basestring):

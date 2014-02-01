@@ -9,7 +9,7 @@ from pymonk.core.monk import *
 from pymonk.utils.utils import GetIds
 from datetime import datetime
 from bson.objectid import ObjectId
-from pymonk.math import sigmoid
+from pymonk.math.cmath import sigmoid
 
 class Tiger(MONKObject):
     def __restore__(self):
@@ -23,7 +23,7 @@ class Tiger(MONKObject):
 
     def generic(self):
         result = super(Tiger, self).generic()
-        result['_type'].append('Tiger')
+        self.appendType(result)
     
     def label(self, entity):
         return -1
@@ -43,7 +43,7 @@ class PatternTiger(Tiger):
     
     def generic(self):
         result = super(PatternTiger, self).generic()
-        result['_type'].append('PatternTiger')
+        self.appendType(result)
     
     def label(self, entity):
         

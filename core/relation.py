@@ -4,10 +4,9 @@ Created on Thu Dec 12 07:27:15 2013
 
 @author: xm
 """
-import pyximport; pyximport.install(setup_args={"include_dirs":'.'}, reload_support=True)
 from pymonk.math.flexible_vector import matching, difference
-from pymonk.core.entity import Entity
 from pymonk.core.monk import *
+from pymonk.core.entity import Entity
 from pymonk.utils.utils import GetIds
 
 class Relation(Entity):
@@ -21,7 +20,7 @@ class Relation(Entity):
     
     def generic(self):
         result = super(Relation, self).generic()
-        result["_type"].append("Relation")
+        self.appendType(result)
         result["_arguments"] = GetIds(self._arguments)
         return result
     
@@ -35,11 +34,11 @@ class DifferenceRelation(Relation):
             ent1 = self._arguments[0]
             ent2 = self._arguments[1]
             relation._features = difference(ent1._features, ent2._features)
-            del self.__dict__['validate']
+            del self.__dict__['_validate']
     
     def generic(self):
         result = super(DifferenceRelation, self).generic()
-        result['_type'].append('DifferenceRelation')
+        self.appendType(result)
     
 class MatchingRelation(Relation):
     def __restore__(self):
@@ -48,11 +47,11 @@ class MatchingRelation(Relation):
             ent1 = self._arguments[0]
             ent2 = self._arguments[1]
             relation._features = matching(ent1._features, ent2._features)
-            del self.__dict__['validate']
+            del self.__dict__['_validate']
     
     def generic(self):
         result = super(MatchingRelation, self).generic()
-        result['_type'].append('MatchingRelation')
+        self.appendType(result)
     
 monkObjectFactory.register("Relation", Relation.create)
 monkObjectFactory.register("DifferenceRelation", DifferenceRelation.create)

@@ -5,11 +5,17 @@ The project object
 @author: xm
 """
 import os
+import socket
 from pymonk.core.uid import UID
 from pymonk.core.crane import Crane
 from pymonk.utils.utils import *
 from bson.objectid import ObjectId
 from pymongo.son_manipulator import SONManipulator
+
+__TYPE = '_type'
+__DEFAULT_CREATOR = 'monk'
+__DEFAULT_NONE = 'None'
+__DEFAULT_EMPTY = ''
 
 class MONKObject(object):
     def __init__(self, generic = None):
@@ -26,7 +32,7 @@ class MONKObject(object):
         if '_id' not in self.__dict__:
             self._id = ObjectId()
         if 'creator' not in self.__dict__:
-            self.creator = 'monk'
+            self.creator = __DEFAULT_CREATOR
         if 'createdTime' not in self.__dict__:
             self.createdTime = datetime.now()
         if 'lastModified' not in self.__dict__:
@@ -34,7 +40,7 @@ class MONKObject(object):
     
     def __defaults__(self):
         self._id = ObjectId()
-        self.creator = 'monk'
+        self.creator = __DEFAULT_CREATOR
         self.createdTime = datetime.now()
         self.lastModified = self.createdTime
         
@@ -43,10 +49,14 @@ class MONKObject(object):
         and make neccessary conversion as needed"""
         result = {}
         result.update(self.__dict__)
-        result['_type'] = ['MONKObject']
+        result[__TYPE] = ['MONKObject']
         result['lastModified'] = datetime.now()
         return result
-    
+        
+    @classmethod
+    def appendType(cls, result):
+        result[__TYPE].append(cls.__name__)
+        
     @classmethod
     def create(cls, generic):
         return cls(generic)
@@ -63,7 +73,7 @@ class Transform(SONManipulator):
     def transform_outgoing(self, son, collection):
         for (key, value) in son.items():
             if isinstance(value, dict):
-                if "_type" in value and value["_type"][0] == "MONKObject":
+                if __TYPE in value and value[__TYPE][0] == "MONKObject":
                     son[key] = monkObjectFactory.decode(value)
                 else: # Again, make sure to recurse into sub-docs
                     son[key] = self.transform_outgoing(value, collection)
@@ -81,7 +91,7 @@ class MONKObjectFactory(object):
         return obj.generic()
         
     def decode(self, generic):
-        typeName = generic['_type'][-1]
+        typeName = generic[__TYPE][-1]
         return self.factory[typeName](generic)
 
 def loadOrCreateAll(store, objs):
@@ -110,7 +120,9 @@ class Configuration(object):
         self.relationCollectionName = 'RelationStore'
         self.dataMaxCacheSize = -1
         self.dataMaxCacheTime = -1
-        self.logFileName = 'log'
+        self.logFileName = 'monk.log'
+        self.monkHost = socket.gethostbyname(socket.gethostname())
+        self.monkPort = 8887
         self.parse(configurationFileName)
         
     def parse(self, configurationFileName):

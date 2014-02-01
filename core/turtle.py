@@ -8,26 +8,26 @@ from pymonk.core.monk import *
 from pymonk.utils.utils import GetIds
 from datetime import datetime
 from bson.objectid import ObjectId
-from pymonk.cmath import sigmoid
+from pymonk.math.cmath import sigmoid
 
 class Turtle(MONKObject):
     def __restore__(self):
         super(Turtle, self).__restore__()
-        self.pandas  = loadOrCreateAll(pandaStore, self.pandas)
+        self.pandas  = loadOrCreateAll(pandaStore,  self.pandas)
         self.monkeys = loadOrCreateAll(monkeyStore, self.monkeys)
         self.mantes  = loadOrCreateAll(mantisStore, self.mantes)
-        self.tigers  = loadOrCreateAll(tigerStore, self.tigers)
+        self.tigers  = loadOrCreateAll(tigerStore,  self.tigers)
     
     def __defaults__(self):
         super(Turtle, self).__defaults__()
-        self.name = 'empty'
-        self.description = 'empty project'
-        self.creator = ''
-        self.createdTime = datetime.now()
-        self.pandas = []
+        self.pandas  = []
         self.monkeys = []
-        self.tigers = []
-        self.mantes = []
+        self.tigers  = []
+        self.mantes  = []
+        self.name = __DEFAULT_NONE
+        self.description = __DEFAULT_NONE
+        self.creator = __DEFAULT_CREATOR
+        self.createdTime = datetime.now()
         self.pPenalty = 1.0
         self.pEPS = 1e-8
         self.pMaxPathLength = 1
@@ -35,7 +35,7 @@ class Turtle(MONKObject):
         
     def generic(self):
         result = super(Turtle, self).generic()
-        result['_type'].append('Turtle')
+        self.appendType(result)
         result['lastModified'] = datetime.now()
         result['pandas']  = GetIds(self.pandas)
         result['monkeys'] = GetIds(self.monkeys)

@@ -39,28 +39,24 @@ class Crane(object):
             return None
             
     def _getAll(self, keys):
-        keyset  = set(keys)
-        found   = keyset.intersection(self._cache.viewkeys)
-        objs    = map(lambda key: self._cache[key], found)
-        remains = map(lambda key: self._cache[key], keyset.difference(found))
-        return objs, remains
+        keyset = set(keys)
+        found  = keyset.intersection(self._cache.viewkeys())
+        objs   = map(lambda key: self._cache[key], found)
+        return objs, keyset.difference(found)
         
     def _putOne(self, obj):
         if obj:
             self._cache[obj._id] = obj
 
     def _putAll(self, objs):
-        for obj in objs:
-            if obj:
-                self._cache[obj._id] = obj
+        map(self._putOne, objs)
             
     def _eraseOne(self, obj):
         if obj._id in self._cache:
             del self._cache[obj._id]
             
     def _eraseAll(self, objs):
-        for obj in objs:
-            self._eraseOne(obj)
+        map(self._eraseOne, objs)
             
     def _clear(self):
         self._cache.clear()
@@ -75,8 +71,7 @@ class Crane(object):
     
     def saveAll(self, objs):
         if self._coll and objs:
-            for obj in objs:
-                self._coll.save(obj)
+            map(self._coll.save, objs)
             self._putAll(objs)
             
     def loadOneById(self, objId):
@@ -117,7 +112,7 @@ class Crane(object):
             return self._coll.find_one(query, fields)
         else:
             return None
-            
+             
     def loadAll(self, query, fields):
         if query and self._coll:
             return self._coll.find(query, fields)

@@ -7,8 +7,8 @@ cimport cython
 from libc.stdlib cimport malloc, free, rand, calloc, realloc, RAND_MAX
 
 cdef extern from "math.h":
-    double exp(double x)
+    float exp(float x)
     
-cpdef sigmoid(double v):
-    cdef double ev2 = exp(v * 2)
+cpdef sigmoid(float v):
+    cdef float ev2 = exp(v * 2)
     return 1 - 2 / (ev2 + 1)
