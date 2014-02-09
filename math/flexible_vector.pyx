@@ -192,7 +192,7 @@ cdef class FlexibleVector(object):
         self.queries = 1
         self.height = 0
         self.head   = _newSkipNodeA(MAX_HEIGHT, -1, -1)
-        self.found  = _newSkipNodeS(MAX_HEIGHT, self.head)    
+        self.found  = _newSkipNodeS(MAX_HEIGHT, self.head)  
         
     def __dealloc__(self):
         _delSkipList(self.head)

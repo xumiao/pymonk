@@ -65,7 +65,7 @@ class Transform(SONManipulator):
     def transform_incoming(self, son, collection):
         for (key, value) in son.items():
             if isinstance(value, MONKObject):
-                son[key] = monkObjectFactory.encode(value)
+                son[key] = monkFactory.encode(value)
             elif isinstance(value, dict): # Make sure we recurse into sub-docs
                 son[key] = self.transform_incoming(value, collection)
         return son
@@ -74,7 +74,7 @@ class Transform(SONManipulator):
         for (key, value) in son.items():
             if isinstance(value, dict):
                 if __TYPE in value and value[__TYPE][0] == "MONKObject":
-                    son[key] = monkObjectFactory.decode(value)
+                    son[key] = monkFactory.decode(value)
                 else: # Again, make sure to recurse into sub-docs
                     son[key] = self.transform_outgoing(value, collection)
         return son
@@ -94,13 +94,19 @@ class MONKObjectFactory(object):
         typeName = generic[__TYPE][-1]
         return self.factory[typeName](generic)
 
-def loadOrCreateAll(store, objs):
-    if objs and isinstance(objs[0], ObjectId):
-        return store.loadAllByIds(objs)
-    else:
-        return map(monkObjectFactory.decode, objs)
+    def load_or_create(self, store, obj):
+        if obj and isinstance(obj, ObjectId):
+            return store.loadOneById(obj)
+        else:
+            return self.decode(obj)
+            
+    def load_or_create_all(self, store, objs):
+        if objs and isinstance(objs[0], ObjectId):
+            return store.loadAllByIds(objs)
+        else:
+            return map(self.decode, objs)
         
-monkObjectFactory = MONKObjectFactory()
+monkFactory = MONKObjectFactory()
 monkTransformer = Transform()
 
 class Configuration(object):
@@ -109,9 +115,10 @@ class Configuration(object):
         self.modelDataBaseName      = 'TestMONKModel'
         self.pandaCollectionName    = 'PandaStore'
         self.turtleCollectionName   = 'TurtleStore'
+        self.viperCollectionName    = 'ViperStore'
         self.mantisCollectionName   = 'MantisStore'
         self.monkeyCollectionName   = 'MonkeyStore'
-        self.tigerCollectionName    = 'TigerStore'
+        self.tigressCollectionName  = 'TigressStore'
         self.modelMaxCacheSize      = -1
         self.modelMaxCacheTime      = -1
         self.dataConnectionString   = 'localhost'
@@ -157,7 +164,7 @@ pandaStore    = Crane(config.modelConnectionString,\
                       monkTransformer,\
                       config.modelMaxCacheSize,\
                       config.modelMaxCacheTime)
-mantisStore    = Crane(config.modelConnectionString,\
+mantisStore   = Crane(config.modelConnectionString,\
                       config.modelDataBaseName,\
                       config.mantisCollectionName,\
                       monkTransformer,\
@@ -175,9 +182,15 @@ monkeyStore   = Crane(config.modelConnectionString,\
                       monkTransformer,\
                       config.modelMaxCacheSize,\
                       config.modelMaxCacheTime)
-tigerStore    = Crane(config.modelConnectionString,\
+tigressStore  = Crane(config.modelConnectionString,\
                       config.modelDataBaseName,\
-                      config.tigerCollectionName,\
+                      config.tigressCollectionName,\
                       monkTransformer,\
                       config.modelMaxCacheSize,\
                       config.modelMaxCacheTime)
+viperStore    = Crane(config.modelConnectionString,\
+                      config.modelDataBaseName,\
+                      config.viperCollectionName,\
+                      monkTransformer,\
+                      config.modelMaxCacheSize,\
+                      config.modelMaxCacheTime)                      

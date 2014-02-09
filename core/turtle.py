@@ -13,17 +13,15 @@ from pymonk.math.cmath import sigmoid
 class Turtle(MONKObject):
     def __restore__(self):
         super(Turtle, self).__restore__()
-        self.pandas  = loadOrCreateAll(pandaStore,  self.pandas)
-        self.monkeys = loadOrCreateAll(monkeyStore, self.monkeys)
-        self.mantes  = loadOrCreateAll(mantisStore, self.mantes)
-        self.tigers  = loadOrCreateAll(tigerStore,  self.tigers)
+        self.viper   = monkFactory.load_or_create(viperStore,  self.viper)
+        self.monkey  = monkFactory.load_or_create(monkeyStore, self.monkey)
+        self.tigress = monkFactory.load_or_create(tigressStore,  self.tigress)
     
     def __defaults__(self):
         super(Turtle, self).__defaults__()
-        self.pandas  = []
-        self.monkeys = []
-        self.tigers  = []
-        self.mantes  = []
+        self.viper = None
+        self.monkey = None
+        self.tigress  = None
         self.name = __DEFAULT_NONE
         self.description = __DEFAULT_NONE
         self.creator = __DEFAULT_CREATOR
@@ -37,21 +35,21 @@ class Turtle(MONKObject):
         result = super(Turtle, self).generic()
         self.appendType(result)
         result['lastModified'] = datetime.now()
-        result['pandas']  = GetIds(self.pandas)
-        result['monkeys'] = GetIds(self.monkeys)
-        result['mantes']  = GetIds(self.mantes)
-        result['tigers']  = GetIds(self.tigers)
+        result['viper']   = self.viper._id
+        result['monkey']  = self.monkey._id
+        result['tigress'] = self.tigress._id
         return result
     
     def addPanda(self, panda):
-        self.pandas.append(panda)
+        pass
     
     def deletePanda(self, panda):
-        self.pandas = filter(lambda x: x._id != panda._id, self.pandas)
+        pass
     
     def infer(self, entity, fields = {}):
-        for panda in self.pandas:
-            entity[panda.Uid] = sigmoid(panda.score(entity))
+        pass
+#        for panda in self.pandas:
+#            entity[panda.Uid] = sigmoid(panda.score(entity))
     
     
-monkObjectFactory.register("Turtle", Turtle.create)
+monkFactory.register("Turtle", Turtle.create)

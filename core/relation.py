@@ -12,7 +12,7 @@ from pymonk.utils.utils import GetIds
 class Relation(Entity):
     def __restore__(self):
         super(Relation, self).__restore__()
-        self._arguments = loadOrCreateAll(entityStore, self._arguments)
+        self._arguments = monkFactory.load_or_create_all(entityStore, self._arguments)
     
     def __defaults__(self):
         super(Relation, self).__defaults__()
@@ -53,6 +53,6 @@ class MatchingRelation(Relation):
         result = super(MatchingRelation, self).generic()
         self.appendType(result)
     
-monkObjectFactory.register("Relation", Relation.create)
-monkObjectFactory.register("DifferenceRelation", DifferenceRelation.create)
-monkObjectFactory.register("MatchingRelation", MatchingRelation.create)
+monkFactory.register("Relation", Relation.create)
+monkFactory.register("DifferenceRelation", DifferenceRelation.create)
+monkFactory.register("MatchingRelation", MatchingRelation.create)
