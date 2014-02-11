@@ -14,9 +14,7 @@ class Entity(MONKObject):
     def __restore__(self):
         super(Entity, self).__restore__()
         if __FEATURES in self.__dict__:
-            f = FlexibleVector()
-            f.update(self._features)
-            self._features = f
+            self._features = FlexibleVector(generic = self._features)
         else:
             self._features = FlexibleVector()
         if __RAWS not in self.__dict__:

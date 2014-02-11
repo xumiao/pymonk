@@ -5,27 +5,47 @@ The complex problem solver that manage a team of pandas.
 @author: xm
 """
 from pymonk.core.monk import *
-from pymonk.utils.utils import GetIds
+import pymonk.core.viper as pviper
+import pymonk.core.monkey as pmonkey
+import pymonk.core.tigress as ptigress
+
 from datetime import datetime
-from bson.objectid import ObjectId
-from pymonk.math.cmath import sigmoid
 
 class Turtle(MONKObject):
     def __restore__(self):
         super(Turtle, self).__restore__()
-        self.viper   = monkFactory.load_or_create(viperStore,  self.viper)
-        self.monkey  = monkFactory.load_or_create(monkeyStore, self.monkey)
-        self.tigress = monkFactory.load_or_create(tigressStore,  self.tigress)
+        if 'viper' in self.__dict__:
+            self.viper = monkFactory.load_or_create(viperStore,  self.viper)
+        else:
+            self.viper = pviper.Viper()
+        if 'monkey' in self.__dict__:
+            self.monkey = monkFactory.load_or_create(monkeyStore, self.monkey)
+        else:
+            self.monkey = pmonkey.Monkey()
+        if 'tigress' in self.__dict__:
+            self.tigress = monkFactory.load_or_create(tigressStore,  self.tigress)
+        else:
+            self.tigress = ptigress.Tigress()
+        if 'name' not in self.__dict__:
+            self.name = __DEFAULT_NONE
+        if 'description' not in self.__dict__:
+            self.description = __DEFAULT_NONE
+        if 'pPenalty' not in self.__dict__:
+            self.pPenalty = 1.0
+        if 'pEPS' not in self.__dict__:
+            self.pEPS = 1e-8
+        if 'pMaxPathLength' not in self.__dict__:
+            self.pMaxPathLength = 1
+        if 'pMaxInferenceSteps' not in self.__dict__:
+            self.pMaxInferenceSteps = 1
     
     def __defaults__(self):
         super(Turtle, self).__defaults__()
-        self.viper = None
-        self.monkey = None
-        self.tigress  = None
+        self.viper   = pviper.Viper()
+        self.monkey  = pmonkey.Monkey()
+        self.tigress = ptigress.Tigress()
         self.name = __DEFAULT_NONE
         self.description = __DEFAULT_NONE
-        self.creator = __DEFAULT_CREATOR
-        self.createdTime = datetime.now()
         self.pPenalty = 1.0
         self.pEPS = 1e-8
         self.pMaxPathLength = 1

@@ -9,13 +9,16 @@ The inducer is based on SPN (sum product network) to form the reduction rules.
 from pymonk.core.monk import *
 
 class Tigress(MONKObject):
+    name = 'Negative tigress'
+    description = 'Always assigns to the negative class'    
+    
     def __restore__(self):
         super(Tigress, self).__restore__()
+        if "pCuriosity" not in self.__dict__:
+            self.pCuriosity = 0.0
     
     def __defaults__(self):
         super(Tigress, self).__defaults__()
-        self.name = 'Negative tigress'
-        self.description = 'Always assigns to the negative class'
         self.pCuriosity = 0.0
 
     def generic(self):
@@ -26,6 +29,9 @@ class Tigress(MONKObject):
         pass
     
 class PatternTigress(Tigress):
+    name = 'Pattern tigress'
+    description = 'Assign positive when a pattern matched'
+    
     def __restore__(self):
         super(PatternTigress, self).__restore__()
         if 'pattern' not in self.__dict__ or 'fields' not in self.__dict__:
@@ -33,8 +39,6 @@ class PatternTigress(Tigress):
             
     def __defaults__(self):
         super(PatternTigress, self).__defaults__()
-        self.name = 'Pattern tigress'
-        self.description = 'Assign positive when a pattern matched'
         self.pattern = ''
         self.fields = []
     
@@ -46,13 +50,8 @@ class PatternTigress(Tigress):
         pass
 
 class SelfTigress(Tigress):
-    def __restore__(self):
-        super(SelfTigress, self).__restore__()
-            
-    def __defaults__(self):
-        super(SelfTigress, self).__defaults__()
-        self.name = 'Self supervising tigress'
-        self.description = 'Supervising by predicting first'
+    name = 'Self supervising tigress'
+    description = 'Supervising by predicting first'
     
     def generic(self):
         result = super(SelfTigress, self).generic()
@@ -62,13 +61,8 @@ class SelfTigress(Tigress):
         pass
 
 class SPNTigress(Tigress):
-    def __restore__(self):
-        super(SPNTigress, self).__restore__()
-    
-    def __defaults__(self):
-        super(SPNTigress, self).__defaults__()
-        self.name = 'SPN inducer'
-        self.description = 'Induce SPN from data'
+    name = 'SPN inducer'
+    description = 'Induce SPN from data'
     
     def generic(self):
         result = super(SPNTigress, self).generic()
@@ -78,13 +72,8 @@ class SPNTigress(Tigress):
         pass
 
 class LexiconTigress(Tigress):
-    def __restore__(self):
-        super(LexiconTigress, self).__restore__()
-    
-    def __defaults__(self):
-        super(LexiconTigress, self).__defaults__()
-        self.name = 'Lexicon inducer'
-        self.description = 'Induce lexicon from data'
+    name = 'Lexicon inducer'
+    description = 'Induce lexicon from data'
     
     def generic(self):
         result = super(LexiconTigress, self).generic()
@@ -94,13 +83,8 @@ class LexiconTigress(Tigress):
         pass
 
 class DistanceTigress(Tigress):
-    def __restore__(self):
-        super(DistanceTigress, self).__restore__()
-    
-    def __defaults__(self):
-        super(DistanceTigress, self).__defaults__()
-        self.name = 'Distance supervision'
-        self.description = 'Distance supervision'
+    name = 'Distance supervision'
+    description = 'Distance supervision'
     
     def generic(self):
         result = super(DistanceTigress,self).generic()
@@ -110,13 +94,8 @@ class DistanceTigress(Tigress):
         pass
 
 class ActiveTigress(Tigress):
-    def __restore__(self):
-        super(ActiveTigress, self).__restore__()
-    
-    def __defaults__(self):
-        super(ActiveTigress, self).__defaults__()
-        self.name = 'Active learner'
-        self.description = 'Actively query human experts'
+    name = 'Active learner'
+    description = 'Actively query human experts'
     
     def generic(self):
         result = super(ActiveTigress, self).generic()
@@ -126,13 +105,8 @@ class ActiveTigress(Tigress):
         pass
 
 class CoTigress(Tigress):
-    def __restore__(self):
-        super(CoTigress, self).__restore__()
-    
-    def __defaults__(self):
-        super(CoTigress, self).__defaults__()
-        self.name = 'Cotrainer'
-        self.description = 'Cotraining by supervising with multiple sources'
+    name = 'Cotrainer'
+    description = 'Cotraining by supervising with multiple sources'
     
     def generic(self):
         result = super(CoTigress, self).generic()

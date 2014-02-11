@@ -23,7 +23,9 @@ class MONKObject(object):
             try:
                 self.__dict__.update(generic)
                 self.__restore__()
-            except:
+            except Exception as e:
+                print e
+                print "Defaulting"
                 self.__defaults__()
         else:
             self.__defaults__()
@@ -60,6 +62,10 @@ class MONKObject(object):
     @classmethod
     def create(cls, generic):
         return cls(generic)
+    
+    @classmethod
+    def parse(cls, script):
+        return cls()
         
 class Transform(SONManipulator):
     def transform_incoming(self, son, collection):
