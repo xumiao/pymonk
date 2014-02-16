@@ -17,8 +17,6 @@ class Panda(MONKObject):
             self.uid = uidStore.nextUID()
         if "name" not in self.__dict__:
             raise Exception('No name specified')
-        elif pandaStore.hasName(self.name):
-            raise Exception(self.name + ' has been used')
     
     def __defaults__(self):
         super(Panda, self).__defaults__()
@@ -61,6 +59,11 @@ class LinearPanda(MONKObject):
         if "mantis" not in self.__dict__:
             self.mantis = pmantis.Mantis()
         else:
+            try:
+                if "panda" not in self.mantis:
+                    self.mantis["panda"] = self._id
+            except:
+                pass
             self.mantis = monkFactory.load_or_create(MantisStore, self.mantis)
         
     def __defaults__(self):
