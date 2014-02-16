@@ -118,4 +118,9 @@ class Crane(object):
             return self._coll.find(query, fields)
         else:
             return []
-            
+    
+    def hasName(self, name):
+        if self._coll.find_one({'name':name}):
+            return True
+        else:
+            return False

@@ -113,7 +113,7 @@ cdef class ADMMsvc(object):
                     self.x[i][j][k] = userdata[j][k]
                     self.xmin[k] = min(self.x[i][j][k], self.xmin[k])
                     self.xmax[k] = max(self.x[i][j][k], self.xmax[k])
-            
+             
         self.eps = eps
         self.Cp = Cp * neg / pos
         self.Cn = Cn
