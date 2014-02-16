@@ -11,13 +11,25 @@ Solving a linear svm in dual
 #cython: wraparound=False
 from __future__ import division
 cimport cython
-from libc.stdlib cimport malloc, free, calloc
+from libc.stdlib cimport malloc, free, calloc, rand
 from pymonk.math.flexible_vector import FlexibleVector
 
 cdef inline _MEM_CHECK(void* p):
     if p == NULL:
         raise MemoryError()
 
+cdef inline int mins(int v1, int v2, int v3):
+    if v1 > v2:
+        if v2 > v3:
+            return v3
+        else:
+            return v2
+    else:
+        if v1 > v3:
+            return v3
+        else:
+            return v1
+    
 cdef inline float max(float v1, float v2):
     if v1 > v2:
         return v1
@@ -29,68 +41,61 @@ cdef inline float min(float v1, float v2):
         return v2
     else:
         return v1
-    
-ctypedef FlexibleVecotr* FlexibleVector_t
 
 cdef class SVMDual(object):
     cpdef public float eps
     cpdef public float Cp
     cpdef public float Cn
-    cpdef public float pos_neg_ratio
     cpdef public float lam
     cpdef public int max_iter
     cpdef public int max_num_instances
     cpdef public int num_instances
     cpdef public float rho
+    cpdef float num_neg
+    cpdef float num_pos
     cdef int active_size
-    cdef FlexibleVector* w # weights
-    cdef FlexibleVector** x # features
+    cdef list x # features
     cdef int*  y # target array
     cdef int* index # index array
     cdef float* QD
     cdef float* alpha
-    cdef float max_score
-    cdef int max_score_index
+    cdef float highest_score
     
-    def __init__(self, x, y, w, eps, Cp, Cn, lam, rho, max_iter, max_L):
+    def __init__(self, x, y, w, eps, Cp, Cn, lam, rho, max_iter, max_num_instances):
+        # @todo: check x, y, w not None
+        # @todo: validate the parameters
         cdef int j
-        cdef float pos = 1e-8
-        cdef float neg = 1e-8
-        self.max_L = max_L
-        self.index = <int*>malloc(self.max_L * cython.sizeof(int))
-        _MEM_CHECK(self.index)
-        self.y     = <int*>malloc(self.max_L * cython.sizeof(int))
-        _MEM_CHECK(self.y)
-        self.x     = <FlexibleVector**>malloc(self.max_L * cython.sizeof(FlexibleVector_t))
-        _MEM_CHECK(self.x)
-        self.QD    = <float*>malloc(self.max_L * cython.sizeof(float))
-        _MEM_CHECK(self.QD)
-        self.alpha = <float*>malloc(self.max_L * cython.sizeof(float))
-        _MEM_CHECK(self.alpha)
-        self.w     = w
-
-        for j in xrange(self.max_L):
-            self.index[j] = j
-            
-        self.active_size = min(len(x), max_L)
-        for j in xrange(self.active_size):
-            self.y[j] = y[j]
-            self.x[j] = x[j]
-            if (self.y[j] > 0):
-                pos += 1
-            else:
-                neg += 1
-        self.pos_neg_ratio = pos / neg
+        pos = 1e-8
+        neg = 1e-8
         self.eps = eps
         self.Cp = Cp
         self.Cn = Cn
         self.lam = lam
-        self.max_iter = max_iter
         self.rho = rho
+        self.w = w
+        self.max_iter = max_iter
+        self.max_num_instances = max_num_instances
+        self.num_instances = mins(len(y), len(x), max_num_instances)
+        
+        self.x = [None for j in xrange(self.max_num_instances)]
+        self.y     = <int*>malloc(self.max_num_instances * cython.sizeof(int))
+        _MEM_CHECK(self.y)
+        self.index = <int*>malloc(self.max_num_instances * cython.sizeof(int))
+        _MEM_CHECK(self.index)
+        self.QD    = <float*>malloc(self.max_num_instances * cython.sizeof(float))
+        _MEM_CHECK(self.QD)
+        self.alpha = <float*>malloc(self.max_num_instances * cython.sizeof(float))
+        _MEM_CHECK(self.alpha)
+        
+        for j in xrange(self.max_num_instances):
+            self.index[j] = j
+            
+        for j in xrange(self.num_instances):
+            self.x[j] = x[j]
+            self.y[j] = y[j]
+            self.addNP(y[j])
 
     def __del__(self):
-        if self.x != NULL:
-            free(self.x)
         if self.y != NULL:
             free(self.y)
         if self.index != NULL:
@@ -100,9 +105,9 @@ cdef class SVMDual(object):
         if self.alpha != NULL:
             free(self.alpha)
     
-    cpdef initialization(self):
+    def initialization(self):
         cdef int j
-        for j in xrange(self.active_size):
+        for j in xrange(self.num_instances):
             self.alpha[j] = 0
             self.index[j] = j
             if self.y[j] > 0:
@@ -111,67 +116,60 @@ cdef class SVMDual(object):
                 self.QD[j] = 0.5 * self.rho / self.Cn
             self.QD[j] += self.x[j].norm2()
     
+    cdef inline addNP(self, int y):
+        if y > 0:
+            self.num_pos += 1
+        else:
+            self.num_neg += 1
+        
+    cdef inline delNP(self, int y):
+        if y > 0:
+            self.num_pos -= 1
+        else:
+            self.num_neg -= 1
+            
     cdef inline swap(self, int* index, int j, int k):
         cdef int tmp
         tmp = index[j]
         index[j] = index[k]
         index[k] = tmp
     
-    cpdef status(self, int i):
-        cdef float objective = 0
-        cdef int j, k
-        cdef float* w = self.w[i]
-        cdef float** x = self.x[i]
-        cdef int* y = self.y[i]
-        cdef float* xj
-        cdef float g, objective1
-        
-        for k in xrange(self.nf):
-            objective += (w[k] - self.z[k]) * (w[k] - self.z[k])
-        objective1 = objective
-        objective *= 0.5 * self.rho
-        
-        for j in xrange(self.L[i]):
-            xj = x[j]
-            g = 0
-            for k in xrange(self.nf):
-                g += w[k] * xj[k]
-            g = 1 - y[j] * g
-            if g > 0:
-                if y[j] > 0:
-                    objective += self.Cp * g * g
-                else:
-                    objective += self.Cn * g * g
-        print '{0:09.4f} {1:09.4f} {2}'.format(objective1, objective, self.userList[i])
-        
-    cpdef addData(self, x, y):
-        if self.active_size < self.max_L:
+    def addData(self, x, y):
+        cdef int j
+        if self.num_instances < self.max_num_instances:
+            # add the data to the end of the arrays
+            j = self.num_instances
+            self.num_instances += 1
+        else:
+            # pick the last one in the index
+            # it is possibly the one far away from the decision boundary
+            j = self.index[-1]
+            self.delNP(self.y[j])
             
-        pass
-        
-    cpdef modifyLabel(self, int index, int y):
-        self.y[index] = y
-        #modify alpha and w to reflect the change
+        self.x[j] = x
+        self.y[j] = y
+        self.addNP(y)
+            
+    def changeLabel(self, j, y):
+        self.y[j] = y
+        # @todo: modify alpha and w to reflect the change
         pass
     
-    cpdef updateWeight(self, FlexibleVector* z):
+    def resetModel(self, z):
         cdef int j
         cdef float ya
-        cdef float* w = self.w
-        w.copy(z)
-        for j in xrange(self.active_size):
-            w.add(self.x[j], self.y[j] * self.alpha[j])
+        self.w.copy(z)
+        for j in xrange(self.num_instances):
+            self.w.add(self.x[j], self.y[j] * self.alpha[j])
         
-    cpdef train(self):
+    def trainModel(self):
         cdef int j, k, s, iteration
         cdef float ya, d, G, alpha_old
-        cdef int active_size = self.active_size
+        cdef int active_size = self.num_instances
         cdef int* index = self.index
-        cdef float* w = self.w
         cdef float* alpha = self.alpha
         cdef float* QD = self.QD
         cdef int yj
-        cdef FlexibleVector* xj
     
         # PG: projected gradient, for shrinking and stopping
         cdef float PG
@@ -186,7 +184,7 @@ cdef class SVMDual(object):
             PGmin_new = 1e10
             
             for j in xrange(active_size):
-                k = j + int(np.random.rand() * (active_size - j))
+                k = j + rand() % (active_size - j)
                 self.swap(index, j, k)
 
             for s in xrange(active_size):
@@ -194,7 +192,7 @@ cdef class SVMDual(object):
                 yj = self.y[j]
                 xj = self.x[j]
                 
-                G = w.dot(xj) * yj - 1
+                G = self.w.dot(xj) * yj - 1
                 
                 if yj > 0:
                     G += alpha[j] * 0.5 * self.rho / self.Cp
@@ -220,17 +218,17 @@ cdef class SVMDual(object):
                     alpha_old = alpha[j]
                     alpha[j] = max(alpha[j] - G / QD[j], 0)
                     d = (alpha[j] - alpha_old) * yj
-                    w.add(xj, d)
+                    self.w.add(xj, d)
                         
             iteration += 1
 #            if iteration % 10 == 0:
 #                print '.',
 
             if PGmax_new - PGmin_new <= self.eps:
-                if active_size == l:
+                if active_size == self.num_instances:
                     break
                 else:
-                    active_size = l
+                    active_size = self.num_instances
 #                    self.status(i)
                     PGmax_old = 1e10
                     PGmin_old = -1e10

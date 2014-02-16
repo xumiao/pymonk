@@ -286,7 +286,10 @@ cdef class FlexibleVector(object):
     def queryStats(self):
         print self.queryLength / self.queries
         print self.queryLength / self.queries, self._numOfNodes()
-        
+    
+    cpdef copy(self, FlexibleVector other):
+        pass
+    
     cdef foreach(self, funcA func):
         cdef SkipNodeA* currA = self.head.nextA[0]
         cdef long i
