@@ -74,7 +74,7 @@ class LinearPanda(MONKObject):
         result['weights'] = self.weights.generic()
         result['mantis'] = self.mantis._id
     
-    def predict(self, entity):
+    def predict(self, entity, fields):
         return sigmoid(self.weights.dot(entity._features))
 
 monkFactory.register("Panda", Panda.create)
