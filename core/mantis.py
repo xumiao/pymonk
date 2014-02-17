@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Nov 08 19:52:40 2013
-The binary or linear optimizer that is the basic building block for solving machine learning problems
+The binary or linear optimizer that is the basic building block for 
+solving machine learning problems
 @author: xm
 """
 from pymonk.core.monk import *
@@ -12,7 +13,7 @@ class Mantis(MONKObject):
     def __restore__(self):
         super(Mantis, self).__restore__()
         if "panda" not in self.__dict__:
-            raise Exception('No panda specified")
+            raise Exception('No panda specified')
         else:
             self.panda = monkFactory.load_or_create(pandaStore, self.panda)
         if "eps" not in self.__dict__:
@@ -23,51 +24,16 @@ class Mantis(MONKObject):
             self.Cn = 1
         if "lam" not in self.__dict__:
             self.lam = 1
-        if "max_iter" not in self.__dict__:
-            self.max_iter = 1000
-        if "max_L" not in self.__dict__:
-            self.max_L = 1000
         if "rho" not in self.__dict__:
             self.rho = 1
-        if "max_users" not in self.__dict__:
-            self.max_users = 100
-        
-        self.Cp = 1
-        self.Cn = 1
-        self.lam = 1
-        self.max_iter = 1000
-        self.rho = 1
-        self.users = {}
-        self.userList = []
-        self.M = 0
-        self.x = []
-        self.y = []
-        self.QD = []
-        self.alpha = []
-        self.w = []
-        self.z = []
+        if "max_num_iters" not in self.__dict__:
+            self.max_num_iters = 1000
+        if "max_num_instances" not in self.__dict__:
+            self.max_num_instances = 1000
+        if "max_num_partitions" not in self.__dict__:
+            self.max_num_partitions = 100
+        self.solvers = {}
             
-        cpdef public float eps
-        cpdef public float Cp
-        cpdef public float Cn
-        cpdef public float lam
-        cpdef public int max_iter
-        cpdef public float rho
-        cpdef public dict users
-        cdef public list userList
-        cdef int M # M users
-        cdef int nf # number of features
-        cdef float*** x # features matrix per user
-        cdef int**  y # target array per user
-        cdef int* L # L instances per user
-        cdef int** index # index array per user
-        cdef float** QD
-        cdef float** alpha
-        cdef float** w
-        cdef float* z
-        cdef float* xmin
-        cdef float* xmax
-    
     def __defaults__(self):
         super(Mantis, self).__defaults__()
         self.panda = None
@@ -75,22 +41,26 @@ class Mantis(MONKObject):
         self.Cp = 1
         self.Cn = 1
         self.lam = 1
-        self.max_iter = 1000
         self.rho = 1
-        self.users = {}
-        self.userList = []
-        self.M = 0
-        self.x = []
-        self.y = []
-        self.QD = []
-        self.alpha = []
-        self.w = []
-        self.z = []
-        self.xmin = []
-        self.xmax = []
-        
+        self.max_num_iters = 1000
+        self.max_num_instances = 1000
+        self.max_num_partitions = 100
+        self.solvers = {}
+
     def generic(self):
         result = super(Mantis, self).generic()
         self.appendType(result)
-        
+        if self.panda:
+            result['panda'] = self.panda._id
+        else:
+            del result['panda']
+        if self.solvers:
+            del result['solvers']
     
+    def solver(self, partition_id):
+        if partition_id not in self.solver:
+            self.solver[partition_id] = SVMDual(self.panda.weights[partition_id],\
+                                                self.eps, self.Cp, self.Cn,\
+                                                self.lam, self.max_num_iters,\
+                                                self.max_num_instances)
+        return self.solver[partition_id]

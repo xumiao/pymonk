@@ -47,7 +47,7 @@ cdef class SVMDual(object):
     cpdef public float Cp
     cpdef public float Cn
     cpdef public float lam
-    cpdef public int max_iter
+    cpdef public int max_num_iter
     cpdef public int max_num_instances
     cpdef public int num_instances
     cpdef public float rho
@@ -61,7 +61,7 @@ cdef class SVMDual(object):
     cdef float* alpha
     cdef float highest_score
     
-    def __init__(self, x, y, w, eps, Cp, Cn, lam, rho, max_iter, max_num_instances):
+    def __init__(self, w, eps, Cp, Cn, lam, rho, max_num_iters, max_num_instances):
         # @todo: check x, y, w not None
         # @todo: validate the parameters
         cdef int j
@@ -73,9 +73,9 @@ cdef class SVMDual(object):
         self.lam = lam
         self.rho = rho
         self.w = w
-        self.max_iter = max_iter
+        self.max_num_iters = max_num_iters
         self.max_num_instances = max_num_instances
-        self.num_instances = mins(len(y), len(x), max_num_instances)
+        self.num_instances = 0
         
         self.x = [None for j in xrange(self.max_num_instances)]
         self.y     = <int*>malloc(self.max_num_instances * cython.sizeof(int))
@@ -90,11 +90,6 @@ cdef class SVMDual(object):
         for j in xrange(self.max_num_instances):
             self.index[j] = j
             
-        for j in xrange(self.num_instances):
-            self.x[j] = x[j]
-            self.y[j] = y[j]
-            self.addNP(y[j])
-
     def __del__(self):
         if self.y != NULL:
             free(self.y)
@@ -104,18 +99,7 @@ cdef class SVMDual(object):
             free(self.QD)
         if self.alpha != NULL:
             free(self.alpha)
-    
-    def initialization(self):
-        cdef int j
-        for j in xrange(self.num_instances):
-            self.alpha[j] = 0
-            self.index[j] = j
-            if self.y[j] > 0:
-                self.QD[j] = 0.5 * self.rho / self.Cp
-            else:
-                self.QD[j] = 0.5 * self.rho / self.Cn
-            self.QD[j] += self.x[j].norm2()
-    
+
     cdef inline addNP(self, int y):
         if y > 0:
             self.num_pos += 1
@@ -133,6 +117,17 @@ cdef class SVMDual(object):
         tmp = index[j]
         index[j] = index[k]
         index[k] = tmp
+
+    def initialization(self):
+        cdef int j
+        for j in xrange(self.num_instances):
+            self.alpha[j] = 0
+            self.index[j] = j
+            if self.y[j] > 0:
+                self.QD[j] = 0.5 * self.rho / self.Cp
+            else:
+                self.QD[j] = 0.5 * self.rho / self.Cn
+            self.QD[j] += self.x[j].norm2()
     
     def addData(self, x, y):
         cdef int j
@@ -149,7 +144,13 @@ cdef class SVMDual(object):
         self.x[j] = x
         self.y[j] = y
         self.addNP(y)
-            
+        self.alpha[j] = 0
+        if y > 0:
+            self.QD[j] = 0.5 * self.rho / self.Cp
+        else:
+            self.QD[j] = 0.5 * self.rho / self.Cn
+        self.QD[j] += x.norm2()
+        
     def changeLabel(self, j, y):
         self.y[j] = y
         # @todo: modify alpha and w to reflect the change
@@ -179,7 +180,7 @@ cdef class SVMDual(object):
         cdef float PGmin_new
                  
         iteration = 0
-        while iteration < self.max_iter:
+        while iteration < self.max_num_iters:
             PGmax_new = -1e10
             PGmin_new = 1e10
             
