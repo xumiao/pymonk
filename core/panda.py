@@ -64,9 +64,10 @@ class LinearPanda(MONKObject):
     def __restore__(self):
         super(Panda, self).__restore__()
         if "weights" not in self.__dict__:
-            self.weights = FlexibleVector()
+            self.weights = {}
         else:
-            self.weights = FlexibleVector(generic = self.weights)
+            for partition_id in self.weights:
+                self.weights[partition_id] = FlexibleVector(generic = self.weights[partition_id])
         
         if "mantis" not in self.__dict__:
             self.mantis = pmantis.Mantis()
@@ -77,24 +78,27 @@ class LinearPanda(MONKObject):
         
     def __defaults__(self):
         super(Panda, self).__defaults__()
-        self.weights = FlexibleVector()
+        self.weights = {}
         self.mantis = pmantis.Mantis()
 
     def generic(self):
         result = super(LinearPanda, self).generic()
         self.appendType(result)
-        result['weights'] = self.weights.generic()
+        for partition_id in self.weights:
+            result['weights'][partition_id] = self.weights[partition_id].generic()
         result['mantis'] = self.mantis._id
     
     def getModel(self, partition_id):
         if partition_id is None:
             partition_id = '__consensus__'
+            
         if partition_id in self.weights:
             return self.weights[partition_id]
         else:
-            self.weights[partition_id] = 
+            self.weights[partition_id] = FlexibleVector()
+            
     def predict(self, partition_id, entity, fields):
-        return sigmoid(self.weights.dot(entity._features))
+        return sigmoid(self.getModel(partition_id).dot(entity._features))
 
 monkFactory.register("Panda", Panda.create)
 monkFactory.register("ExistPanda", ExistPanda.create)

@@ -71,5 +71,7 @@ class Turtle(MONKObject):
 #        for panda in self.pandas:
 #            entity[panda.Uid] = sigmoid(panda.score(entity))
     
+    def addData(self, entity, fields = {}):
+        
     
 monkFactory.register("Turtle", Turtle.create)
