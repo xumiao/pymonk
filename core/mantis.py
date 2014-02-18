@@ -6,16 +6,11 @@ solving machine learning problems
 @author: xm
 """
 from pymonk.core.monk import *
-from pymonk.math.flexible_vector import FlexibleVector
 from pymonk.math.svm_solver_dual import SVMDual
 
 class Mantis(MONKObject):
     def __restore__(self):
         super(Mantis, self).__restore__()
-        if "panda" not in self.__dict__:
-            raise Exception('No panda specified')
-        else:
-            self.panda = monkFactory.load_or_create(pandaStore, self.panda)
         if "eps" not in self.__dict__:
             self.eps = 1e-4
         if "Cp" not in self.__dict__:
@@ -33,6 +28,7 @@ class Mantis(MONKObject):
         if "max_num_partitions" not in self.__dict__:
             self.max_num_partitions = 100
         self.solvers = {}
+        self.panda = None
             
     def __defaults__(self):
         super(Mantis, self).__defaults__()
@@ -50,17 +46,18 @@ class Mantis(MONKObject):
     def generic(self):
         result = super(Mantis, self).generic()
         self.appendType(result)
-        if self.panda:
-            result['panda'] = self.panda._id
-        else:
-            del result['panda']
-        if self.solvers:
+        # every mantis should have a panda
+        result['panda'] = self.panda._id
+        # @todo: store the solvers locally or somewhere for faster initialization
+        try:
             del result['solvers']
+        except:
+            pass
     
     def solver(self, partition_id):
         if partition_id not in self.solver:
-            self.solver[partition_id] = SVMDual(self.panda.weights[partition_id],\
-                                                self.eps, self.Cp, self.Cn,\
+            w = self.panda.getModel(partition_id)
+            self.solver[partition_id] = SVMDual(w, self.eps, self.Cp, self.Cn,\
                                                 self.lam, self.max_num_iters,\
                                                 self.max_num_instances)
         return self.solver[partition_id]

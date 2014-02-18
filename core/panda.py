@@ -27,9 +27,12 @@ class Panda(MONKObject):
         result = super(Panda, self).generic()
         self.appendType(result)
     
-    def predict(self, entity, fields):
+    def predict(self, partition_id, entity, fields):
         return 0
-
+    
+    def getModel(self, partition_id):
+        return None
+        
 class ExistPanda(Panda):
     def predict(self, entity, fields = []):
         def extract(x, y):
@@ -45,10 +48,18 @@ class ExistPanda(Panda):
         else:
             return reduce(extract, entity.iterkeys(), 0)
 
+    def generic(self):
+        result = super(ExistPanda, self).generic()
+        self.appendType(result)
+
 class RegexPanda(Panda):
-    def predict(self, entity, fields):
+    def predict(self, partition_id, entity, fields):
         pass
     
+    def generic(self):
+        result = super(RegexPanda, self).generic()
+        self.appendType(result)
+
 class LinearPanda(MONKObject):
     def __restore__(self):
         super(Panda, self).__restore__()
@@ -56,15 +67,13 @@ class LinearPanda(MONKObject):
             self.weights = FlexibleVector()
         else:
             self.weights = FlexibleVector(generic = self.weights)
+        
         if "mantis" not in self.__dict__:
             self.mantis = pmantis.Mantis()
         else:
-            try:
-                if "panda" not in self.mantis:
-                    self.mantis["panda"] = self._id
-            except:
-                pass
             self.mantis = monkFactory.load_or_create(MantisStore, self.mantis)
+            
+        self.mantis.panda = self
         
     def __defaults__(self):
         super(Panda, self).__defaults__()
@@ -72,12 +81,19 @@ class LinearPanda(MONKObject):
         self.mantis = pmantis.Mantis()
 
     def generic(self):
-        result = super(Panda, self).generic()
+        result = super(LinearPanda, self).generic()
         self.appendType(result)
         result['weights'] = self.weights.generic()
         result['mantis'] = self.mantis._id
     
-    def predict(self, entity, fields):
+    def getModel(self, partition_id):
+        if partition_id is None:
+            partition_id = '__consensus__'
+        if partition_id in self.weights:
+            return self.weights[partition_id]
+        else:
+            self.weights[partition_id] = 
+    def predict(self, partition_id, entity, fields):
         return sigmoid(self.weights.dot(entity._features))
 
 monkFactory.register("Panda", Panda.create)

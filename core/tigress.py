@@ -82,17 +82,6 @@ class LexiconTigress(Tigress):
     def supervise(self, viper, entity):
         pass
 
-class DistanceTigress(Tigress):
-    name = 'Distance supervision'
-    description = 'Distance supervision'
-    
-    def generic(self):
-        result = super(DistanceTigress,self).generic()
-        self.appendType(result)
-    
-    def supervise(self, viper, entity):
-        pass
-
 class ActiveTigress(Tigress):
     name = 'Active learner'
     description = 'Actively query human experts'
@@ -121,5 +110,4 @@ monkFactory.register("SelfTigress", SelfTigress.create)
 monkFactory.register("SPNTigress", SPNTigress.create)
 monkFactory.register("LexiconTigress", LexiconTigress.create)
 monkFactory.register("ActiveTigress", ActiveTigress.create)
-monkFactory.register("DistanceTigress", DistanceTigress.create)
 monkFactory.register("CoTigress", CoTigress.create)
