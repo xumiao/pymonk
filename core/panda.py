@@ -64,7 +64,7 @@ class LinearPanda(MONKObject):
     def __restore__(self):
         super(Panda, self).__restore__()
         if "weights" not in self.__dict__:
-            self.weights = FlexibleVector()
+            self.weights = 
         else:
             self.weights = FlexibleVector(generic = self.weights)
         
