@@ -6,6 +6,7 @@ The project object
 """
 import os
 import socket
+import logging
 from pymonk.core.uid import UID
 from pymonk.core.crane import Crane
 from pymonk.utils.utils import *
@@ -24,8 +25,8 @@ class MONKObject(object):
                 self.__dict__.update(generic)
                 self.__restore__()
             except Exception as e:
-                print e
-                print "Defaulting"
+                logging.warning('serializatin failed. {0}'.format(e.message))
+                logging.info('defaulting')
                 self.__defaults__()
         else:
             self.__defaults__()
@@ -112,28 +113,30 @@ class MONKObjectFactory(object):
         else:
             return map(self.decode, objs)
         
-monkFactory = MONKObjectFactory()
-monkTransformer = Transform()
-
 class Configuration(object):
     def __init__(self, configurationFileName):
         self.modelConnectionString  = 'localhost'
         self.modelDataBaseName      = 'TestMONKModel'
         self.pandaCollectionName    = 'PandaStore'
+        self.pandaFields            = '{}'
         self.turtleCollectionName   = 'TurtleStore'
+        self.turtleFields           = '{}'
         self.viperCollectionName    = 'ViperStore'
+        self.viperFields            = '{}'
         self.mantisCollectionName   = 'MantisStore'
+        self.mantisFields           = '{}'
         self.monkeyCollectionName   = 'MonkeyStore'
+        self.monkeyFields           = '{}'
         self.tigressCollectionName  = 'TigressStore'
-        self.modelMaxCacheSize      = -1
-        self.modelMaxCacheTime      = -1
+        self.tigressFields          = '{}'
         self.dataConnectionString   = 'localhost'
         self.dataDataBaseName       = 'TestMONKData'
         self.entityCollectionName   = 'EntityStore'
+        self.entityFields           = '{}'
         self.relationCollectionName = 'RelationStore'
-        self.dataMaxCacheSize = -1
-        self.dataMaxCacheTime = -1
+        self.relationFields         = '{}'
         self.logFileName = 'monk.log'
+        self.logLevel = 'logging.DEBUG'
         self.monkHost = socket.gethostbyname(socket.gethostname())
         self.monkPort = 8887
         self.parse(configurationFileName)
@@ -150,53 +153,74 @@ class Configuration(object):
 #@todo: change to scan paths
 config = Configuration(os.getenv('MONK_CONFIG_FILE', 'monk.config'))
 
+logging.basicConfig(format  = '[%(asctime)s]#[%(levelname)s] : %(message)s',\
+                    datefmt = '%m/%d/%Y %I:%M:%S %p',\
+                    level   = eval(config.logLevel))
+
+logging.info('initializing monk factory')
+monkFactory = MONKObjectFactory()
+logging.info('finished monk factory')
+logging.info('initializing monk transformer')
+monkTransformer = Transform()
+logging.info('finished monk transformer')
+
+logging.info('initializing uid store')
 uidStore      = UID(config.modelConnectionString,\
                     config.modelDataBaseName)
+
+logging.info('initializing entity store')
 entityStore   = Crane(config.dataConnectionString,\
                       config.dataDataBaseName,\
                       config.entityCollectionName,\
-                      monkTransformer,\
-                      config.dataMaxCacheSize,\
-                      config.dataMaxCacheTime)
+                      config.entityFields,\
+                      monkTransformer)
+logging.info('finished entity store')
+logging.info('initializing relation store')
 relationStore = Crane(config.dataConnectionString,\
                       config.dataDataBaseName,\
                       config.relationCollectionName,\
-                      monkTransformer,\
-                      config.dataMaxCacheSize,\
-                      config.dataMaxCacheTime)
+                      config.relationFields,\
+                      monkTransformer)
+logging.info('finished relation store')
+logging.info('initializing panda store')
 pandaStore    = Crane(config.modelConnectionString,\
                       config.modelDataBaseName,\
                       config.pandaCollectionName,\
-                      monkTransformer,\
-                      config.modelMaxCacheSize,\
-                      config.modelMaxCacheTime)
+                      config.pandaFields,\
+                      monkTransformer)
+logging.info('finished panda store')
+logging.info('initializing mantis store')
 mantisStore   = Crane(config.modelConnectionString,\
                       config.modelDataBaseName,\
                       config.mantisCollectionName,\
-                      monkTransformer,\
-                      config.modelMaxCacheSize,\
-                      config.modelMaxCacheTime)
+                      config.mantisFields,\
+                      monkTransformer)
+logging.info('finished mantis store')
+logging.info('initializing turtle store')
 turtleStore   = Crane(config.modelConnectionString,\
                       config.modelDataBaseName,\
                       config.turtleCollectionName,\
-                      monkTransformer,\
-                      config.modelMaxCacheSize,\
-                      config.modelMaxCacheTime)
+                      config.turtleFields,\
+                      monkTransformer)
+logging.info('finished turtle store')
+logging.info('initializing monkey store')
 monkeyStore   = Crane(config.modelConnectionString,\
                       config.modelDataBaseName,\
                       config.monkeyCollectionName,\
-                      monkTransformer,\
-                      config.modelMaxCacheSize,\
-                      config.modelMaxCacheTime)
+                      config.monkeyFields,\
+                      monkTransformer)
+logging.info('finished monkey store')
+logging.info('initializing tigress store')
 tigressStore  = Crane(config.modelConnectionString,\
                       config.modelDataBaseName,\
                       config.tigressCollectionName,\
-                      monkTransformer,\
-                      config.modelMaxCacheSize,\
-                      config.modelMaxCacheTime)
+                      config.tigressFields,\
+                      monkTransformer)
+logging.info('finished tigress store')
+logging.info('initializing viper store')
 viperStore    = Crane(config.modelConnectionString,\
                       config.modelDataBaseName,\
                       config.viperCollectionName,\
-                      monkTransformer,\
-                      config.modelMaxCacheSize,\
-                      config.modelMaxCacheTime)                      
+                      config.viperFields,\
+                      monkTransformer)                      
+logging.info('finished viper store')

@@ -9,8 +9,6 @@ import pymonk.core.viper as pviper
 import pymonk.core.monkey as pmonkey
 import pymonk.core.tigress as ptigress
 
-from datetime import datetime
-
 class Turtle(MONKObject):
     def __restore__(self):
         super(Turtle, self).__restore__()
@@ -54,7 +52,6 @@ class Turtle(MONKObject):
     def generic(self):
         result = super(Turtle, self).generic()
         self.appendType(result)
-        result['lastModified'] = datetime.now()
         result['viper']   = self.viper._id
         result['monkey']  = self.monkey._id
         result['tigress'] = self.tigress._id

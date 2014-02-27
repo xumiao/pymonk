@@ -61,3 +61,6 @@ class Mantis(MONKObject):
                                                 self.lam, self.max_num_iters,\
                                                 self.max_num_instances)
         return self.solver[partition_id]
+    
+    def aggregate(self):
+        
