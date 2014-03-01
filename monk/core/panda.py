@@ -84,8 +84,8 @@ class LinearPanda(MONKObject):
     def generic(self):
         result = super(LinearPanda, self).generic()
         self.appendType(result)
-        for partition_id in self.weights:
-            result['weights'][partition_id] = self.weights[partition_id].generic()
+        result['weights'].update([(partition_id, self.weights[partition_id].generic())\
+                                  for partition_id in self.weights])
         result['mantis'] = self.mantis._id
     
     def getModel(self, partition_id):

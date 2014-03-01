@@ -7,6 +7,7 @@ solving machine learning problems
 """
 from pymonk.core.monk import *
 from pymonk.math.svm_solver_dual import SVMDual
+import logging
 
 class Mantis(MONKObject):
     def __restore__(self):
@@ -51,8 +52,8 @@ class Mantis(MONKObject):
         # @todo: store the solvers locally or somewhere for faster initialization
         try:
             del result['solvers']
-        except:
-            pass
+        except Exception as e:
+            logging.warning('deleting solvers failed {0}'.format(e.message))
     
     def solver(self, partition_id):
         if partition_id not in self.solver:
@@ -63,4 +64,4 @@ class Mantis(MONKObject):
         return self.solver[partition_id]
     
     def aggregate(self):
-        
+        pass
