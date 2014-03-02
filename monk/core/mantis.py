@@ -9,7 +9,9 @@ from monk.core.monk import *
 from monk.math.svm_solver_dual import SVMDual
 import logging
 
+
 class Mantis(MONKObject):
+
     def __restore__(self):
         super(Mantis, self).__restore__()
         if "eps" not in self.__dict__:
@@ -30,7 +32,7 @@ class Mantis(MONKObject):
             self.max_num_partitions = 100
         self.solvers = {}
         self.panda = None
-            
+
     def __defaults__(self):
         super(Mantis, self).__defaults__()
         self.panda = None
@@ -54,14 +56,14 @@ class Mantis(MONKObject):
             del result['solvers']
         except Exception as e:
             logging.warning('deleting solvers failed {0}'.format(e.message))
-    
+
     def solver(self, partition_id):
         if partition_id not in self.solver:
             w = self.panda.getModel(partition_id)
-            self.solver[partition_id] = SVMDual(w, self.eps, self.Cp, self.Cn,\
-                                                self.lam, self.max_num_iters,\
+            self.solver[partition_id] = SVMDual(w, self.eps, self.Cp, self.Cn,
+                                                self.lam, self.max_num_iters,
                                                 self.max_num_instances)
         return self.solver[partition_id]
-    
+
     def aggregate(self):
         pass

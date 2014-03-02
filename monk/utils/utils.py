@@ -5,8 +5,10 @@ Created on Mon Oct 21 10:44:50 2013
 @author: xumiao
 """
 
-import pickle, StringIO
+import pickle
+import StringIO
 from twisted.python import log
+
 
 def GetOrDefault(a, key, default, convert=lambda x: x):
     try:
@@ -18,7 +20,8 @@ def GetOrDefault(a, key, default, convert=lambda x: x):
     except Exception as e:
         log.msg(e)
         return default
-            
+
+
 def Serialize(a):
     try:
         outfile = StringIO.StringIO()
@@ -27,6 +30,7 @@ def Serialize(a):
     except:
         return ""
 
+
 def Deserialize(astr):
     try:
         infile = StringIO.StringIO(astr)
@@ -34,12 +38,13 @@ def Deserialize(astr):
     except:
         return None
 
+
 def LowerFirst(astr):
     if astr:
         return astr[:1].lower() + astr[1:]
     else:
         return None
 
+
 def GetIds(objs):
     map(lambda x: x._id, objs)
-    

@@ -11,10 +11,14 @@ from itertools import ifilterfalse
 from heapq import nsmallest
 from operator import itemgetter
 
+
 class Counter(dict):
+
     'Mapping where default values are zero'
+
     def __missing__(self, key):
         return 0
+
 
 def lru_cache(maxsize=100):
     '''Least-recently-used cache decorator.
@@ -26,10 +30,11 @@ def lru_cache(maxsize=100):
 
     '''
     maxqueue = maxsize * 10
+
     def decorating_function(user_function,
-            len=len, iter=iter, tuple=tuple, sorted=sorted, KeyError=KeyError):
+                            len=len, iter=iter, tuple=tuple, sorted=sorted, KeyError=KeyError):
         cache = {}                  # mapping of args to results
-        queue = collections.deque() # order that keys have been used
+        queue = collections.deque()  # order that keys have been used
         refcount = Counter()        # times each key is in the queue
         sentinel = object()         # marker for looping around the queue
         kwd_mark = object()         # separate positional and keyword args
@@ -145,7 +150,7 @@ if __name__ == '__main__':
 
     @lru_cache(maxsize=20)
     def f(x, y):
-        return 3*x+y
+        return 3 * x + y
 
     domain = range(5)
     from random import choice
@@ -156,7 +161,7 @@ if __name__ == '__main__':
 
     @lfu_cache(maxsize=20)
     def f(x, y):
-        return 3*x+y
+        return 3 * x + y
 
     domain = range(5)
     from random import choice

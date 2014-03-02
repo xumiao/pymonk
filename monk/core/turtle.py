@@ -9,7 +9,9 @@ import monk.core.viper as pviper
 import monk.core.monkey as pmonkey
 import monk.core.tigress as ptigress
 
+
 class Turtle(MONKObject):
+
     def __restore__(self):
         super(Turtle, self).__restore__()
         if 'viper' in self.__dict__:
@@ -21,7 +23,8 @@ class Turtle(MONKObject):
         else:
             self.monkey = pmonkey.Monkey()
         if 'tigress' in self.__dict__:
-            self.tigress = monkFactory.load_or_create(tigressStore,  self.tigress)
+            self.tigress = monkFactory.load_or_create(
+                tigressStore,  self.tigress)
         else:
             self.tigress = ptigress.Tigress()
         if 'name' not in self.__dict__:
@@ -36,11 +39,11 @@ class Turtle(MONKObject):
             self.pMaxPathLength = 1
         if 'pMaxInferenceSteps' not in self.__dict__:
             self.pMaxInferenceSteps = 1
-    
+
     def __defaults__(self):
         super(Turtle, self).__defaults__()
-        self.viper   = pviper.Viper()
-        self.monkey  = pmonkey.Monkey()
+        self.viper = pviper.Viper()
+        self.monkey = pmonkey.Monkey()
         self.tigress = ptigress.Tigress()
         self.name = __DEFAULT_NONE
         self.description = __DEFAULT_NONE
@@ -48,31 +51,31 @@ class Turtle(MONKObject):
         self.pEPS = 1e-8
         self.pMaxPathLength = 1
         self.pMaxInferenceSteps = 1
-        
+
     def generic(self):
         result = super(Turtle, self).generic()
         self.appendType(result)
-        result['viper']   = self.viper._id
-        result['monkey']  = self.monkey._id
+        result['viper'] = self.viper._id
+        result['monkey'] = self.monkey._id
         result['tigress'] = self.tigress._id
         return result
-    
+
     def addPanda(self, panda):
         pass
-    
+
     def deletePanda(self, panda):
         pass
-    
-    def infer(self, entity, fields = {}):
+
+    def infer(self, entity, fields={}):
         pass
 #        for panda in self.pandas:
 #            entity[panda.Uid] = sigmoid(panda.score(entity))
-    
-    def addData(self, entity, fields = {}):
+
+    def addData(self, entity, fields={}):
         pass
-    
-    def changeLabel(self, entity, fields = {}):
+
+    def changeLabel(self, entity, fields={}):
         pass
-    
-    
+
+
 monkFactory.register("Turtle", Turtle.create)
