@@ -5,34 +5,40 @@ Created on Fri Dec 27 21:02:22 2013
 @author: xm
 """
 
-import pyximport; pyximport.install(setup_args={"include_dirs":'.'}, reload_support=True)
+import pyximport
+pyximport.install(setup_args={"include_dirs": '.'}, reload_support=True)
 
 from timeit import timeit
 from core.sparse_vector import SparseVector
 from numpy.random import rand
 
-def randomSV(num, th = 0.5):
+
+def randomSV(num, th=0.5):
     a = SparseVector()
     for i in range(num):
         if rand() > th:
             a[i] = 1
     return a
 
+
 def sequentialSV(num):
     a = SparseVector()
     for i in range(num):
         a[i] = i
     return a
-    
+
+
 def testRandomAdd():
-    print timeit("randomSV(10000)",\
-                 setup="from core.sparse_vector import SparseVector; from tests.sparse_vector_test import randomSV; from numpy.random import rand",\
+    print timeit("randomSV(10000)",
+                 setup="from core.sparse_vector import SparseVector; from tests.sparse_vector_test import randomSV; from numpy.random import rand",
                  number=10)
 
+
 def testSequentialAdd():
-    print timeit("sequentialSV(10000)",\
-                 setup="from core.sparse_vector import SparseVector; from tests.sparse_vector_test import sequentialSV",\
+    print timeit("sequentialSV(10000)",
+                 setup="from core.sparse_vector import SparseVector; from tests.sparse_vector_test import sequentialSV",
                  number=10)
+
 
 def testTrim():
     a = SparseVector()
@@ -49,7 +55,8 @@ def testTrim():
     a.trim(remove=True)
     print 'after remove trim'
     print a
-    
+
+
 def testInsertRemove():
     a = SparseVector()
     a[1] = 1
@@ -59,10 +66,10 @@ def testInsertRemove():
     print 'insert 5'
     print a
     a[2] = 2
-    print 'insert 2'    
+    print 'insert 2'
     print a
     a[10] = 10
-    print 'insert 10'    
+    print 'insert 10'
     print a
     a[4] = 4
     print 'insert 4'
