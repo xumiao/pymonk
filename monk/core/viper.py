@@ -5,8 +5,8 @@ A Sum-Product Network for organizing Pandas
 @author: pacif_000
 """
 
-from pymonk.core.monk import *
-import pymonk.core.panda as ppanda
+from monk.core.monk import *
+import monk.core.panda as ppanda
 """
 An example of SPN
 {

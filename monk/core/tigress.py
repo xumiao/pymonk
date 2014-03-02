@@ -6,7 +6,8 @@ The inducer is based on SPN (sum product network) to form the reduction rules.
 
 @author: xm
 """
-from pymonk.core.monk import *
+
+from monk.core.monk import *
 
 class Tigress(MONKObject):
     name = 'Negative tigress'

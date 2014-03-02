@@ -4,10 +4,10 @@ Created on Fri Nov 08 19:52:01 2013
 The complex problem solver that manage a team of pandas. 
 @author: xm
 """
-from pymonk.core.monk import *
-import pymonk.core.viper as pviper
-import pymonk.core.monkey as pmonkey
-import pymonk.core.tigress as ptigress
+from monk.core.monk import *
+import monk.core.viper as pviper
+import monk.core.monkey as pmonkey
+import monk.core.tigress as ptigress
 
 class Turtle(MONKObject):
     def __restore__(self):

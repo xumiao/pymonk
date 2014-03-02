@@ -5,10 +5,10 @@ The basic executor of the machine learning building block,
 i.e., a binary classifier or a linear regressor
 @author: xm
 """
-from pymonk.math.flexible_vector import FlexibleVector
-from pymonk.math.cmath import sigmoid
-from pymonk.core.monk import *
-import pymonk.core.mantis as pmantis
+from monk.math.flexible_vector import FlexibleVector
+from monk.math.cmath import sigmoid
+from monk.core.monk import *
+import monk.core.mantis as pmantis
 
 class Panda(MONKObject):
     def __restore__(self):

@@ -4,8 +4,8 @@ Created on Fri Nov 08 19:51:22 2013
 The general object used in MONK
 @author: xm
 """
-from pymonk.math.flexible_vector import FlexibleVector
-from pymonk.core.monk import *
+from monk.math.flexible_vector import FlexibleVector
+from monk.core.monk import *
 
 __FEATURES = '_features'
 __RAWS     = '_raws'

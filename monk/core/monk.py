@@ -7,9 +7,9 @@ The project object
 import os
 import socket
 import logging
-from pymonk.core.uid import UID
-from pymonk.core.crane import Crane
-from pymonk.utils.utils import *
+from monk.core.uid import UID
+from monk.core.crane import Crane
+from monk.utils.utils import *
 from bson.objectid import ObjectId
 from pymongo.son_manipulator import SONManipulator
 
@@ -151,6 +151,7 @@ class Configuration(object):
         configFile.close()
 
 #@todo: change to scan paths
+#@todo: change to yml file for configuration
 config = Configuration(os.getenv('MONK_CONFIG_FILE', 'monk.config'))
 
 logging.basicConfig(format  = '[%(asctime)s]#[%(levelname)s] : %(message)s',\
@@ -224,3 +225,5 @@ viperStore    = Crane(config.modelConnectionString,\
                       eval(config.viperFields),\
                       monkTransformer)                      
 logging.info('finished viper store')
+
+#API exposures

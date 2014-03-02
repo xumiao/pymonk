@@ -5,8 +5,8 @@ The binary or linear optimizer that is the basic building block for
 solving machine learning problems
 @author: xm
 """
-from pymonk.core.monk import *
-from pymonk.math.svm_solver_dual import SVMDual
+from monk.core.monk import *
+from monk.math.svm_solver_dual import SVMDual
 import logging
 
 class Mantis(MONKObject):

@@ -6,7 +6,7 @@ Created on Sat Jan 25 22:45:25 2014
 """
 
 import unittest
-import pymonk.core.crane as crane
+import monk.core.crane as crane
 
 class CraneTests(unittest.TestCase):
     pass
