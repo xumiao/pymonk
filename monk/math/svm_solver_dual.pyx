@@ -61,7 +61,7 @@ cdef class SVMDual(object):
     cdef float* alpha
     cdef float highest_score
     
-    def __init__(self, w, eps, Cp, Cn, lam, rho, max_num_iters, max_num_instances):
+    def __init__(self, w, eps, lam, Cp, Cn, rho, max_num_iters, max_num_instances):
         # @todo: check x, y, w not None
         # @todo: validate the parameters
         cdef int j
@@ -129,16 +129,26 @@ cdef class SVMDual(object):
                 self.QD[j] = 0.5 * self.rho / self.Cn
             self.QD[j] += self.x[j].norm2()
     
-    def addData(self, x, y):
+    def setData(self, x, y):
         cdef int j
-        if self.num_instances < self.max_num_instances:
+        if x.getIndex() >= 0:
+            # x is set, use its index, and modify label
+            j = x.getIndex()
+            if y == self.y[j]:
+                return
+            self.delNP(self.y[j])
+            # @todo: rewind the alpha and weight to remove the old data
+            # for now, assume it is just forgotten
+        elif self.num_instances < self.max_num_instances:
             # add the data to the end of the arrays
             j = self.num_instances
             self.num_instances += 1
+            x.setIndex(j)
         else:
             # pick the last one in the index
             # it is possibly the one far away from the decision boundary
             j = self.index[-1]
+            x.setIndex(j)
             self.delNP(self.y[j])
             
         self.x[j] = x
@@ -151,12 +161,7 @@ cdef class SVMDual(object):
             self.QD[j] = 0.5 * self.rho / self.Cn
         self.QD[j] += x.norm2()
         
-    def changeLabel(self, j, y):
-        self.y[j] = y
-        # @todo: modify alpha and w to reflect the change
-        pass
-    
-    def resetModel(self, z):
+    def setModel(self, z):
         cdef int j
         cdef float ya
         self.w.copy(z)

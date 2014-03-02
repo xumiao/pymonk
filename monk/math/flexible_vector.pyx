@@ -181,6 +181,7 @@ cdef void _delSkipList(SkipNodeA* head):
         currA = nextA
 
 cdef class FlexibleVector(object):
+    cdef int __index #used as back index holder
     cdef int height
     cdef float queryLength
     cdef long queries
@@ -188,6 +189,7 @@ cdef class FlexibleVector(object):
     cdef SkipNodeA** found
     
     def __init__(self, *arguments, **keywords):
+        self.__index = -1
         self.queryLength = 1
         self.queries = 1
         self.height = 0
@@ -234,6 +236,12 @@ cdef class FlexibleVector(object):
     def __repr__(self):
         return str(self)
 
+    def setIndex(self, index):
+        self.__index = index
+    
+    def getIndex(self):
+        return self.__index
+        
     def _memorySize(self):
         cdef long long size = _SIZE_OF(self.head) + MAX_HEIGHT * cython.sizeof(SkipNodeA_t)
         cdef SkipNodeA* currA = self.head.nextA[0]

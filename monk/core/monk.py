@@ -66,10 +66,6 @@ class MONKObject(object):
     def create(cls, generic):
         return cls(generic)
 
-    @classmethod
-    def parse(cls, script):
-        return cls()
-
 
 class Transform(SONManipulator):
 
@@ -109,16 +105,29 @@ class MONKObjectFactory(object):
 
     def load_or_create(self, store, obj):
         if obj and isinstance(obj, ObjectId):
-            return store.loadOneById(obj)
+            return store.load_one_by_id(obj)
         else:
             return self.decode(obj)
 
     def load_or_create_all(self, store, objs):
         if objs and isinstance(objs[0], ObjectId):
-            return store.loadAllByIds(objs)
+            return store.load_one_by_ids(objs)
         else:
             return map(self.decode, objs)
+    
 
+    def clone(self, obj, modification = {}):
+        try:
+            generic = obj.generic()
+            generic['_id'] = ObjectId()
+            generic['creator'] = __DEFAULT_CREATOR
+            generic['createdTime'] = datetime.now()
+            generic['lastModified'] = datetime.now()            
+            generic.update(modification)
+            return self.decode(generic)
+        except Exception as e:
+            logging.warning('can not clone the object {0}'.format(e.message))
+            return None
 
 class Configuration(object):
 

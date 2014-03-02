@@ -57,13 +57,45 @@ class Mantis(MONKObject):
         except Exception as e:
             logging.warning('deleting solvers failed {0}'.format(e.message))
 
-    def solver(self, partition_id):
-        if partition_id not in self.solver:
-            w = self.panda.getModel(partition_id)
-            self.solver[partition_id] = SVMDual(w, self.eps, self.Cp, self.Cn,
-                                                self.lam, self.max_num_iters,
-                                                self.max_num_instances)
-        return self.solver[partition_id]
+    def get_solver(self, partition_id):
+        try:
+            return self.solvers[partition_id]
+        except KeyError:
+            if parition_id is None:
+                logging.warning('trying to get None solver')
+                return None
+            else:
+                logging.info('adding a solver for {0}'.format(partition_id))
+                w = self.panda.getModel(partition_id)
+                solver = SVMDual(w, self.eps, self.lam, self.Cp, self.Cn,
+                                 self.rho, self.max_num_iters,
+                                 self.max_num_instances)
+                self.solvers[partition_id] = solver
+                return solver
 
+    def train_one(self, partition_id):
+        solver = self.get_solver(partition_id)
+        if solver:
+            solver.trainModel()
+    
+    def set_data(self, partition_id, x, y, c):
+        solver = self.get_solver(partition_id)
+        if solver:
+            solver.setData(x,y)
+    
     def aggregate(self):
-        pass
+        # @todo: incremental aggregation
+        # @todo: ADMM aggregation
+        consensus = FlexibleVector()
+        for w in self.weights.values:
+            consensus.add(w)
+        consensus.divide(len(self.weights))
+        self.panda.consensus = consensus
+        
+    def save_model(self, partition_id):
+        w = self.panda.getModel(partition_id)
+        if partition_id is None:
+            field = 'consensus'
+        else:
+            field = 'weights.{0}'.format(partition_id)
+        pandaStore.update_one(self.panda, {field : w.generic()})

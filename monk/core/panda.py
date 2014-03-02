@@ -77,6 +77,11 @@ class LinearPanda(MONKObject):
             for partition_id in self.weights:
                 self.weights[partition_id] = FlexibleVector(
                     generic=self.weights[partition_id])
+        
+        if "consensus" not in self.__dict__:
+            self.consensus = FlexibleVector()
+        else:
+            self.consensus = FlexibleVector(generic=self.consensus)
 
         if "mantis" not in self.__dict__:
             self.mantis = pmantis.Mantis()
@@ -88,26 +93,30 @@ class LinearPanda(MONKObject):
     def __defaults__(self):
         super(Panda, self).__defaults__()
         self.weights = {}
+        self.consensus = FlexibleVector()
         self.mantis = pmantis.Mantis()
 
     def generic(self):
         result = super(LinearPanda, self).generic()
         self.appendType(result)
+        # @error: problematic when saving
         result['weights'].update([(partition_id, self.weights[partition_id].generic())
                                   for partition_id in self.weights])
+        result['consensus'] = self.consensus.generic()
         result['mantis'] = self.mantis._id
 
-    def getModel(self, partition_id):
+    def get_model(self, partition_id):
         if partition_id is None:
-            partition_id = '__consensus__'
+            return self.consensus
 
         if partition_id in self.weights:
             return self.weights[partition_id]
-        else:
-            self.weights[partition_id] = FlexibleVector()
+
+        pandaStore.load_one_in_fields()
+        self.weights[partition_id] = FlexibleVector()
 
     def predict(self, partition_id, entity, fields):
-        return sigmoid(self.getModel(partition_id).dot(entity._features))
+        return sigmoid(self.get_model(partition_id).dot(entity._features))
 
 monkFactory.register("Panda", Panda.create)
 monkFactory.register("ExistPanda", ExistPanda.create)

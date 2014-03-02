@@ -33,11 +33,10 @@ def lru_cache(maxsize=100):
 
     def decorating_function(user_function,
                             len=len, iter=iter, tuple=tuple, sorted=sorted, KeyError=KeyError):
-        cache = {}                  # mapping of args to results
+        cache = {}                   # mapping of args to results
         queue = collections.deque()  # order that keys have been used
-        refcount = Counter()        # times each key is in the queue
-        sentinel = object()         # marker for looping around the queue
-        kwd_mark = object()         # separate positional and keyword args
+        refcount = Counter()         # times each key is in the queue
+        sentinel = object()          # marker for looping around the queue
 
         # lookup optimizations (ugly but fast)
         queue_append, queue_popleft = queue.append, queue.popleft
@@ -45,10 +44,8 @@ def lru_cache(maxsize=100):
 
         @functools.wraps(user_function)
         def wrapper(*args, **kwds):
-            # cache key records both positional and keyword args
+            # cache key records positional args, and ignores keyword args
             key = args
-            if kwds:
-                key += (kwd_mark,) + tuple(sorted(kwds.items()))
 
             # record recent use of this key
             queue_append(key)
@@ -108,13 +105,13 @@ def lfu_cache(maxsize=100):
     def decorating_function(user_function):
         cache = {}                      # mapping of args to results
         use_count = Counter()           # times each key has been accessed
-        kwd_mark = object()             # separate positional and keyword args
+#        kwd_mark = object()             # separate positional and keyword args
 
         @functools.wraps(user_function)
         def wrapper(*args, **kwds):
             key = args
-            if kwds:
-                key += (kwd_mark,) + tuple(sorted(kwds.items()))
+#            if kwds:
+#                key += (kwd_mark,) + tuple(sorted(kwds.items()))
             use_count[key] += 1
 
             # get cache entry or compute if not found

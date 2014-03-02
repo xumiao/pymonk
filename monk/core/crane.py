@@ -7,6 +7,8 @@ The persistent storage manager that talks to different databases
 """
 
 import pymongo as pm
+#@todo: using cache
+#from monk.utils.cache import lru_cache
 import logging
 
 
@@ -28,97 +30,119 @@ class Crane(object):
         self._cache = {}
 
     # cache related operation
-    def _getOne(self, key):
+    def __get_one(self, key):
         if key in self._cache:
             return self._cache[key]
         else:
             return None
 
-    def _getAll(self, keys):
+    def __get_all(self, keys):
         objs = [self._cache[key] for key in keys if key in self._cache]
         rems = [key for key in keys if key not in self._cache]
         return objs, rems
 
-    def _putOne(self, obj):
-        if obj:
-            self._cache[obj._id] = obj
+    def __put_one(self, obj):
+        self._cache[obj._id] = obj
 
-    def _putAll(self, objs):
-        map(self._putOne, objs)
+    def __put_all(self, objs):
+        map(self.__put_one, objs)
 
-    def _eraseOne(self, obj):
-        if obj._id in self._cache:
-            del self._cache[obj._id]
+    def __erase_one(self, obj):
+        del self._cache[obj._id]
 
-    def _eraseAll(self, objs):
-        map(self._eraseOne, objs)
-
-    def _clear(self):
-        self._cache.clear()
+    def __erase_all(self, objs):
+        map(self.__erase_one, objs)
 
     # database related operation
     def alive(self):
         return self._conn and self._conn.alive()
 
-    def saveOne(self, obj):
-        if self._coll:
+    def save_one(self, obj):
+        try:
             self._coll.save(obj)
-            self._putOne(obj)
+            self.__put_one(obj)
+        except Exception as e:
+            logging.warning(e.message)
+            logging.warning('can not save document {0}'.format(obj.generic()))
 
-    def saveAll(self, objs):
-        if self._coll and objs:
-            map(self._coll.save, objs)
-            self._putAll(objs)
-
-    def loadOneById(self, objId):
-        obj = self._getOne(objId)
+    def save_all(self, objs):
+        map(self._coll.save, objs)
+        self.__put_all(objs)
+    
+    def update_one(self, obj, fields):
+        try:
+            self._coll.update({'_id':obj._id}, {'$set':fields}, upsert=False)
+        except Exception as e:
+            logging.warning(e.message)
+            logging.warning('can not update document {0} in fields {1}'.format(obj._id, fields))
+    
+    def load_one_in_field(self, obj, fields):
+        try:
+            return self._coll.find_one({'_id':obj._id}, {fields:1})
+        except Exception as e:
+            logging.warning(e.message)
+            logging.warning('can not load document {0} in fields {1}'.format(obj._id, fields))
+            return None
+            
+    def load_one_by_id(self, objId):
+        obj = self.__get_one(objId)
         if not obj:
             try:
                 obj = self._coll.find_one({'_id': objId}, self._fields)
-                self._putOne(obj)
+                self.__put_one(obj)
             except Exception as e:
-                logging.warning('exception {0}'.format(e.message))
+                logging.warning(e.message)
+                logging.warning('can not load document by id {0}'.format(objId))
                 obj = None
         return obj
 
-    def loadAllByIds(self, objIds):
-        objs, rems = self._getAll(objIds)
-        if rems and self._coll:
-            try:
+    def load_all_by_ids(self, objIds):
+        objs, rems = self.__get_all(objIds)
+        if rems:
+            try:    
                 remainObjs = self._coll.find(
                     {'_id': {'$in', rems}}, self._fields)
-            except:
+            except Exception as e:
+                logging.warning(e.message)
+                logging.warning('can not load remains {0} ...'.format(rems[0]))
                 remainObjs = []
             objs.extend(remainObjs)
-            self._putAll(remainObjs)
+            self.__put_all(remainObjs)
         return objs
 
-    def loadOneInId(self, query):
+    def load_one_in_id(self, query):
         try:
             return self._coll.find_one(query, {'_id': 1})
         except Exception as e:
-            logging.warning('exception {0}'.format(e.message))
+            logging.warning(e.message)
+            logging.warning('can not load document by query'.format(query))
             return None
 
-    def loadAllInIds(self, query):
-        if query and self._coll:
+    def load_all_in_ids(self, query):
+        try:
             return self._coll.find(query, {'_id': 1})
-        else:
+        except Exception as e:
+            logging.warning(e.message)
+            logging.warning('can not load documents by query'.format(query))
             return []
 
-    def loadOne(self, query, fields):
-        if query and self._coll:
+    def load_one(self, query, fields):
+        try:
             return self._coll.find_one(query, fields)
-        else:
+        except Exception as e:
+            logging.warning(e.message)
+            logging.warning('query {0} can not be executed'.format(query))
             return None
 
-    def loadAll(self, query, fields):
-        if query and self._coll:
+    def load_all(self, query, fields):
+        try:
             return self._coll.find(query, fields)
-        else:
-            return []
+        except Exception as e:
+            logging.warning(e.message)
+            logging.warning('query {0} can not be executed'.format(query))
+            return None
 
-    def hasName(self, name):
+    def has_name(self, name):
         if self._coll.find_one({'name': name}):
             return True
         else:
