@@ -4,11 +4,8 @@ Created on Fri Nov 08 19:52:19 2013
 The project object
 @author: xm
 """
-import os
 import socket
 import logging
-from monk.core.uid import UID
-from monk.core.crane import Crane
 from monk.utils.utils import *
 from bson.objectid import ObjectId
 from pymongo.son_manipulator import SONManipulator
@@ -93,8 +90,8 @@ class MONKObjectFactory(object):
         self.factory = {}
         self.factory['MONKObject'] = MONKObject.create
 
-    def register(self, typeName, createFunc):
-        self.factory[typeName] = createFunc
+    def register(self, MONKObjectClass):
+        self.factory[MONKObjectClass.__name__] = MONKObjectClass.create
 
     def encode(self, obj):
         return obj.generic()
@@ -115,7 +112,6 @@ class MONKObjectFactory(object):
         else:
             return map(self.decode, objs)
     
-
     def clone(self, obj, modification = {}):
         try:
             generic = obj.generic()
@@ -128,6 +124,10 @@ class MONKObjectFactory(object):
         except Exception as e:
             logging.warning('can not clone the object {0}'.format(e.message))
             return None
+
+
+monkFactory = MONKObjectFactory()
+monkTransformer = Transform()
 
 class Configuration(object):
 
@@ -167,80 +167,3 @@ class Configuration(object):
                 self.__dict__[LowerFirst(kvp[0].strip())] = kvp[1].strip()
         configFile.close()
 
-#@todo: change to scan paths
-#@todo: change to yml file for configuration
-config = Configuration(os.getenv('MONK_CONFIG_FILE', 'monk.config'))
-
-logging.basicConfig(format='[%(asctime)s]#[%(levelname)s] : %(message)s',
-                    datefmt='%m/%d/%Y %I:%M:%S %p',
-                    level=eval(config.logLevel))
-
-logging.info('initializing monk factory')
-monkFactory = MONKObjectFactory()
-logging.info('finished monk factory')
-logging.info('initializing monk transformer')
-monkTransformer = Transform()
-logging.info('finished monk transformer')
-
-logging.info('initializing uid store')
-uidStore = UID(config.modelConnectionString,
-               config.modelDataBaseName)
-
-logging.info('initializing entity store')
-entityStore = Crane(config.dataConnectionString,
-                    config.dataDataBaseName,
-                    config.entityCollectionName,
-                    eval(config.entityFields),
-                    monkTransformer)
-logging.info('finished entity store')
-logging.info('initializing relation store')
-relationStore = Crane(config.dataConnectionString,
-                      config.dataDataBaseName,
-                      config.relationCollectionName,
-                      eval(config.relationFields),
-                      monkTransformer)
-logging.info('finished relation store')
-logging.info('initializing panda store')
-pandaStore = Crane(config.modelConnectionString,
-                   config.modelDataBaseName,
-                   config.pandaCollectionName,
-                   eval(config.pandaFields),
-                   monkTransformer)
-logging.info('finished panda store')
-logging.info('initializing mantis store')
-mantisStore = Crane(config.modelConnectionString,
-                    config.modelDataBaseName,
-                    config.mantisCollectionName,
-                    eval(config.mantisFields),
-                    monkTransformer)
-logging.info('finished mantis store')
-logging.info('initializing turtle store')
-turtleStore = Crane(config.modelConnectionString,
-                    config.modelDataBaseName,
-                    config.turtleCollectionName,
-                    eval(config.turtleFields),
-                    monkTransformer)
-logging.info('finished turtle store')
-logging.info('initializing monkey store')
-monkeyStore = Crane(config.modelConnectionString,
-                    config.modelDataBaseName,
-                    config.monkeyCollectionName,
-                    eval(config.monkeyFields),
-                    monkTransformer)
-logging.info('finished monkey store')
-logging.info('initializing tigress store')
-tigressStore = Crane(config.modelConnectionString,
-                     config.modelDataBaseName,
-                     config.tigressCollectionName,
-                     eval(config.tigressFields),
-                     monkTransformer)
-logging.info('finished tigress store')
-logging.info('initializing viper store')
-viperStore = Crane(config.modelConnectionString,
-                   config.modelDataBaseName,
-                   config.viperCollectionName,
-                   eval(config.viperFields),
-                   monkTransformer)
-logging.info('finished viper store')
-
-# API exposures

@@ -57,28 +57,29 @@ class Crane(object):
     def alive(self):
         return self._conn and self._conn.alive()
 
-    def save_one(self, obj):
+    def insert_one(self, obj):
         try:
+            if self._coll.find_one({'_id':obj._id}):
+                logging.warning('Object {0} already exists'.format(obj.generic()))
+                logging.warning('Use updating instead')
+                return
             self._coll.save(obj)
             self.__put_one(obj)
         except Exception as e:
             logging.warning(e.message)
             logging.warning('can not save document {0}'.format(obj.generic()))
-
-    def save_all(self, objs):
-        map(self._coll.save, objs)
-        self.__put_all(objs)
     
-    def update_one(self, obj, fields):
+    def update_one_in_fields(self, obj, fields):
         try:
             self._coll.update({'_id':obj._id}, {'$set':fields}, upsert=False)
         except Exception as e:
             logging.warning(e.message)
             logging.warning('can not update document {0} in fields {1}'.format(obj._id, fields))
     
-    def load_one_in_field(self, obj, fields):
+    def load_one_in_fields(self, obj, fields):
+        # fields is a list
         try:
-            return self._coll.find_one({'_id':obj._id}, {fields:1})
+            return self._coll.find_one({'_id':obj._id}, fields)
         except Exception as e:
             logging.warning(e.message)
             logging.warning('can not load document {0} in fields {1}'.format(obj._id, fields))
