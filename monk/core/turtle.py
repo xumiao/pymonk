@@ -15,16 +15,15 @@ class Turtle(MONKObject):
     def __restore__(self):
         super(Turtle, self).__restore__()
         if 'viper' in self.__dict__:
-            self.viper = monkFactory.load_or_create(viperStore,  self.viper)
+            self.viper = viperStore.load_or_create(self.viper)
         else:
             self.viper = pviper.Viper()
         if 'monkey' in self.__dict__:
-            self.monkey = monkFactory.load_or_create(monkeyStore, self.monkey)
+            self.monkey = monkeyStore.load_or_create(self.monkey)
         else:
             self.monkey = pmonkey.Monkey()
         if 'tigress' in self.__dict__:
-            self.tigress = monkFactory.load_or_create(
-                tigressStore,  self.tigress)
+            self.tigress = tigressStore.load_or_create(self.tigress)
         else:
             self.tigress = ptigress.Tigress()
         if 'name' not in self.__dict__:
@@ -78,4 +77,4 @@ class Turtle(MONKObject):
         pass
 
 
-monkFactory.register("Turtle", Turtle.create)
+monkFactory.register(Turtle)

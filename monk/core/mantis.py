@@ -99,3 +99,5 @@ class Mantis(MONKObject):
         else:
             field = 'weights.{0}'.format(partition_id)
         pandaStore.update_one(self.panda, {field : w.generic()})
+
+monkFactory.register(Mantis)

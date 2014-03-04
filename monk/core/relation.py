@@ -16,8 +16,7 @@ class Relation(Entity):
 
     def __restore__(self):
         super(Relation, self).__restore__()
-        self._arguments = monkFactory.load_or_create_all(
-            entityStore, self._arguments)
+        self._arguments = entityStore.load_or_create_all(self._arguments)
 
     def __defaults__(self):
         super(Relation, self).__defaults__()
@@ -62,6 +61,6 @@ class MatchingRelation(Relation):
         result = super(MatchingRelation, self).generic()
         self.appendType(result)
 
-monkFactory.register("Relation", Relation.create)
-monkFactory.register("DifferenceRelation", DifferenceRelation.create)
-monkFactory.register("MatchingRelation", MatchingRelation.create)
+monkFactory.register(Relation)
+monkFactory.register(DifferenceRelation)
+monkFactory.register(MatchingRelation)

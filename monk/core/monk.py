@@ -6,9 +6,8 @@ The project object
 """
 import socket
 import logging
-from monk.utils.utils import *
+from datetime import datetime
 from bson.objectid import ObjectId
-from pymongo.son_manipulator import SONManipulator
 
 __TYPE = '_type'
 __DEFAULT_CREATOR = 'monk'
@@ -64,26 +63,6 @@ class MONKObject(object):
         return cls(generic)
 
 
-class Transform(SONManipulator):
-
-    def transform_incoming(self, son, collection):
-        for (key, value) in son.items():
-            if isinstance(value, MONKObject):
-                son[key] = monkFactory.encode(value)
-            elif isinstance(value, dict):  # Make sure we recurse into sub-docs
-                son[key] = self.transform_incoming(value, collection)
-        return son
-
-    def transform_outgoing(self, son, collection):
-        for (key, value) in son.items():
-            if isinstance(value, dict):
-                if __TYPE in value and value[__TYPE][0] == "MONKObject":
-                    son[key] = monkFactory.decode(value)
-                else:  # Again, make sure to recurse into sub-docs
-                    son[key] = self.transform_outgoing(value, collection)
-        return son
-
-
 class MONKObjectFactory(object):
 
     def __init__(self):
@@ -100,18 +79,6 @@ class MONKObjectFactory(object):
         typeName = generic[__TYPE][-1]
         return self.factory[typeName](generic)
 
-    def load_or_create(self, store, obj):
-        if obj and isinstance(obj, ObjectId):
-            return store.load_one_by_id(obj)
-        else:
-            return self.decode(obj)
-
-    def load_or_create_all(self, store, objs):
-        if objs and isinstance(objs[0], ObjectId):
-            return store.load_one_by_ids(objs)
-        else:
-            return map(self.decode, objs)
-    
     def clone(self, obj, modification = {}):
         try:
             generic = obj.generic()
@@ -127,7 +94,15 @@ class MONKObjectFactory(object):
 
 
 monkFactory = MONKObjectFactory()
-monkTransformer = Transform()
+uidStore = None
+entityStore = None
+relationStore = None
+pandaStore = None
+mantisStore = None
+turtleStore = None
+monkeyStore = None
+tigressStore = None
+viperStore = None
 
 class Configuration(object):
 

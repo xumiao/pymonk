@@ -41,8 +41,7 @@ class PNode(MONKObject):
         if "children" not in self.__dict__:
             self.children = []
         else:
-            self.children = monkFactory.load_or_create_all(
-                ViperStore, self.children)
+            self.children = viperStore.load_or_create_all(self.children)
 
     def __defaults__(self):
         super(PNode, self).__defaults__()
@@ -61,12 +60,11 @@ class SNode(MONKObject):
         if "panda" not in self.__dict__:
             self.panda = ppanda.Panda()
         else:
-            self.panda = monkFactory.load_or_create(PandaStore, self.panda)
+            self.panda = pandaStore.load_or_create(self.panda)
         if "children" not in self.__dict__:
             self.children = []
         else:
-            self.children = monkFactory.load_or_create_all(
-                ViperStore, self.children)
+            self.children = viperStore.load_or_create_all(self.children)
 
     def __defaults__(self):
         super(SNode, self).__defaults__()
@@ -88,7 +86,7 @@ class Viper(MONKObject):
         if "SPN" not in self.__dict__:
             self.SPN = PNode()
         else:
-            self.SPN = monkFactory.load_or_create(ViperStore, self.SPN)
+            self.SPN = viperStore.load_or_create(self.SPN)
 
     def __defaults__(self):
         super(Viper, self).__defaults__()
@@ -99,6 +97,6 @@ class Viper(MONKObject):
         self.appendType(result)
         result["SPN"] = self.SPN._id
 
-monkFactory.register('PNode', PNode.create)
-monkFactory.register('SNode', SNode.create)
-monkFactory.register('Viper', Viper.create)
+monkFactory.register(PNode)
+monkFactory.register(SNode)
+monkFactory.register(Viper)

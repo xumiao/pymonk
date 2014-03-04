@@ -10,21 +10,39 @@ import pymongo as pm
 #@todo: using cache
 #from monk.utils.cache import lru_cache
 import logging
+from pymongo.son_manipulator import SONManipulator
+from monk.core.monk import *
 
+class Transform(SONManipulator):
 
+    def transform_incoming(self, son, collection):
+        for (key, value) in son.items():
+            if isinstance(value, MONKObject):
+                son[key] = monkFactory.encode(value)
+            elif isinstance(value, dict):  # Make sure we recurse into sub-docs
+                son[key] = self.transform_incoming(value, collection)
+        return son
+
+    def transform_outgoing(self, son, collection):
+        for (key, value) in son.items():
+            if isinstance(value, dict):
+                if __TYPE in value and value[__TYPE][0] == "MONKObject":
+                    son[key] = monkFactory.decode(value)
+                else:  # Again, make sure to recurse into sub-docs
+                    son[key] = self.transform_outgoing(value, collection)
+        return son
+
+monkTransformer = Transform()
+        
 class Crane(object):
 
-    def __init__(self, connectionString,
-                 databaseName,
-                 collectionName,
-                 fields,
-                 transformer):
+    def __init__(self, connectionString, databaseName, collectionName, fields):
         self._connectionString = connectionString
         self._databaseName = databaseName
         self._collectionName = collectionName
         self._conn = pm.Connection(connectionString)
         self._database = self._conn[self._databaseName]
-        self._database.add_son_manipulator(transformer)
+        self._database.add_son_manipulator(monkTransformer)
         self._coll = self._database[self._collectionName]
         self._fields = fields
         self._cache = {}
@@ -57,17 +75,35 @@ class Crane(object):
     def alive(self):
         return self._conn and self._conn.alive()
 
+    def load_or_create(self, obj):
+        if obj and isinstance(obj, ObjectId):
+            return self.load_one_by_id(obj)
+        else:
+            obj = monkFactory.decode(obj)
+            self.insert_one(obj)
+            return obj
+
+    def load_or_create_all(self, objs):
+        if objs and isinstance(objs[0], ObjectId):
+            return self.load_one_by_ids(objs)
+        else:
+            objs = map(monkFactory.decode, objs)
+            [self.insert_one for obj in objs]
+            return objs
+            
     def insert_one(self, obj):
         try:
             if self._coll.find_one({'_id':obj._id}):
                 logging.warning('Object {0} already exists'.format(obj.generic()))
                 logging.warning('Use updating instead')
-                return
+                return False
             self._coll.save(obj)
             self.__put_one(obj)
         except Exception as e:
             logging.warning(e.message)
             logging.warning('can not save document {0}'.format(obj.generic()))
+            return False
+        return True
     
     def update_one_in_fields(self, obj, fields):
         try:
@@ -75,6 +111,8 @@ class Crane(object):
         except Exception as e:
             logging.warning(e.message)
             logging.warning('can not update document {0} in fields {1}'.format(obj._id, fields))
+            return False
+        return True
     
     def load_one_in_fields(self, obj, fields):
         # fields is a list

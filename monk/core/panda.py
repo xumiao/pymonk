@@ -86,7 +86,7 @@ class LinearPanda(MONKObject):
         if "mantis" not in self.__dict__:
             self.mantis = pmantis.Mantis()
         else:
-            self.mantis = monkFactory.load_or_create(MantisStore, self.mantis)
+            self.mantis = mantisStore.load_or_create(self.mantis)
 
         self.mantis.panda = self
 
@@ -118,7 +118,7 @@ class LinearPanda(MONKObject):
     def predict(self, partition_id, entity, fields):
         return sigmoid(self.get_model(partition_id).dot(entity._features))
 
-monkFactory.register("Panda", Panda.create)
-monkFactory.register("ExistPanda", ExistPanda.create)
-monkFactory.register("RegexPanda", RegexPanda.create)
-monkFactory.register("LinearPanda", LinearPanda.create)
+monkFactory.register(Panda)
+monkFactory.register(ExistPanda)
+monkFactory.register(RegexPanda)
+monkFactory.register(LinearPanda)

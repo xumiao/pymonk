@@ -6,7 +6,7 @@ Created on Sun Mar 02 12:29:03 2014
 """
 from monk.core.monk import *
 from monk.core.uid import UID
-from monk.core.crane import Crane
+from monk.core.crane import *
 import os
 
 #@todo: change to scan paths
@@ -25,55 +25,48 @@ logging.info('initializing entity store')
 entityStore = Crane(config.dataConnectionString,
                     config.dataDataBaseName,
                     config.entityCollectionName,
-                    eval(config.entityFields),
-                    monkTransformer)
+                    eval(config.entityFields))
 logging.info('finished entity store')
 logging.info('initializing relation store')
 relationStore = Crane(config.dataConnectionString,
                       config.dataDataBaseName,
                       config.relationCollectionName,
-                      eval(config.relationFields),
-                      monkTransformer)
+                      eval(config.relationFields))
 logging.info('finished relation store')
 logging.info('initializing panda store')
 pandaStore = Crane(config.modelConnectionString,
                    config.modelDataBaseName,
                    config.pandaCollectionName,
-                   eval(config.pandaFields),
-                   monkTransformer)
+                   eval(config.pandaFields))
 logging.info('finished panda store')
 logging.info('initializing mantis store')
 mantisStore = Crane(config.modelConnectionString,
                     config.modelDataBaseName,
                     config.mantisCollectionName,
-                    eval(config.mantisFields),
-                    monkTransformer)
+                    eval(config.mantisFields))
 logging.info('finished mantis store')
 logging.info('initializing turtle store')
 turtleStore = Crane(config.modelConnectionString,
                     config.modelDataBaseName,
                     config.turtleCollectionName,
-                    eval(config.turtleFields),
-                    monkTransformer)
+                    eval(config.turtleFields))
 logging.info('finished turtle store')
 logging.info('initializing monkey store')
 monkeyStore = Crane(config.modelConnectionString,
                     config.modelDataBaseName,
                     config.monkeyCollectionName,
-                    eval(config.monkeyFields),
-                    monkTransformer)
+                    eval(config.monkeyFields))
 logging.info('finished monkey store')
 logging.info('initializing tigress store')
 tigressStore = Crane(config.modelConnectionString,
                      config.modelDataBaseName,
                      config.tigressCollectionName,
-                     eval(config.tigressFields),
-                     monkTransformer)
+                     eval(config.tigressFields))
 logging.info('finished tigress store')
 logging.info('initializing viper store')
 viperStore = Crane(config.modelConnectionString,
                    config.modelDataBaseName,
                    config.viperCollectionName,
-                   eval(config.viperFields),
-                   monkTransformer)
+                   eval(config.viperFields))
 logging.info('finished viper store')
+

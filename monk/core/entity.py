@@ -53,4 +53,4 @@ class Entity(MONKObject):
             self._raws[
                 rawKey.replace('.', '\uff0e').replace('$', '\uff04')] = rawValue
 
-monkFactory.register("Entity", Entity.create)
+monkFactory.register(Entity)

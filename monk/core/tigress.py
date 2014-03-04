@@ -112,10 +112,10 @@ class CoTigress(Tigress):
     def supervise(self, viper, entity):
         pass
 
-monkFactory.register("Tigress", Tigress.create)
-monkFactory.register("PatternTigress", PatternTigress.create)
-monkFactory.register("SelfTigress", SelfTigress.create)
-monkFactory.register("SPNTigress", SPNTigress.create)
-monkFactory.register("LexiconTigress", LexiconTigress.create)
-monkFactory.register("ActiveTigress", ActiveTigress.create)
-monkFactory.register("CoTigress", CoTigress.create)
+monkFactory.register(Tigress)
+monkFactory.register(PatternTigress)
+monkFactory.register(SelfTigress)
+monkFactory.register(SPNTigress)
+monkFactory.register(LexiconTigress)
+monkFactory.register(ActiveTigress)
+monkFactory.register(CoTigress)
