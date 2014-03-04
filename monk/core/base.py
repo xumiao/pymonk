@@ -71,6 +71,9 @@ class MONKObjectFactory(object):
     def register(self, MONKObjectClass):
         self.factory[MONKObjectClass.__name__] = MONKObjectClass.create
 
+    def find(self, name):
+        return [key for key in self.factory.iterkeys if key.find(name) >= 0]
+        
     def encode(self, obj):
         return obj.generic()
 
