@@ -11,7 +11,7 @@ import pymongo as pm
 #from monk.utils.cache import lru_cache
 import logging
 from pymongo.son_manipulator import SONManipulator
-from monk.core.monk import *
+from monk.core.base import *
 
 class Transform(SONManipulator):
 
@@ -33,20 +33,27 @@ class Transform(SONManipulator):
         return son
 
 monkTransformer = Transform()
-        
+
 class Crane(object):
 
-    def __init__(self, connectionString, databaseName, collectionName, fields):
-        self._connectionString = connectionString
-        self._databaseName = databaseName
-        self._collectionName = collectionName
-        self._conn = pm.Connection(connectionString)
-        self._database = self._conn[self._databaseName]
-        self._database.add_son_manipulator(monkTransformer)
+    def __init__(self,database, collectionName, fields):
+        self._database = database
         self._coll = self._database[self._collectionName]
-        self._fields = fields
+        self._fields = fields        
         self._cache = {}
 
+    @classmethod
+    def getDatabase(cls, connectionString, databaseName):
+        try:
+            conn = pm.Connection(connectionString)
+            database = conn[databaseName]
+            database.add_son_manipulator(monkTransformer)
+        except Exception as e:
+            logging.warning(e.message)
+            logging.warning('failed to connection to database {0}.{1}'.format(connectionString, databaseName))
+            return None
+        return database
+        
     # cache related operation
     def __get_one(self, key):
         if key in self._cache:

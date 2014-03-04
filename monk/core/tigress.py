@@ -7,7 +7,7 @@ The inducer is based on SPN (sum product network) to form the reduction rules.
 @author: xm
 """
 
-from monk.core.monk import *
+from monk.core.base import MONKObject, monkFactory
 
 
 class Tigress(MONKObject):

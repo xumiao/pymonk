@@ -5,7 +5,7 @@ The general object used in MONK
 @author: xm
 """
 from monk.math.flexible_vector import FlexibleVector
-from monk.core.monk import *
+from monk.core.base import MONKObject, monkFactory,__DEFAULT_EMPTY
 
 __FEATURES = '_features'
 __RAWS = '_raws'

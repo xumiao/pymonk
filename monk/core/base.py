@@ -4,7 +4,6 @@ Created on Fri Nov 08 19:52:19 2013
 The project object
 @author: xm
 """
-import socket
 import logging
 from datetime import datetime
 from bson.objectid import ObjectId
@@ -94,6 +93,7 @@ class MONKObjectFactory(object):
 
 
 monkFactory = MONKObjectFactory()
+
 uidStore = None
 entityStore = None
 relationStore = None
@@ -103,42 +103,3 @@ turtleStore = None
 monkeyStore = None
 tigressStore = None
 viperStore = None
-
-class Configuration(object):
-
-    def __init__(self, configurationFileName):
-        self.modelConnectionString = 'localhost'
-        self.modelDataBaseName = 'TestMONKModel'
-        self.pandaCollectionName = 'PandaStore'
-        self.pandaFields = '{}'
-        self.turtleCollectionName = 'TurtleStore'
-        self.turtleFields = '{}'
-        self.viperCollectionName = 'ViperStore'
-        self.viperFields = '{}'
-        self.mantisCollectionName = 'MantisStore'
-        self.mantisFields = '{}'
-        self.monkeyCollectionName = 'MonkeyStore'
-        self.monkeyFields = '{}'
-        self.tigressCollectionName = 'TigressStore'
-        self.tigressFields = '{}'
-        self.dataConnectionString = 'localhost'
-        self.dataDataBaseName = 'TestMONKData'
-        self.entityCollectionName = 'EntityStore'
-        self.entityFields = '{}'
-        self.relationCollectionName = 'RelationStore'
-        self.relationFields = '{}'
-        self.logFileName = 'monk.log'
-        self.logLevel = 'logging.DEBUG'
-        self.monkHost = socket.gethostbyname(socket.gethostname())
-        self.monkPort = 8887
-        self.parse(configurationFileName)
-
-    def parse(self, configurationFileName):
-        configFile = file(configurationFileName, 'r')
-        for line in configFile:
-            line = line.strip()
-            if not line.startswith('#') and line.find('=') > -1:
-                kvp = line.split('=')
-                self.__dict__[LowerFirst(kvp[0].strip())] = kvp[1].strip()
-        configFile.close()
-

@@ -4,16 +4,13 @@ Created on Sat Dec 14 15:02:18 2013
 Generate UID from a database
 @author: xm
 """
-import pymongo as pm
-
 
 class UID:
     uidChunk = 1024L
     uidCollectionName = 'UIDStore'
 
-    def __init__(self, connectionString, databaseName):
-        self.__conn = pm.Connection(connectionString)
-        self.__db = self.__conn[databaseName]
+    def __init__(self, database):
+        self.__db = database
         self.__coll = self.__db[self.uidCollectionName]
         self.__pivotUid = 0L
         self.__currentUid = 0L

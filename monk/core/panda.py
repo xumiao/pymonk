@@ -7,7 +7,7 @@ i.e., a binary classifier or a linear regressor
 """
 from monk.math.flexible_vector import FlexibleVector
 from monk.math.cmath import sigmoid
-from monk.core.monk import *
+from monk.core.base import MONKObject, monkFactory, uidStore, pandaStore
 import monk.core.mantis as pmantis
 
 

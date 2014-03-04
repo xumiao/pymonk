@@ -5,7 +5,7 @@ Created on Thu Dec 12 07:27:15 2013
 @author: xm
 """
 from monk.math.flexible_vector import matching, difference
-from monk.core.monk import *
+from monk.core.base import monkFactory, entityStore
 from monk.core.entity import Entity
 
 __ARGUMENTS = '_arguments'
