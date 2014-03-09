@@ -116,4 +116,36 @@ def initialize(monkConfigFile = None):
                        config.viperCollectionName,
                        eval(config.viperFields))
     logging.info('finished viper store')
-    
+
+# training API
+def create_turtle(turtle):
+    pass
+
+def update_turtle(turtle):
+    pass
+
+def remove_turtle(turtle):
+    pass
+
+def add_data(turtle_id, partition_id, entity, fields):
+    pass
+
+def mod_data(turtle_id, partition_id, entity, fields):
+    pass
+
+def train_one(turtle_id, partition_id):
+    pass
+
+# testing API
+def process(turtle_id, partition_id, entity, fields):
+    pass
+
+# query API
+def find_type(type_name):
+    return base.monkFactory.find(type_name)
+
+# storage API
+def save():
+    pass
+
+
