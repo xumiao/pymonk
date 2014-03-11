@@ -11,22 +11,19 @@ import monk.core.panda as ppanda
 """
 An example of SPN
 {
-'_type':['PNode'],
 'children':[
     {
-    '_type':['SNode'],
     'panda':
         {
-        '_type':['Panda'],
+        '_type':['LinearPanda'],
         'name':'test1',
         ...
         }
     },
     {
-    '_type':['SNode'],
     'panda':
         {
-        '_type':['Panda'],
+        '_type':['LinearPanda'],
         'name':'test2',
         ...
         }
@@ -42,6 +39,9 @@ class PNode(MONKObject):
         if "children" not in self.__dict__:
             self.children = []
         else:
+            for child in self.children:
+                if "_type" not in child:
+                    child["_type"] = ["SNode"]
             self.children = viperStore.load_or_create_all(self.children)
 
     def __defaults__(self):
@@ -87,6 +87,8 @@ class Viper(MONKObject):
         if "SPN" not in self.__dict__:
             self.SPN = PNode()
         else:
+            if "_type" not in self.SPN:
+                self.SPN["_type"] = ["PNode"]
             self.SPN = viperStore.load_or_create(self.SPN)
 
     def __defaults__(self):
