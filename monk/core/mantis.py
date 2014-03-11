@@ -62,7 +62,7 @@ class Mantis(MONKObject):
         try:
             return self.solvers[partition_id]
         except KeyError:
-            if parition_id is None:
+            if partition_id is None:
                 logging.warning('trying to get None solver')
                 return None
             else:
