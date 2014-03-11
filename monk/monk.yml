@@ -1,0 +1,5 @@
+modelConnectionString : localhost
+modelDataBaseName : TestMONKModel
+dataConnectionString : localhost
+dataDataBaseName : TestMONKData
+logFileName : monk.log

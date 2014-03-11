@@ -7,10 +7,10 @@ Created on Sun Mar 02 12:29:03 2014
 import socket
 import os
 import logging
-from monk.utils.utils import LowerFirst
 from monk.core.uid import UID
 from monk.core.crane import Crane
 import monk.core.base as base
+import yaml
 
 class Configuration(object):
 
@@ -18,23 +18,23 @@ class Configuration(object):
         self.modelConnectionString = 'localhost'
         self.modelDataBaseName = 'TestMONKModel'
         self.pandaCollectionName = 'PandaStore'
-        self.pandaFields = '{}'
+        self.pandaFields = {}
         self.turtleCollectionName = 'TurtleStore'
-        self.turtleFields = '{}'
+        self.turtleFields = {}
         self.viperCollectionName = 'ViperStore'
-        self.viperFields = '{}'
+        self.viperFields = {}
         self.mantisCollectionName = 'MantisStore'
-        self.mantisFields = '{}'
+        self.mantisFields = {}
         self.monkeyCollectionName = 'MonkeyStore'
-        self.monkeyFields = '{}'
+        self.monkeyFields = {}
         self.tigressCollectionName = 'TigressStore'
-        self.tigressFields = '{}'
+        self.tigressFields = {}
         self.dataConnectionString = 'localhost'
         self.dataDataBaseName = 'TestMONKData'
         self.entityCollectionName = 'EntityStore'
-        self.entityFields = '{}'
+        self.entityFields = {} 
         self.relationCollectionName = 'RelationStore'
-        self.relationFields = '{}'
+        self.relationFields = {}
         self.logFileName = 'monk.log'
         self.logLevel = 'logging.DEBUG'
         self.monkHost = socket.gethostbyname(socket.gethostname())
@@ -43,21 +43,13 @@ class Configuration(object):
         self.dataDB = None
         self.modelDB = None
         
-        self.parse(configurationFileName)
-
-    def parse(self, configurationFileName):
-        with open(configurationFileName, 'r') as configFile:
-            for line in configFile:
-                line = line.strip()
-                if not line.startswith('#') and line.find('=') > -1:
-                    kvp = line.split('=')
-                    self.__dict__[LowerFirst(kvp[0].strip())] = kvp[1].strip()
+        with open(configurationFileName, 'r') as conf:
+            self.__dict__.update(yaml.load(conf))
 
 def initialize(monkConfigFile = None):
     if not monkConfigFile:
         #@todo: change to scan paths
-        #@todo: change to yml file for configuration
-        monkConfigFile = os.getenv('MONK_CONFIG_FILE', 'monk.config')
+        monkConfigFile = os.getenv('MONK_CONFIG_FILE', 'monk.yml')
     
     config = Configuration(monkConfigFile)
     
@@ -69,8 +61,8 @@ def initialize(monkConfigFile = None):
                                config.dataDataBaseName)
     modelDB = Crane.getDatabase(config.modelConnectionString,
                                 config.modelDataBaseName)
-    config.dataDB = dataDB
-    config.modelDB = modelDB
+    base.dataDB = dataDB
+    base.modelDB = modelDB
     
     logging.info('initializing uid store')
     base.uidStore = UID(modelDB)
@@ -79,42 +71,42 @@ def initialize(monkConfigFile = None):
     logging.info('initializing entity store')
     base.entityStore = Crane(dataDB,
                         config.entityCollectionName,
-                        eval(config.entityFields))
+                        config.entityFields)
     logging.info('finished entity store')
     logging.info('initializing relation store')
     base.relationStore = Crane(dataDB,
                           config.relationCollectionName,
-                          eval(config.relationFields))
+                          config.relationFields)
     logging.info('finished relation store')
     logging.info('initializing panda store')
     base.pandaStore = Crane(modelDB,
                        config.pandaCollectionName,
-                       eval(config.pandaFields))
+                       config.pandaFields)
     logging.info('finished panda store')
     logging.info('initializing mantis store')
     base.mantisStore = Crane(modelDB,
                         config.mantisCollectionName,
-                        eval(config.mantisFields))
+                        config.mantisFields)
     logging.info('finished mantis store')
     logging.info('initializing turtle store')
     base.turtleStore = Crane(modelDB,
                         config.turtleCollectionName,
-                        eval(config.turtleFields))
+                        config.turtleFields)
     logging.info('finished turtle store')
     logging.info('initializing monkey store')
     base.monkeyStore = Crane(modelDB,
                         config.monkeyCollectionName,
-                        eval(config.monkeyFields))
+                        config.monkeyFields)
     logging.info('finished monkey store')
     logging.info('initializing tigress store')
     base.tigressStore = Crane(modelDB,
                          config.tigressCollectionName,
-                         eval(config.tigressFields))
+                         config.tigressFields)
     logging.info('finished tigress store')
     logging.info('initializing viper store')
     base.viperStore = Crane(modelDB,
                        config.viperCollectionName,
-                       eval(config.viperFields))
+                       config.viperFields)
     logging.info('finished viper store')
 
 # training APIs
