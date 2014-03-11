@@ -117,7 +117,7 @@ def initialize(monkConfigFile = None):
                        eval(config.viperFields))
     logging.info('finished viper store')
 
-# training API
+# training APIs
 def create_turtle(turtle):
     pass
 
@@ -136,15 +136,15 @@ def mod_data(turtle_id, partition_id, entity, fields):
 def train_one(turtle_id, partition_id):
     pass
 
-# testing API
+# testing APIs
 def process(turtle_id, partition_id, entity, fields):
     pass
 
-# query API
+# query APIs
 def find_type(type_name):
     return base.monkFactory.find(type_name)
 
-# storage API
+# storage APIs
 def save():
     pass
 
