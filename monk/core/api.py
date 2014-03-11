@@ -119,7 +119,7 @@ def initialize(monkConfigFile = None):
 
 # training APIs
 def create_turtle(turtle):
-    pass
+    base.turtleStore.load_or_create(turtle)
 
 def update_turtle(turtle):
     pass
@@ -134,7 +134,11 @@ def mod_data(turtle_id, partition_id, entity, fields):
     pass
 
 def train_one(turtle_id, partition_id):
-    pass
+    turtle = base.turtleStore.load_one_by_id(turtle_id)
+    if turtle:
+        turtle.train_one(partition_id)
+    else:
+        logging.warning('can not find turtle by {0}'.format(turtle_id))
 
 # testing APIs
 def process(turtle_id, partition_id, entity, fields):
