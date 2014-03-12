@@ -99,6 +99,7 @@ class Viper(MONKObject):
         result = super(Viper, self).generic()
         self.appendType(result)
         result["SPN"] = self.SPN._id
+    
 
 monkFactory.register(PNode)
 monkFactory.register(SNode)

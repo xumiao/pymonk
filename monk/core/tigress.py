@@ -28,7 +28,7 @@ class Tigress(MONKObject):
         self.appendType(result)
 
     def supervise(self, viper, entity):
-        pass
+        pass 
 
 
 class PatternTigress(Tigress):
@@ -50,7 +50,7 @@ class PatternTigress(Tigress):
         self.appendType(result)
 
     def supervise(self, viper, entity):
-        pass
+        viper.SPN.children
 
 
 class SelfTigress(Tigress):
