@@ -4,11 +4,11 @@ Created on Fri Nov 08 19:52:01 2013
 The complex problem solver that manage a team of pandas. 
 @author: xm
 """
-from monk.core.base import MONKObject, monkFactory, __DEFAULT_NONE
-from monk.core.base import viperStore, monkeyStore, tigressStore
-import monk.core.viper as pviper
-import monk.core.monkey as pmonkey
-import monk.core.tigress as ptigress
+from base import MONKObject, monkFactory, __DEFAULT_NONE
+from base import viperStore, monkeyStore, tigressStore
+import viper as pviper
+import monkey as pmonkey
+import tigress as ptigress
 
 
 class Turtle(MONKObject):

@@ -7,14 +7,16 @@ Created on Sun Mar 02 12:29:03 2014
 import socket
 import os
 import logging
-from monk.core.uid import UID
-from monk.core.crane import Crane
-import monk.core.base as base
+from uid import UID
+from crane import Crane
+import base
 import yaml
 
 class Configuration(object):
 
     def __init__(self, configurationFileName):
+        self.uidConnectionString = 'localhost'
+        self.uidDataBaseName = 'uidDB'
         self.modelConnectionString = 'localhost'
         self.modelDataBaseName = 'TestMONKModel'
         self.pandaCollectionName = 'PandaStore'
@@ -61,11 +63,15 @@ def initialize(monkConfigFile = None):
                                config.dataDataBaseName)
     modelDB = Crane.getDatabase(config.modelConnectionString,
                                 config.modelDataBaseName)
+    uidDB = Crane.getDatabase(config.uidConnectionString,
+                              config.uidDataBaseName)
+                              
     base.dataDB = dataDB
     base.modelDB = modelDB
+    base.uidDB = uidDB
     
     logging.info('initializing uid store')
-    base.uidStore = UID(modelDB)
+    base.uidStore = UID(uidDB)
     logging.info('finished uid store')
     
     logging.info('initializing entity store')

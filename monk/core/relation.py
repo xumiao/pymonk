@@ -4,9 +4,9 @@ Created on Thu Dec 12 07:27:15 2013
 
 @author: xm
 """
-from monk.math.flexible_vector import matching, difference
-from monk.core.base import monkFactory, entityStore
-from monk.core.entity import Entity
+from ..math.flexible_vector import matching, difference
+from base import monkFactory, entityStore
+from entity import Entity
 
 __ARGUMENTS = '_arguments'
 __VALIDATE = '_validate'

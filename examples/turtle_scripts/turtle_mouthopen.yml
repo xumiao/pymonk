@@ -10,5 +10,5 @@ viper:
             name: mouthOpen
 tigress:
     _type: [PatternTigress]
-    pattern: mouth_open
     fields: [labels]
+    patterns: mouthOpen
