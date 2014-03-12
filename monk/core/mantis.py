@@ -5,9 +5,9 @@ The binary or linear optimizer that is the basic building block for
 solving machine learning problems
 @author: xm
 """
-from monk.core.base import MONKObject, monkFactory, pandaStore
-from monk.math.svm_solver_dual import SVMDual
-from monk.math.flexible_vector import FlexibleVector
+from base import MONKObject, monkFactory, pandaStore
+from ..math.svm_solver_dual import SVMDual
+from ..math.flexible_vector import FlexibleVector
 import logging
 
 

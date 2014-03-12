@@ -5,8 +5,8 @@ A Sum-Product Network for organizing Pandas
 @author: pacif_000
 """
 
-from monk.core.monk import MONKObject, monkFactory, viperStore, pandaStore
-import monk.core.panda as ppanda
+from base import MONKObject, monkFactory, viperStore, pandaStore
+import panda as ppanda
 
 """
 An example of SPN

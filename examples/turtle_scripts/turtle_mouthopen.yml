@@ -9,4 +9,6 @@ viper:
             _type: [LinearPanda]
             name: mouthOpen
 tigress:
-           
+    _type: [PatternTigress]
+    fields: [labels]
+    patterns: mouthOpen

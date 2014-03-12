@@ -11,14 +11,15 @@ import pymongo as pm
 #from monk.utils.cache import lru_cache
 import logging
 from pymongo.son_manipulator import SONManipulator
-from monk.core.base import *
+import base
+from bson.objectid import ObjectId
 
 class Transform(SONManipulator):
 
     def transform_incoming(self, son, collection):
         for (key, value) in son.items():
-            if isinstance(value, MONKObject):
-                son[key] = monkFactory.encode(value)
+            if isinstance(value, base.MONKObject):
+                son[key] = base.monkFactory.encode(value)
             elif isinstance(value, dict):  # Make sure we recurse into sub-docs
                 son[key] = self.transform_incoming(value, collection)
         return son
@@ -26,8 +27,8 @@ class Transform(SONManipulator):
     def transform_outgoing(self, son, collection):
         for (key, value) in son.items():
             if isinstance(value, dict):
-                if __TYPE in value and value[__TYPE][0] == "MONKObject":
-                    son[key] = monkFactory.decode(value)
+                if '_type' in value and value['_type'][0] == "MONKObject":
+                    son[key] = base.monkFactory.decode(value)
                 else:  # Again, make sure to recurse into sub-docs
                     son[key] = self.transform_outgoing(value, collection)
         return son
@@ -38,7 +39,7 @@ class Crane(object):
 
     def __init__(self,database, collectionName, fields):
         self._database = database
-        self._coll = self._database[self._collectionName]
+        self._coll = self._database[collectionName]
         self._fields = fields        
         self._cache = {}
 
@@ -86,7 +87,7 @@ class Crane(object):
         if obj and isinstance(obj, ObjectId):
             return self.load_one_by_id(obj)
         else:
-            obj = monkFactory.decode(obj)
+            obj = base.monkFactory.decode(obj)
             self.insert_one(obj)
             return obj
 
@@ -94,7 +95,7 @@ class Crane(object):
         if objs and isinstance(objs[0], ObjectId):
             return self.load_one_by_ids(objs)
         else:
-            objs = map(monkFactory.decode, objs)
+            objs = map(base.monkFactory.decode, objs)
             [self.insert_one for obj in objs]
             return objs
             

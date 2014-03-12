@@ -2,4 +2,6 @@ modelConnectionString : localhost
 modelDataBaseName : TestMONKModel
 dataConnectionString : localhost
 dataDataBaseName : TestMONKData
+uidConnectionString : localhost
+uidDataBaseName : uidDB
 logFileName : monk.log
