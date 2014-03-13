@@ -164,7 +164,8 @@ cdef class SVMDual(object):
     def setModel(self, z):
         cdef int j
         cdef float ya
-        self.w.copy(z)
+        del self.w
+        self.w = z.clone()
         for j in xrange(self.num_instances):
             self.w.add(self.x[j], self.y[j] * self.alpha[j])
         

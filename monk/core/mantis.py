@@ -88,9 +88,8 @@ class Mantis(MONKObject):
         # @todo: incremental aggregation
         # @todo: ADMM aggregation
         consensus = FlexibleVector()
-        for w in self.weights.values:
-            consensus.add(w)
-        consensus.divide(len(self.weights))
+        t = 1 / len(self.weights)
+        [consensus.add(w, t) for w in self.weights.values]
         self.panda.consensus = consensus
         
     def save_model(self, partition_id):
