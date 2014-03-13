@@ -138,8 +138,15 @@ def train_one(turtle_id, partition_id):
     else:
         logging.warning('can not find turtle by {0}'.format(turtle_id))
 
+def aggregate(turtle_id):
+    turtle = base.turtleStore.load_one_by_id(turtle_id)
+    if turtle:
+        turtle.aggregate()
+    else:
+        logging.warning('can not find turtle by {0}'.format(turtle_id))
+    
 # testing APIs
-def process(turtle_id, partition_id, entity, fields):
+def predict(turtle_id, partition_id, entity, fields):
     pass
 
 # query APIs
@@ -147,7 +154,7 @@ def find_type(type_name):
     return base.monkFactory.find(type_name)
 
 # storage APIs
-def save():
+def save_turtle(turtle_id, partition_id):
     pass
 
 
