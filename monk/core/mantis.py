@@ -9,7 +9,7 @@ from base import MONKObject, monkFactory, pandaStore
 from ..math.svm_solver_dual import SVMDual
 from ..math.flexible_vector import FlexibleVector
 import logging
-
+logger = logging.getLogger("monk")
 
 class Mantis(MONKObject):
 
@@ -56,17 +56,17 @@ class Mantis(MONKObject):
         try:
             del result['solvers']
         except Exception as e:
-            logging.warning('deleting solvers failed {0}'.format(e.message))
+            logger.warning('deleting solvers failed {0}'.format(e.message))
 
     def get_solver(self, partition_id):
         try:
             return self.solvers[partition_id]
         except KeyError:
             if partition_id is None:
-                logging.warning('trying to get None solver')
+                logger.warning('trying to get None solver')
                 return None
             else:
-                logging.info('adding a solver for {0}'.format(partition_id))
+                logger.info('adding a solver for {0}'.format(partition_id))
                 w = self.panda.getModel(partition_id)
                 solver = SVMDual(w, self.eps, self.lam, self.Cp, self.Cn,
                                  self.rho, self.max_num_iters,

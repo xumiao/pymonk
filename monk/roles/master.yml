@@ -6,3 +6,6 @@ uidConnectionString : localhost
 uidDataBaseName : uidDB
 logFileName : monk.log
 kafkaConnectionString : mozo.cloudapp.net:9092
+kafkaGroup : mouthOpen
+kafkaTopic : unique_id
+kafkaPartitionId : 0

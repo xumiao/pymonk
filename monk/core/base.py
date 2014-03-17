@@ -7,6 +7,7 @@ The project object
 import logging
 from datetime import datetime
 from bson.objectid import ObjectId
+logger = logging.getLogger("monk")
 
 __TYPE = '_type'
 __DEFAULT_CREATOR = 'monk'
@@ -22,8 +23,8 @@ class MONKObject(object):
                 self.__dict__.update(generic)
                 self.__restore__()
             except Exception as e:
-                logging.warning('serializatin failed. {0}'.format(e.message))
-                logging.info('defaulting')
+                logger.warning('serializatin failed. {0}'.format(e.message))
+                logger.info('defaulting')
                 self.__defaults__()
         else:
             self.__defaults__()
@@ -91,7 +92,7 @@ class MONKObjectFactory(object):
             generic.update(modification)
             return self.decode(generic)
         except Exception as e:
-            logging.warning('can not clone the object {0}'.format(e.message))
+            logger.warning('can not clone the object {0}'.format(e.message))
             return None
 
 

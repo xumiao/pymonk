@@ -13,6 +13,7 @@ import logging
 from pymongo.son_manipulator import SONManipulator
 import base
 from bson.objectid import ObjectId
+logger = logging.getLogger("monk")
 
 class Transform(SONManipulator):
 
@@ -35,6 +36,7 @@ class Transform(SONManipulator):
 
 monkTransformer = Transform()
 
+   
 class Crane(object):
 
     def __init__(self,database, collectionName, fields):
@@ -50,8 +52,8 @@ class Crane(object):
             database = conn[databaseName]
             database.add_son_manipulator(monkTransformer)
         except Exception as e:
-            logging.warning(e.message)
-            logging.warning('failed to connection to database {0}.{1}'.format(connectionString, databaseName))
+            logger.warning(e.message)
+            logger.warning('failed to connection to database {0}.{1}'.format(connectionString, databaseName))
             return None
         return database
         
@@ -102,14 +104,14 @@ class Crane(object):
     def insert_one(self, obj):
         try:
             if self._coll.find_one({'_id':obj._id}):
-                logging.warning('Object {0} already exists'.format(obj.generic()))
-                logging.warning('Use updating instead')
+                logger.warning('Object {0} already exists'.format(obj.generic()))
+                logger.warning('Use updating instead')
                 return False
             self._coll.save(obj)
             self.__put_one(obj)
         except Exception as e:
-            logging.warning(e.message)
-            logging.warning('can not save document {0}'.format(obj.generic()))
+            logger.warning(e.message)
+            logger.warning('can not save document {0}'.format(obj.generic()))
             return False
         return True
     
@@ -117,8 +119,8 @@ class Crane(object):
         try:
             self._coll.update({'_id':obj._id}, {'$set':fields}, upsert=False)
         except Exception as e:
-            logging.warning(e.message)
-            logging.warning('can not update document {0} in fields {1}'.format(obj._id, fields))
+            logger.warning(e.message)
+            logger.warning('can not update document {0} in fields {1}'.format(obj._id, fields))
             return False
         return True
     
@@ -127,8 +129,8 @@ class Crane(object):
         try:
             return self._coll.find_one({'_id':obj._id}, fields)
         except Exception as e:
-            logging.warning(e.message)
-            logging.warning('can not load document {0} in fields {1}'.format(obj._id, fields))
+            logger.warning(e.message)
+            logger.warning('can not load document {0} in fields {1}'.format(obj._id, fields))
             return None
             
     def load_one_by_id(self, objId):
@@ -138,8 +140,8 @@ class Crane(object):
                 obj = self._coll.find_one({'_id': objId}, self._fields)
                 self.__put_one(obj)
             except Exception as e:
-                logging.warning(e.message)
-                logging.warning('can not load document by id {0}'.format(objId))
+                logger.warning(e.message)
+                logger.warning('can not load document by id {0}'.format(objId))
                 obj = None
         return obj
 
@@ -150,8 +152,8 @@ class Crane(object):
                 remainObjs = self._coll.find(
                     {'_id': {'$in', rems}}, self._fields)
             except Exception as e:
-                logging.warning(e.message)
-                logging.warning('can not load remains {0} ...'.format(rems[0]))
+                logger.warning(e.message)
+                logger.warning('can not load remains {0} ...'.format(rems[0]))
                 remainObjs = []
             objs.extend(remainObjs)
             self.__put_all(remainObjs)
@@ -161,32 +163,32 @@ class Crane(object):
         try:
             return self._coll.find_one(query, {'_id': 1})
         except Exception as e:
-            logging.warning(e.message)
-            logging.warning('can not load document by query'.format(query))
+            logger.warning(e.message)
+            logger.warning('can not load document by query'.format(query))
             return None
 
     def load_all_in_ids(self, query):
         try:
             return self._coll.find(query, {'_id': 1})
         except Exception as e:
-            logging.warning(e.message)
-            logging.warning('can not load documents by query'.format(query))
+            logger.warning(e.message)
+            logger.warning('can not load documents by query'.format(query))
             return []
 
     def load_one(self, query, fields):
         try:
             return self._coll.find_one(query, fields)
         except Exception as e:
-            logging.warning(e.message)
-            logging.warning('query {0} can not be executed'.format(query))
+            logger.warning(e.message)
+            logger.warning('query {0} can not be executed'.format(query))
             return None
 
     def load_all(self, query, fields):
         try:
             return self._coll.find(query, fields)
         except Exception as e:
-            logging.warning(e.message)
-            logging.warning('query {0} can not be executed'.format(query))
+            logger.warning(e.message)
+            logger.warning('query {0} can not be executed'.format(query))
             return None
 
     def has_name(self, name):
