@@ -55,11 +55,6 @@ def initialize(config):
                         config.turtleCollectionName,
                         config.turtleFields)
     
-    logger.info('initializing monkey store')
-    base.monkeyStore = Crane(modelDB,
-                        config.monkeyCollectionName,
-                        config.monkeyFields)
-    
     logger.info('initializing tigress store')
     base.tigressStore = Crane(modelDB,
                          config.tigressCollectionName,
@@ -84,12 +79,17 @@ def remove_turtle(turtle):
     pass
 
 def add_data(turtle_id, partition_id, entity, fields):
-    pass
+    turtle = base.turtleStore.load_one_by_id(turtle_id)
+    if turtle:
+        turtle.add_data(partition_id, entity, fields)
+    else:
+        logger.warning('can not find turtle by {0}'.format(turtle_id))
 
 def train_one(turtle_id, partition_id):
     turtle = base.turtleStore.load_one_by_id(turtle_id)
     if turtle:
         turtle.train_one(partition_id)
+        turtle.save_one(partition_id)
     else:
         logger.warning('can not find turtle by {0}'.format(turtle_id))
 

@@ -5,11 +5,11 @@ The complex problem solver that manage a team of pandas.
 @author: xm
 """
 from base import MONKObject, monkFactory, __DEFAULT_NONE
-from base import viperStore, monkeyStore, tigressStore
+from base import viperStore, tigressStore
 import viper as pviper
-import monkey as pmonkey
 import tigress as ptigress
-
+import logging
+logger = logging.getLogger("monk")
 
 class Turtle(MONKObject):
 
@@ -19,10 +19,6 @@ class Turtle(MONKObject):
             self.viper = viperStore.load_or_create(self.viper)
         else:
             self.viper = pviper.Viper()
-        if 'monkey' in self.__dict__:
-            self.monkey = monkeyStore.load_or_create(self.monkey)
-        else:
-            self.monkey = pmonkey.Monkey()
         if 'tigress' in self.__dict__:
             self.tigress = tigressStore.load_or_create(self.tigress)
         else:
@@ -43,7 +39,6 @@ class Turtle(MONKObject):
     def __defaults__(self):
         super(Turtle, self).__defaults__()
         self.viper = pviper.Viper()
-        self.monkey = pmonkey.Monkey()
         self.tigress = ptigress.Tigress()
         self.name = __DEFAULT_NONE
         self.description = __DEFAULT_NONE
@@ -60,22 +55,24 @@ class Turtle(MONKObject):
         result['tigress'] = self.tigress._id
         return result
 
-    def addPanda(self, panda):
+    def add_panda(self, panda):
         pass
 
-    def deletePanda(self, panda):
+    def delete_panda(self, panda):
         pass
 
-    def infer(self, entity, fields={}):
+    def infer(self, entity):
         pass
 #        for panda in self.pandas:
 #            entity[panda.Uid] = sigmoid(panda.score(entity))
 
-    def addData(self, entity, fields={}):
+    def add_data(self, partition_id, entity):
+        self.tigress.supervise(self.viper, entity)
+        
+    def train_one(self, partition_id):
         pass
-
-    def changeLabel(self, entity, fields={}):
+    
+    def save_one(self, partition_id):
         pass
-
 
 monkFactory.register(Turtle)

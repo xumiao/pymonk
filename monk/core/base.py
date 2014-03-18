@@ -104,6 +104,5 @@ relationStore = None
 pandaStore = None
 mantisStore = None
 turtleStore = None
-monkeyStore = None
 tigressStore = None
 viperStore = None

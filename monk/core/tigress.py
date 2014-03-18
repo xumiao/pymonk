@@ -18,10 +18,13 @@ class Tigress(MONKObject):
         super(Tigress, self).__restore__()
         if "pCuriosity" not in self.__dict__:
             self.pCuriosity = 0.0
+        if "confusionMatrix" not in self.__dict__:
+            self.confusionMatrix = {}
 
     def __defaults__(self):
         super(Tigress, self).__defaults__()
         self.pCuriosity = 0.0
+        self.confusionMatrix = {}
 
     def generic(self):
         result = super(Tigress, self).generic()
@@ -50,7 +53,7 @@ class PatternTigress(Tigress):
         self.appendType(result)
 
     def supervise(self, viper, entity):
-        viper.SPN.children
+        pass
 
 
 class SelfTigress(Tigress):
