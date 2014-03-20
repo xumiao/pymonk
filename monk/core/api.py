@@ -78,10 +78,10 @@ def update_turtle(turtle):
 def remove_turtle(turtle):
     pass
 
-def add_data(turtle_id, partition_id, entity, fields):
+def add_data(turtle_id, partition_id, entity):
     turtle = base.turtleStore.load_one_by_id(turtle_id)
     if turtle:
-        turtle.add_data(partition_id, entity, fields)
+        turtle.add_data(partition_id, entity)
     else:
         logger.warning('can not find turtle by {0}'.format(turtle_id))
 
@@ -101,15 +101,23 @@ def aggregate(turtle_id, partition_id):
         logger.warning('can not find turtle by {0}'.format(turtle_id))
     
 # testing APIs
-def predict(turtle_id, partition_id, entity, fields):
-    pass
+def predict(turtle_id, partition_id, entity):
+    turtle = base.turtleStore.load_one_by_id(turtle_id)
+    if turtle:
+        return turtle.infer(partition_id, entity)
+    else:
+        logger.warning('can not find turtle by {0}'.format(turtle_id))
+
+# storage APIs
+def save_turtle(turtle_id, partition_id):
+    turtle = base.turtleStore.load_one_by_id(turtle_id)
+    if turtle:
+        turtle.save_one(partition_id)
+    else:
+        logger.warning('can not find turtle by {0}'.format(turtle_id))
 
 # query APIs
 def find_type(type_name):
     return base.monkFactory.find(type_name)
-
-# storage APIs
-def save_turtle(turtle_id, partition_id):
-    pass
 
 

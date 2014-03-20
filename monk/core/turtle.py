@@ -5,8 +5,8 @@ The complex problem solver that manage a team of pandas.
 @author: xm
 """
 from base import MONKObject, monkFactory, __DEFAULT_NONE
-from base import viperStore, tigressStore
-import viper as pviper
+from base import tigressStore, pandaStore
+from ..math.cmath import sigmoid, sign0
 import tigress as ptigress
 import logging
 logger = logging.getLogger("monk")
@@ -15,14 +15,17 @@ class Turtle(MONKObject):
 
     def __restore__(self):
         super(Turtle, self).__restore__()
-        if 'viper' in self.__dict__:
-            self.viper = viperStore.load_or_create(self.viper)
+        if 'pandas' in self.__dict__:
+            self.pandas = pandaStore.load_or_create_all(self.pandas)
         else:
-            self.viper = pviper.Viper()
+            self.pandas = []
         if 'tigress' in self.__dict__:
             self.tigress = tigressStore.load_or_create(self.tigress)
         else:
             self.tigress = ptigress.Tigress()
+        if "mapping" not in self.__dict__:
+            self.mapping = {}
+        self.inverted_mapping = {v: k for k, v in self.mapping.iteritems()}
         if 'name' not in self.__dict__:
             self.name = __DEFAULT_NONE
         if 'description' not in self.__dict__:
@@ -38,8 +41,10 @@ class Turtle(MONKObject):
 
     def __defaults__(self):
         super(Turtle, self).__defaults__()
-        self.viper = pviper.Viper()
         self.tigress = ptigress.Tigress()
+        self.pandas = []
+        self.mapping = {}
+        self.inverted_mapping = {}
         self.name = __DEFAULT_NONE
         self.description = __DEFAULT_NONE
         self.pPenalty = 1.0
@@ -50,9 +55,10 @@ class Turtle(MONKObject):
     def generic(self):
         result = super(Turtle, self).generic()
         self.appendType(result)
-        result['viper'] = self.viper._id
-        result['monkey'] = self.monkey._id
         result['tigress'] = self.tigress._id
+        result['pandas'] = [panda._id for panda in self.pandas]
+        # inverted_mapping is created from mapping
+        del result['inverted_mapping']
         return result
 
     def add_panda(self, panda):
@@ -61,18 +67,27 @@ class Turtle(MONKObject):
     def delete_panda(self, panda):
         pass
 
-    def infer(self, entity):
-        pass
-#        for panda in self.pandas:
-#            entity[panda.Uid] = sigmoid(panda.score(entity))
+    def predict(self, partition_id, entity):
+        def _predict(panda):
+            entity[panda.Uid] = sigmoid(panda.score(partition_id, entity))
+            return sign0(entity[panda.Uid])
+        return self.inverted_mapping[tuple([_predict(panda) for panda in self.pandas])]
 
     def add_data(self, partition_id, entity):
-        self.tigress.supervise(self.viper, entity)
+        self.tigress.supervise(self, partition_id, entity)
         
     def train_one(self, partition_id):
-        pass
+        [panda.mantis.train_one(partition_id) for panda in self.pandas if panda.has_mantis()]
     
     def save_one(self, partition_id):
         pass
 
+class SPNTurtle(Turtle):
+    
+    def generic(self):
+        result = super(SPNTurtle, self).generic()
+        self.appendType(result)
+        return result
+    
 monkFactory.register(Turtle)
+monkFactory.register(SPNTurtle)

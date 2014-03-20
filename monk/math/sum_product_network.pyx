@@ -2,11 +2,12 @@
 """
 Created on Sat Feb 01 18:43:29 2014
 A Sum-Product Network for organizing Pandas
+@todo: need more work
 @author: pacif_000
 """
 
-from base import MONKObject, monkFactory, viperStore, pandaStore
-import panda as ppanda
+from ..core.base import MONKObject
+import ..core.panda as ppanda
 
 """
 An example of SPN
@@ -77,30 +78,4 @@ class SNode(MONKObject):
         self.appendType(result)
         result["panda"] = self.panda._id
         result["children"] = map(lambda x: x._id, self.children)
-
-
-class Viper(MONKObject):
-    name = 'Fully factored'
-
-    def __restore__(self):
-        super(Viper, self).__restore__()
-        if "SPN" not in self.__dict__:
-            self.SPN = PNode()
-        else:
-            if "_type" not in self.SPN:
-                self.SPN["_type"] = ["PNode"]
-            self.SPN = viperStore.load_or_create(self.SPN)
-
-    def __defaults__(self):
-        super(Viper, self).__defaults__()
-        self.SPN = PNode()
-
-    def generic(self):
-        result = super(Viper, self).generic()
-        self.appendType(result)
-        result["SPN"] = self.SPN._id
-    
-
-monkFactory.register(PNode)
-monkFactory.register(SNode)
-monkFactory.register(Viper)
+        

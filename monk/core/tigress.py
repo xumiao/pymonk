@@ -1,25 +1,30 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Nov 08 19:53:08 2013
-A superviser to break down problems into binary ones to solve. 
-The inducer is based on SPN (sum product network) to form the reduction rules.
-
+A supervisor looks for signals and decides the training strategy
 @author: xm
 """
 
 from base import MONKObject, monkFactory
-
+import re
 
 class Tigress(MONKObject):
-    name = 'Negative tigress'
-    description = 'Always assigns to the negative class'
-
+    """
+    The base class for Tigress, and does nothing
+    """
+    
     def __restore__(self):
         super(Tigress, self).__restore__()
+        if "name" not in self.__dict__:
+            self.name = 'tigress'
+        if "description" not in self.__dict__:
+            self.description = ''
         if "pCuriosity" not in self.__dict__:
             self.pCuriosity = 0.0
         if "confusionMatrix" not in self.__dict__:
             self.confusionMatrix = {}
+        if "costs" not in self.__dict__:
+            self.costs = {}
 
     def __defaults__(self):
         super(Tigress, self).__defaults__()
@@ -29,92 +34,90 @@ class Tigress(MONKObject):
     def generic(self):
         result = super(Tigress, self).generic()
         self.appendType(result)
-
-    def supervise(self, viper, entity):
-        pass 
+        return result
+        
+    def accuracy(self, partition_id, target):
+        return self.confusionMatrix[partition_id][target]
+        
+    def supervise(self, turtle, partition_id, entity):
+        pass
+    
 
 
 class PatternTigress(Tigress):
-    name = 'Pattern tigress'
-    description = 'Assign positive when a pattern matched'
+    """
+    Find patterns for the targets. 
+    """
 
     def __restore__(self):
         super(PatternTigress, self).__restore__()
-        if 'pattern' not in self.__dict__ or 'fields' not in self.__dict__:
-            raise Exception('No pattern or fields specified')
+        if 'patterns' not in self.__dict__:
+            self.patterns = {}
+        if 'fields' not in self.__dict__:
+            self.fields = []
+        self.p = {re.compile(pattern) : target for target, pattern in self.patterns.iteritems()}
 
     def __defaults__(self):
         super(PatternTigress, self).__defaults__()
-        self.pattern = ''
-        self.fields = []
+        self.patterns = {}
+        self.p = {}
 
     def generic(self):
         result = super(PatternTigress, self).generic()
         self.appendType(result)
+        return result
 
-    def supervise(self, viper, entity):
-        pass
-
-
+    def supervise(self, turtle, partition_id, entity):
+        combinedField = ' . '.join([str, self.fields])
+        pandas = turtle.pandas
+        for r, t in self.p:
+            if r.search(combinedField):
+                cost = self.costs[partition_id][t]
+                ys = turtle.mapping[t]
+                for i in xrange(len(ys)):
+                    pandas[i].mantis.set_data(partition_id, 
+                                              entity._features, 
+                                              ys[i], 
+                                              cost)
+                # found the target
+                return
+        # no pattern found, looking for the _default bit
+        
 class SelfTigress(Tigress):
-    name = 'Self supervising tigress'
-    description = 'Supervising by predicting first'
 
     def generic(self):
         result = super(SelfTigress, self).generic()
         self.appendType(result)
-
-    def supervise(self, viper, entity):
-        pass
-
+        return result
 
 class SPNTigress(Tigress):
-    name = 'SPN inducer'
-    description = 'Induce SPN from data'
 
     def generic(self):
         result = super(SPNTigress, self).generic()
         self.appendType(result)
-
-    def supervise(self, viper, entity):
-        pass
-
-
+        return result
+        
 class LexiconTigress(Tigress):
-    name = 'Lexicon inducer'
-    description = 'Induce lexicon from data'
 
     def generic(self):
         result = super(LexiconTigress, self).generic()
         self.appendType(result)
-
-    def supervise(self, viper, entity):
-        pass
-
-
+        return result
+        
 class ActiveTigress(Tigress):
-    name = 'Active learner'
-    description = 'Actively query human experts'
 
     def generic(self):
         result = super(ActiveTigress, self).generic()
         self.appendType(result)
-
-    def supervise(self, viper, entity):
-        pass
-
-
+        return result
+        
 class CoTigress(Tigress):
-    name = 'Cotrainer'
-    description = 'Cotraining by supervising with multiple sources'
 
     def generic(self):
         result = super(CoTigress, self).generic()
         self.appendType(result)
-
-    def supervise(self, viper, entity):
-        pass
-
+        return result
+        
 monkFactory.register(Tigress)
 monkFactory.register(PatternTigress)
 monkFactory.register(SelfTigress)
