@@ -5,7 +5,8 @@ Created on Thu Dec 12 07:27:15 2013
 @author: xm
 """
 from ..math.flexible_vector import matching, difference
-from base import monkFactory, entityStore
+import base
+from crane import entityStore
 from entity import Entity
 
 __ARGUMENTS = '_arguments'
@@ -45,7 +46,7 @@ class DifferenceRelation(Relation):
     def generic(self):
         result = super(DifferenceRelation, self).generic()
         self.appendType(result)
-
+        return result
 
 class MatchingRelation(Relation):
 
@@ -60,7 +61,8 @@ class MatchingRelation(Relation):
     def generic(self):
         result = super(MatchingRelation, self).generic()
         self.appendType(result)
-
-monkFactory.register(Relation)
-monkFactory.register(DifferenceRelation)
-monkFactory.register(MatchingRelation)
+        return result
+        
+base.register(Relation)
+base.register(DifferenceRelation)
+base.register(MatchingRelation)

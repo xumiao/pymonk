@@ -5,13 +5,13 @@ The binary or linear optimizer that is the basic building block for
 solving machine learning problems
 @author: xm
 """
-from base import MONKObject, monkFactory, pandaStore
+import base
 from ..math.svm_solver_dual import SVMDual
 from ..math.flexible_vector import FlexibleVector
 import logging
 logger = logging.getLogger("monk")
 
-class Mantis(MONKObject):
+class Mantis(base.MONKObject):
 
     def __restore__(self):
         super(Mantis, self).__restore__()
@@ -31,8 +31,10 @@ class Mantis(MONKObject):
             self.max_num_instances = 1000
         if "max_num_partitions" not in self.__dict__:
             self.max_num_partitions = 100
-        self.solvers = {}
-        self.panda = None
+        if "panda" not in self.__dict__:
+            self.panda = None
+        if "solvers" not in self.__dict__:
+            self.solvers = {}
 
     def __defaults__(self):
         super(Mantis, self).__defaults__()
@@ -100,4 +102,4 @@ class Mantis(MONKObject):
             field = 'weights.{0}'.format(partition_id)
         pandaStore.update_one(self.panda, {field : w.generic()})
 
-monkFactory.register(Mantis)
+base.register(Mantis)

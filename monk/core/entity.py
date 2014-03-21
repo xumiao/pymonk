@@ -5,13 +5,13 @@ The general object used in MONK
 @author: xm
 """
 from ..math.flexible_vector import FlexibleVector
-from base import MONKObject, monkFactory,__DEFAULT_EMPTY
+import base
 
 __FEATURES = '_features'
 __RAWS = '_raws'
 
 
-class Entity(MONKObject):
+class Entity(base.MONKObject):
 
     def __restore__(self):
         super(Entity, self).__restore__()
@@ -46,11 +46,11 @@ class Entity(MONKObject):
         if rawKey in self._raws:
             return self._raws[rawKey]
         else:
-            return __DEFAULT_EMPTY
+            return base.__DEFAULT_EMPTY
 
     def setRaw(self, rawKey, rawValue):
         if isinstance(rawKey, basestring):
             self._raws[
                 rawKey.replace('.', '\uff0e').replace('$', '\uff04')] = rawValue
 
-monkFactory.register(Entity)
+base.register(Entity)

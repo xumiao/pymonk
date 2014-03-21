@@ -4,14 +4,14 @@ Created on Fri Nov 08 19:52:01 2013
 The complex problem solver that manage a team of pandas. 
 @author: xm
 """
-from base import MONKObject, monkFactory, __DEFAULT_NONE
-from base import tigressStore, pandaStore
+import base
+from crane import tigressStore, pandaStore
 from ..math.cmath import sigmoid, sign0
-import tigress as ptigress
+from tigress import Tigress
 import logging
 logger = logging.getLogger("monk")
 
-class Turtle(MONKObject):
+class Turtle(base.MONKObject):
 
     def __restore__(self):
         super(Turtle, self).__restore__()
@@ -22,14 +22,14 @@ class Turtle(MONKObject):
         if 'tigress' in self.__dict__:
             self.tigress = tigressStore.load_or_create(self.tigress)
         else:
-            self.tigress = ptigress.Tigress()
+            self.tigress = Tigress()
         if "mapping" not in self.__dict__:
             self.mapping = {}
         self.inverted_mapping = {v: k for k, v in self.mapping.iteritems()}
         if 'name' not in self.__dict__:
-            self.name = __DEFAULT_NONE
+            self.name = base.__DEFAULT_NONE
         if 'description' not in self.__dict__:
-            self.description = __DEFAULT_NONE
+            self.description = base.__DEFAULT_NONE
         if 'pPenalty' not in self.__dict__:
             self.pPenalty = 1.0
         if 'pEPS' not in self.__dict__:
@@ -41,12 +41,12 @@ class Turtle(MONKObject):
 
     def __defaults__(self):
         super(Turtle, self).__defaults__()
-        self.tigress = ptigress.Tigress()
+        self.tigress = Tigress()
         self.pandas = []
         self.mapping = {}
         self.inverted_mapping = {}
-        self.name = __DEFAULT_NONE
-        self.description = __DEFAULT_NONE
+        self.name = base.__DEFAULT_NONE
+        self.description = base.__DEFAULT_NONE
         self.pPenalty = 1.0
         self.pEPS = 1e-8
         self.pMaxPathLength = 1
@@ -82,6 +82,36 @@ class Turtle(MONKObject):
     def save_one(self, partition_id):
         pass
 
+class SingleTurtle(Turtle):
+    
+    def generic(self):
+        result = super(SingleTurtle, self).generic()
+        self.appendType(result)
+        return result
+    
+    def add_panda(self, panda):
+        pass
+
+    def delete_panda(self, panda):
+        pass
+
+    def predict(self, partition_id, entity):
+        panda = self.pandas[0]
+        entity[panda.Uid] = sigmoid(panda.score(partition_id, entity))
+        if sign0(entity[panda.Uid]) > 0:
+            return panda.name
+        else:
+            return base.__DEFAULT_NONE
+
+    def add_data(self, partition_id, entity):
+        self.tigress.supervise(self, partition_id, entity)
+        
+    def train_one(self, partition_id):
+        [panda.mantis.train_one(partition_id) for panda in self.pandas if panda.has_mantis()]
+    
+    def save_one(self, partition_id):
+        pass
+    
 class SPNTurtle(Turtle):
     
     def generic(self):
@@ -89,5 +119,5 @@ class SPNTurtle(Turtle):
         self.appendType(result)
         return result
     
-monkFactory.register(Turtle)
-monkFactory.register(SPNTurtle)
+base.register(Turtle)
+base.register(SPNTurtle)

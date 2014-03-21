@@ -14,6 +14,7 @@ from pymongo.son_manipulator import SONManipulator
 import base
 from bson.objectid import ObjectId
 logger = logging.getLogger("monk")
+from uid import UID
 
 class Transform(SONManipulator):
 
@@ -34,29 +35,15 @@ class Transform(SONManipulator):
                     son[key] = self.transform_outgoing(value, collection)
         return son
 
-monkTransformer = Transform()
-
-   
 class Crane(object):
 
-    def __init__(self,database, collectionName, fields):
+    def __init__(self, database, collectionName, fields):
+        logger.info('Crane : initializing {0} '.format(collectionName))
         self._database = database
         self._coll = self._database[collectionName]
         self._fields = fields        
         self._cache = {}
 
-    @classmethod
-    def getDatabase(cls, connectionString, databaseName):
-        try:
-            conn = pm.Connection(connectionString)
-            database = conn[databaseName]
-            database.add_son_manipulator(monkTransformer)
-        except Exception as e:
-            logger.warning(e.message)
-            logger.warning('failed to connection to database {0}.{1}'.format(connectionString, databaseName))
-            return None
-        return database
-        
     # cache related operation
     def __get_one(self, key):
         if key in self._cache:
@@ -196,3 +183,61 @@ class Crane(object):
             return True
         else:
             return False
+
+dataDB = None
+modelDB = None
+uidDB = None
+uidStore = None
+entityStore = None
+relationStore = None
+pandaStore = None
+mantisStore = None
+turtleStore = None
+tigressStore = None
+
+def create_db(connectionString, databaseName, transformer=None):
+    try:
+        conn = pm.Connection(connectionString)
+        database = conn[databaseName]
+        if transformer:
+            database.add_son_manipulator(transformer)
+    except Exception as e:
+        logger.warning(e.message)
+        logger.warning('failed to connection to database {0}.{1}'.format(connectionString, databaseName))
+        return None
+    return database
+    
+def initialize_storage(config):
+    global dataDB, modelDB, uidDB
+    global uidStore, entityStore, relationStore, pandaStore, mantisStore, turtleStore, tigressStore
+    monkTransformer = Transform()
+    dataDB = create_db(config.dataConnectionString,
+                       config.dataDataBaseName,
+                       monkTransformer)
+    modelDB = create_db(config.modelConnectionString,
+                        config.modelDataBaseName,
+                        monkTransformer)
+    uidDB = create_db(config.uidConnectionString,
+                      config.uidDataBaseName)
+                              
+    logger.info('initializing uid store')
+    uidStore = UID(uidDB)
+    entityStore = Crane(dataDB,
+                    config.entityCollectionName,
+                    config.entityFields)
+    relationStore = Crane(dataDB,
+                      config.relationCollectionName,
+                      config.relationFields)
+    pandaStore = Crane(modelDB,
+                   config.pandaCollectionName,
+                   config.pandaFields)
+    mantisStore = Crane(modelDB,
+                    config.mantisCollectionName,
+                    config.mantisFields)
+    turtleStore = Crane(modelDB,
+                    config.turtleCollectionName,
+                    config.turtleFields)
+    tigressStore = Crane(modelDB,
+                     config.tigressCollectionName,
+                     config.tigressFields)
+                         

@@ -95,14 +95,8 @@ class MONKObjectFactory(object):
             logger.warning('can not clone the object {0}'.format(e.message))
             return None
 
-
 monkFactory = MONKObjectFactory()
 
-uidStore = None
-entityStore = None
-relationStore = None
-pandaStore = None
-mantisStore = None
-turtleStore = None
-tigressStore = None
-viperStore = None
+def register(MONKObjectClass):
+    monkFactory.register(MONKObjectClass)
+    
