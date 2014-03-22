@@ -9,7 +9,7 @@ from bson.objectid import ObjectId
 # to register classes in base
 import base, crane, entity, relation, tigress, turtle, mantis, panda
 
-logger = logging.getLogger("monk")
+logger = logging.getLogger("monk.api")
 
 def initialize(config):
     logging.basicConfig(format='[%(asctime)s]#[%(levelname)s] : %(message)s',

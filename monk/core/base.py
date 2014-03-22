@@ -7,7 +7,7 @@ The project object
 import logging
 from datetime import datetime
 from bson.objectid import ObjectId
-logger = logging.getLogger("monk")
+logger = logging.getLogger("monk.base")
 
 __TYPE = '_type'
 __DEFAULT_CREATOR = 'monk'
@@ -51,6 +51,7 @@ class MONKObject(object):
         result = {}
         result.update(self.__dict__)
         result[__TYPE] = ['MONKObject']
+        self.appendType(result)
         result['lastModified'] = datetime.now()
         return result
 

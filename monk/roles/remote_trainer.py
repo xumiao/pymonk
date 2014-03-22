@@ -15,7 +15,7 @@ import simplejson
 
 config = configuration.Configuration("remote_trainer.yml")
 initialize(config)
-logger = logging.getLogger("monk")
+logger = logging.getLogger("monk.remote_trainer")
 turtle_id = config.kafkaTopic
 try:
     kafka = KafkaClient(config.kafkaConnectionString)

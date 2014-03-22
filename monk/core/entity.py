@@ -29,7 +29,6 @@ class Entity(base.MONKObject):
 
     def generic(self):
         result = super(Entity, self).generic()
-        self.appendType(result)
         result[__FEATURES] = self._features.generic()
         return result
 

@@ -11,7 +11,7 @@ import base
 from crane import uidStore, mantisStore
 from mantis import Mantis
 import logging
-logger = logging.getLogger('monk')
+logger = logging.getLogger('monk.panda')
 
 class Panda(base.MONKObject):
 
@@ -27,12 +27,16 @@ class Panda(base.MONKObject):
         super(Panda, self).__defaults__()
         self.uid = uidStore.nextUID()
         self.name = "Var" + str(self.uid)
-
-    def generic(self):
-        result = super(Panda, self).generic()
-        self.appendType(result)
-        return result
-        
+    
+    def has_mantis():
+        return False
+    
+    def load(self, partition_id):
+        pass
+    
+    def save(self, partition_id):
+        pass
+    
     def predict(self, partition_id):
         return 0
 
@@ -53,20 +57,10 @@ class ExistPanda(Panda):
                 return x
         return reduce(extract, entity.iterkeys(), 0)
 
-    def generic(self):
-        result = super(ExistPanda, self).generic()
-        self.appendType(result)
-        return result
-
 class RegexPanda(Panda):
 
     def predict(self, partition_id, entity):
         pass
-
-    def generic(self):
-        result = super(RegexPanda, self).generic()
-        self.appendType(result)
-        return result
 
 class LinearPanda(Panda):
 
@@ -99,7 +93,6 @@ class LinearPanda(Panda):
 
     def generic(self):
         result = super(LinearPanda, self).generic()
-        self.appendType(result)
         # @error: problematic when saving
         result['weights'].update([(partition_id, self.weights[partition_id].generic())
                                   for partition_id in self.weights])

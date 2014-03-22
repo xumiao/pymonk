@@ -9,7 +9,7 @@ import base
 from ..math.svm_solver_dual import SVMDual
 from ..math.flexible_vector import FlexibleVector
 import logging
-logger = logging.getLogger("monk")
+logger = logging.getLogger("monk.mantis")
 
 class Mantis(base.MONKObject):
 
@@ -51,7 +51,6 @@ class Mantis(base.MONKObject):
 
     def generic(self):
         result = super(Mantis, self).generic()
-        self.appendType(result)
         # every mantis should have a panda
         result['panda'] = self.panda._id
         # @todo: store the solvers locally or somewhere for faster initialization
@@ -59,6 +58,7 @@ class Mantis(base.MONKObject):
             del result['solvers']
         except Exception as e:
             logger.warning('deleting solvers failed {0}'.format(e.message))
+        return result
 
     def get_solver(self, partition_id):
         try:

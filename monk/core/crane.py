@@ -13,8 +13,8 @@ import logging
 from pymongo.son_manipulator import SONManipulator
 import base
 from bson.objectid import ObjectId
-logger = logging.getLogger("monk")
 from uid import UID
+logger = logging.getLogger("monk.crane")
 
 class Transform(SONManipulator):
 
@@ -103,6 +103,9 @@ class Crane(object):
         return True
     
     def update_one_in_fields(self, obj, fields):
+        # fields are in flat form
+        # 'f1.f2':'v' is ok
+        # 'f1':{'f2':'v'} is NOT
         try:
             self._coll.update({'_id':obj._id}, {'$set':fields}, upsert=False)
         except Exception as e:
