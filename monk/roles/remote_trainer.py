@@ -10,13 +10,12 @@ import logging
 from kafka.client import KafkaClient
 from kafka.consumer import SimpleConsumer
 from kafka.producer import KeyedProducer
-from ..monk import initialize, add_data, train_one
+from ..core.api import initialize, add_data, train_one
 import simplejson
 
 config = configuration.Configuration("remote_trainer.yml")
 initialize(config)
 logger = logging.getLogger("monk.remote_trainer")
-turtle_id = config.kafkaTopic
 try:
     kafka = KafkaClient(config.kafkaConnectionString)
     producer = KeyedProducer(kafka, async=True)
@@ -26,6 +25,7 @@ try:
     for message in consumer:
         decoded_message = simplejson.loads(message)
         user_id = decoded_message['userId']
+        turtle_id = decoded_message['turtle_id']
         if decoded_message['operation'] == 'add_data':
             entity = decoded_message['entity']
             fields = decoded_message['fields']

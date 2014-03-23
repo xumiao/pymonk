@@ -115,6 +115,7 @@ class PatternTigress(Tigress):
 
     def generic(self):
         result = super(PatternTigress, self).generic()
+        del result['p']
         del result['isMutualExclusive']
         del result['isDefaulting']
         return result
@@ -148,6 +149,7 @@ class ActiveTigress(Tigress):
     pass        
 class CoTigress(Tigress):
     pass
+
 base.register(Tigress)
 base.register(PatternTigress)
 base.register(SelfTigress)

@@ -1,14 +1,12 @@
 # mouth open turtle
 ---
+monk_type: SingleTurtle
 name:  mouth_open_turtle
 description:  classify mouth openness
-viper:
-    SPN:
-      children:
-        - panda: 
-            _type: [LinearPanda]
-            name: mouthOpen
+pandas:
+   - monk_type: LinearPanda
+     name: mouthOpen
 tigress:
-    _type: [PatternTigress]
+    monk_type: PatternTigress
     fields: [labels]
     patterns: mouthOpen

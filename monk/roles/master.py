@@ -8,12 +8,12 @@ import configuration
 import logging
 from kafka.client import KafkaClient
 from kafka.consumer import SimpleConsumer
-from ..monk import initialize, aggregate
+from ..core.api import initialize, aggregate
 import simplejson
 
 config = configuration.Configuration("master.yml")
 initialize(config)
-logger = logging.getLogger("monk")
+logger = logging.getLogger("monk.master")
 turtle_id = config.kafkaTopic
 try:
     kafka = KafkaClient(config.kafkaConnectionString)

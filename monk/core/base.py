@@ -9,7 +9,7 @@ from datetime import datetime
 from bson.objectid import ObjectId
 logger = logging.getLogger("monk.base")
 
-__TYPE = '_type'
+__TYPE = '_monk_type'
 __DEFAULT_CREATOR = 'monk'
 __DEFAULT_NONE = 'None'
 __DEFAULT_EMPTY = ''
@@ -50,14 +50,13 @@ class MONKObject(object):
         and make neccessary conversion as needed"""
         result = {}
         result.update(self.__dict__)
-        result[__TYPE] = ['MONKObject']
         self.appendType(result)
         result['lastModified'] = datetime.now()
         return result
 
     @classmethod
     def appendType(cls, result):
-        result[__TYPE].append(cls.__name__)
+        result[__TYPE] = cls.__name__
 
     @classmethod
     def create(cls, generic):
@@ -80,8 +79,7 @@ class MONKObjectFactory(object):
         return obj.generic()
 
     def decode(self, generic):
-        typeName = generic[__TYPE][-1]
-        return self.factory[typeName](generic)
+        return self.factory[generic[__TYPE]](generic)
 
     def clone(self, obj, modification = {}):
         try:

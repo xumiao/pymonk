@@ -27,9 +27,10 @@ class Transform(SONManipulator):
         return son
 
     def transform_outgoing(self, son, collection):
+        monk_type = base.__TYPE
         for (key, value) in son.items():
             if isinstance(value, dict):
-                if '_type' in value and value['_type'][0] == "MONKObject":
+                if monk_type in value:
                     son[key] = base.monkFactory.decode(value)
                 else:  # Again, make sure to recurse into sub-docs
                     son[key] = self.transform_outgoing(value, collection)
@@ -101,7 +102,22 @@ class Crane(object):
             logger.warning('can not save document {0}'.format(obj.generic()))
             return False
         return True
-    
+
+    def exists_field(self, obj, field):
+        query = {'_id':obj._id, field:{'$exists':1}}
+        if self._coll.find(query, {'_id':1}):
+            return True
+        else:
+            return False
+            
+    def exists_fields(self, obj, fields):
+        query = {field:{'$exists':1} for field in fields}
+        query['_id'] = obj._id
+        if self._coll.find(query, {'_id':1}):
+            return True
+        else:
+            return False
+        
     def update_one_in_fields(self, obj, fields):
         # fields are in flat form
         # 'f1.f2':'v' is ok

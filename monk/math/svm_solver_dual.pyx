@@ -129,7 +129,7 @@ cdef class SVMDual(object):
                 self.QD[j] = 0.5 * self.rho / self.Cn
             self.QD[j] += self.x[j].norm2()
     
-    def setData(self, x, y):
+    def setData(self, x, y, c):
         cdef int j
         if x.getIndex() >= 0:
             # x is set, use its index, and modify label
@@ -165,7 +165,7 @@ cdef class SVMDual(object):
         cdef int j
         cdef float ya
         del self.w
-        self.w = z.clone()
+        self.w.copyUpdate(z)
         for j in xrange(self.num_instances):
             self.w.add(self.x[j], self.y[j] * self.alpha[j])
         

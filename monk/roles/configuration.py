@@ -16,13 +16,13 @@ class Configuration(object):
         self.modelConnectionString = 'localhost'
         self.modelDataBaseName = 'TestMONKModel'
         self.pandaCollectionName = 'PandaStore'
-        self.pandaFields = {}
+        self.pandaFields = {'weights':-1}
         self.turtleCollectionName = 'TurtleStore'
         self.turtleFields = {}
         self.viperCollectionName = 'ViperStore'
         self.viperFields = {}
         self.mantisCollectionName = 'MantisStore'
-        self.mantisFields = {}
+        self.mantisFields = {'solvers':-1}
         self.monkeyCollectionName = 'MonkeyStore'
         self.monkeyFields = {}
         self.tigressCollectionName = 'TigressStore'

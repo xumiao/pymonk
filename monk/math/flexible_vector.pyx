@@ -277,6 +277,15 @@ cdef class FlexibleVector(object):
             currA = currA.nextA[0]
         return a
 
+    def copyUpdate(self, FlexibleVector other):
+        cdef SkipNodeA* currA = other.head.nextA[0]
+        cdef long i
+        while currA != NULL:
+            for i in xrange(currA.length):
+                if currA.values[i] != 0:
+                    self.upsert(i + currA.index, currA.values[i])
+            currA = currA.nextA[0]
+        
     def update(self, dict f):
         # bulk-insertion can not handle more than 2^32 continuous index span
         cdef list kvps = f.items()

@@ -8,7 +8,7 @@ import base
 from crane import tigressStore, pandaStore
 from ..math.cmath import sigmoid, sign0
 from tigress import Tigress
-from itertools import izip
+#from itertools import izip
 import logging
 logger = logging.getLogger("monk.turtle")
 
@@ -83,6 +83,9 @@ class Turtle(base.MONKObject):
     def train_one(self, partition_id):
         [panda.mantis.train_one(partition_id) for panda in self.pandas if panda.has_mantis()]
     
+    def aggregate(self, partition_id):
+        [panda.mantis.aggregate(partition_id) for panda in self.pandas if panda.has_mantis()]
+        
     def load_one(self, partition_id):
         if not self.tigress.has_partition(partition_id):
             self.tigress.load(partition_id)
