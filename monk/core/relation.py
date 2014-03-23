@@ -17,15 +17,14 @@ class Relation(Entity):
 
     def __restore__(self):
         super(Relation, self).__restore__()
-        self._arguments = entityStore.load_or_create_all(self._arguments)
-
-    def __defaults__(self):
-        super(Relation, self).__defaults__()
-        self._arguments = []
+        if '_arguments' not in self.__dict__:
+            self._arguments = []
+        else:
+            self._arguments = entityStore.load_or_create_all(self._arguments)
 
     def generic(self):
         result = super(Relation, self).generic()
-        result[__ARGUMENTS] = map(lambda x: x._id, self._arguments)
+        result[__ARGUMENTS] = [x._id for x in self._arguments]
         return result
 
     def arity(self):

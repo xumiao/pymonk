@@ -164,7 +164,6 @@ cdef class SVMDual(object):
     def setModel(self, z):
         cdef int j
         cdef float ya
-        del self.w
         self.w.copyUpdate(z)
         for j in xrange(self.num_instances):
             self.w.add(self.x[j], self.y[j] * self.alpha[j])

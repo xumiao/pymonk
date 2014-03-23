@@ -41,20 +41,6 @@ class Turtle(base.MONKObject):
         if 'pMaxInferenceSteps' not in self.__dict__:
             self.pMaxInferenceSteps = 1
 
-    def __defaults__(self):
-        super(Turtle, self).__defaults__()
-        self.tigress = Tigress()
-        self.pandas = []
-        #self.ids = {}
-        self.mapping = {}
-        self.inverted_mapping = {}
-        self.name = base.__DEFAULT_NONE
-        self.description = base.__DEFAULT_NONE
-        self.pPenalty = 1.0
-        self.pEPS = 1e-8
-        self.pMaxPathLength = 1
-        self.pMaxInferenceSteps = 1
-
     def generic(self):
         result = super(Turtle, self).generic()
         result['tigress'] = self.tigress._id
@@ -82,6 +68,7 @@ class Turtle(base.MONKObject):
         
     def train_one(self, partition_id):
         [panda.mantis.train_one(partition_id) for panda in self.pandas if panda.has_mantis()]
+        [panda.save_one(partition_id) for panda in self.pandas]
     
     def aggregate(self, partition_id):
         [panda.mantis.aggregate(partition_id) for panda in self.pandas if panda.has_mantis()]

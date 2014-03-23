@@ -33,7 +33,7 @@ class Configuration(object):
         self.entityFields = {} 
         self.relationCollectionName = 'RelationStore'
         self.relationFields = {}
-        self.logFileName = 'monk.log'
+        self.logFileName = 'monk'
         self.logLevel = 'logging.DEBUG'
         self.kafkaConnectionString = "mozo.cloudapp.net:9092"
         self.kafkaGroup = 'test'

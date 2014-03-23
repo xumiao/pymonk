@@ -20,14 +20,9 @@ class Panda(base.MONKObject):
         if "uid" not in self.__dict__:
             self.uid = uidStore.nextUID()
         if "name" not in self.__dict__:
-            logger.error('Panda : no name is specified')
-            raise Exception('No name specified')
+            logger.warning('no name is specified, using default')
+            self.name = 'Var' + str(self.uid)
 
-    def __defaults__(self):
-        super(Panda, self).__defaults__()
-        self.uid = uidStore.nextUID()
-        self.name = "Var" + str(self.uid)
-    
     def has_mantis():
         return False
     
@@ -85,19 +80,12 @@ class LinearPanda(Panda):
 
         self.mantis.panda = self
 
-    def __defaults__(self):
-        super(Panda, self).__defaults__()
-        self.weights = {}
-        self.consensus = FlexibleVector()
-        self.mantis = Mantis()
-
     def generic(self):
         result = super(LinearPanda, self).generic()
         # @error: problematic when saving, only works on updating
-        result['weights'].update(((partition_id, self.weights[partition_id].generic())
-                                  for partition_id in self.weights.iterkeys()))
         result['consensus'] = self.consensus.generic()
         result['mantis'] = self.mantis._id
+        del result['weights']
         return result
     
     def has_mantis(self):

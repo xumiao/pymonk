@@ -30,11 +30,6 @@ class Tigress(base.MONKObject):
         if "costs" not in self.__dict__:
             self.costs = {}
 
-    def __defaults__(self):
-        super(Tigress, self).__defaults__()
-        self.pCuriosity = 0.0
-        self.confusionMatrix = {}
-    
     def has_partition(self, partition_id):
         return partition_id in self.confusionMatrix
         
@@ -105,13 +100,6 @@ class PatternTigress(Tigress):
             self.isDefaulting = True
         else:
             self.isDefaulting = False
-
-    def __defaults__(self):
-        super(PatternTigress, self).__defaults__()
-        self.patterns = {}
-        self.p = {}
-        self.isMutualExclusive = False
-        self.isDefaulting = False
 
     def generic(self):
         result = super(PatternTigress, self).generic()

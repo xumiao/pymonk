@@ -18,16 +18,12 @@ __DEFAULT_EMPTY = ''
 class MONKObject(object):
 
     def __init__(self, generic=None):
-        if generic is not None:
-            try:
-                self.__dict__.update(generic)
-                self.__restore__()
-            except Exception as e:
-                logger.warning('serializatin failed. {0}'.format(e.message))
-                logger.info('defaulting')
-                self.__defaults__()
-        else:
-            self.__defaults__()
+        try:
+            self.__dict__.update(generic)
+        except Exception as e:
+            logger.info('serializatin failed. {0}'.format(e.message))
+            logger.info('defaulting')
+        self.__restore__()
 
     def __restore__(self):
         if '_id' not in self.__dict__:
@@ -38,12 +34,6 @@ class MONKObject(object):
             self.createdTime = datetime.now()
         if 'lastModified' not in self.__dict__:
             self.lastModified = datetime.now()
-
-    def __defaults__(self):
-        self._id = ObjectId()
-        self.creator = __DEFAULT_CREATOR
-        self.createdTime = datetime.now()
-        self.lastModified = self.createdTime
 
     def generic(self):
         """ A shallow copy of the __dict__, 

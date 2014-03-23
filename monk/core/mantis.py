@@ -36,19 +36,6 @@ class Mantis(base.MONKObject):
             self.panda = None
         self.solvers = {}
 
-    def __defaults__(self):
-        super(Mantis, self).__defaults__()
-        self.panda = None
-        self.eps = 1e-4
-        self.Cp = 1
-        self.Cn = 1
-        self.lam = 1
-        self.rho = 1
-        self.max_num_iters = 1000
-        self.max_num_instances = 1000
-        self.max_num_partitions = 100
-        self.solvers = {}
-
     def generic(self):
         result = super(Mantis, self).generic()
         # every mantis should have a panda

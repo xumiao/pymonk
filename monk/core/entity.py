@@ -22,11 +22,6 @@ class Entity(base.MONKObject):
         if __RAWS not in self.__dict__:
             self._raws = {}
 
-    def __defaults__(self):
-        super(Entity, self).__defaults__()
-        self._raws = {}
-        self._features = FlexibleVector()
-
     def generic(self):
         result = super(Entity, self).generic()
         result[__FEATURES] = self._features.generic()

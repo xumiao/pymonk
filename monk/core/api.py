@@ -14,7 +14,7 @@ logger = logging.getLogger("monk.api")
 
 def initialize(config):
     pid = os.getpid()
-    logging.basicConfig(filename='{0}.{1}'.format(pid, config.logFileName),
+    logging.basicConfig(filename='{0}.{1}.log'.format(config.logFileName, pid),
                         filemode='w',
                         format='[%(asctime)s]#[%(levelname)s] : %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -79,6 +79,7 @@ def load_one(turtle_id, partition_id):
         _turtle.load_one(partition_id)
     else:
         logger.warning('can not find turtle by {0} to load'.format(turtle_id))
+        
 # query APIs
 def find_type(type_name):
     return base.monkFactory.find(type_name)
