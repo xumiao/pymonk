@@ -88,13 +88,13 @@ class Turtle(base.MONKObject):
         
     def load_one(self, partition_id):
         if not self.tigress.has_partition(partition_id):
-            self.tigress.load(partition_id)
-            [panda.load(partition_id) for panda in self.pandas]
+            self.tigress.load_one(partition_id)
+            [panda.load_one(partition_id) for panda in self.pandas]
     
     def save_one(self, partition_id):
         if self.tigress.has_partition(partition_id):
-            self.tigress.save(partition_id)
-            [panda.save(partition_id) for panda in self.pandas]
+            self.tigress.save_one(partition_id)
+            [panda.save_one(partition_id) for panda in self.pandas]
 
 class SingleTurtle(Turtle):
     

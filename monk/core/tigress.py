@@ -52,7 +52,7 @@ class Tigress(base.MONKObject):
         else:
             cm['__total__'] += 1
     
-    def load(self, partition_id):
+    def load_one(self, partition_id):
         if partition_id not in self.confusionMatrix:
             field = 'confusionMatrix.{0}'.format(partition_id)
             tg = tigressStore.load_one_in_fields(self, [field])
@@ -61,7 +61,7 @@ class Tigress(base.MONKObject):
             except:
                 self.confusionMatrix[partition_id] = {}
                 
-    def save(self, partition_id):
+    def save_one(self, partition_id):
         if partition_id in self.confusionMatrix:
             field = 'confusionMatrix.{0}'.format(partition_id)
             tigressStore.update_one_in_fields(self, {field:self.confusionMatrix[partition_id]})
