@@ -4,7 +4,7 @@ dataConnectionString : localhost
 dataDataBaseName : TestMONKData
 uidConnectionString : localhost
 uidDataBaseName : uidDB
-logFileName : monk.log
+logFileName : monk
 kafkaConnectionString : mozo.cloudapp.net:9092
 kafkaGroup : mouthOpen
 kafkaTopic : unique_id
