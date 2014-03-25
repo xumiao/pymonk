@@ -236,10 +236,10 @@ cdef class FlexibleVector(object):
     def __repr__(self):
         return str(self)
 
-    def setIndex(self, index):
+    cpdef setIndex(self, int index):
         self.__index = index
     
-    def getIndex(self):
+    cpdef getIndex(self):
         return self.__index
         
     def _memorySize(self):

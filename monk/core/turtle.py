@@ -5,9 +5,10 @@ The complex problem solver that manage a team of pandas.
 @author: xm
 """
 import base
-from crane import tigressStore, pandaStore
+import constants
+import crane
 from ..math.cmath import sigmoid, sign0
-from tigress import Tigress
+import tigress as ti
 #from itertools import izip
 import logging
 logger = logging.getLogger("monk.turtle")
@@ -17,21 +18,21 @@ class Turtle(base.MONKObject):
     def __restore__(self):
         super(Turtle, self).__restore__()
         if 'pandas' in self.__dict__:
-            self.pandas = pandaStore.load_or_create_all(self.pandas)
+            self.pandas = crane.pandaStore.load_or_create_all(self.pandas)
         else:
             self.pandas = []
         #self.ids = {p._id : i for i, p in izip(range(len(self.pandas)), self.pandas)}
         if 'tigress' in self.__dict__:
-            self.tigress = tigressStore.load_or_create(self.tigress)
+            self.tigress = crane.tigressStore.load_or_create(self.tigress)
         else:
-            self.tigress = Tigress()
+            self.tigress = ti.Tigress()
         if "mapping" not in self.__dict__:
             self.mapping = {}
         self.inverted_mapping = {v: k for k, v in self.mapping.iteritems()}
         if 'name' not in self.__dict__:
-            self.name = base.__DEFAULT_NONE
+            self.name = constants.DEFAULT_NONE
         if 'description' not in self.__dict__:
-            self.description = base.__DEFAULT_NONE
+            self.description = constants.DEFAULT_NONE
         if 'pPenalty' not in self.__dict__:
             self.pPenalty = 1.0
         if 'pEPS' not in self.__dict__:
@@ -49,7 +50,18 @@ class Turtle(base.MONKObject):
         del result['inverted_mapping']
         #del result['ids']
         return result
-
+    
+    def save(self, **kwargs):
+        if kwargs and kwargs.has_key('partition_id'):
+            self.save_one(kwargs['partition_id'])
+        else:
+            crane.turtleStore.update_one_in_fields(self, self.generic())
+            logger.debug('tigress {0} to save'.format(self.tigress.generic()))
+            logger.debug('tigress save {0}'.format(self.tigress.save))
+            self.tigress.save()
+            for pa in self.pandas:
+                pa.save()
+                
     def add_panda(self, panda):
         pass
     
@@ -62,6 +74,7 @@ class Turtle(base.MONKObject):
             return sign0(entity[panda.Uid])
         predicted = self.inverted_mapping[tuple([_predict(panda) for panda in self.pandas])]
         self.tigress.measure(partition_id, entity, predicted)
+        return predicted
 
     def add_data(self, partition_id, entity):
         self.tigress.supervise(self, partition_id, entity)
@@ -92,8 +105,8 @@ class SingleTurtle(Turtle):
             self.tigress.measure(partition_id, entity, panda.name)
             return panda.name
         else:
-            self.tigress.measure(partition_id, entity, base.__DEFAULT_NONE)
-            return base.__DEFAULT_NONE
+            self.tigress.measure(partition_id, entity, constants.DEFAULT_NONE)
+            return constants.DEFAULT_NONE
         
     def train_one(self, partition_id):
         panda = self.pandas[0]

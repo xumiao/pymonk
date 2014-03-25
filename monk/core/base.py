@@ -5,31 +5,28 @@ The project object
 @author: xm
 """
 import logging
+import constants
 from datetime import datetime
 from bson.objectid import ObjectId
 logger = logging.getLogger("monk.base")
 
-__TYPE = '_monk_type'
-__DEFAULT_CREATOR = 'monk'
-__DEFAULT_NONE = 'None'
-__DEFAULT_EMPTY = ''
-
-
 class MONKObject(object):
 
     def __init__(self, generic=None):
-        try:
-            self.__dict__.update(generic)
-        except Exception as e:
-            logger.info('serializatin failed. {0}'.format(e.message))
-            logger.info('defaulting')
+        if generic:
+            try:
+                logger.debug('trying to deserialize {0}'.format(generic))
+                self.__dict__.update(generic)
+            except Exception as e:
+                logger.warning('deserializatin failed. {0}'.format(e.message))
+                logger.warning('defaulting')
         self.__restore__()
 
     def __restore__(self):
         if '_id' not in self.__dict__:
             self._id = ObjectId()
         if 'creator' not in self.__dict__:
-            self.creator = __DEFAULT_CREATOR
+            self.creator = constants.DEFAULT_CREATOR
         if 'createdTime' not in self.__dict__:
             self.createdTime = datetime.now()
         if 'lastModified' not in self.__dict__:
@@ -40,13 +37,18 @@ class MONKObject(object):
         and make neccessary conversion as needed"""
         result = {}
         result.update(self.__dict__)
-        self.appendType(result)
+        del result['_id']
         result['lastModified'] = datetime.now()
+        self.appendType(result)
         return result
-
+        
+    def save(self, **kwargs):
+        logger.warning('no store for abstract MONKObject')
+        return None
+        
     @classmethod
     def appendType(cls, result):
-        result[__TYPE] = cls.__name__
+        result[constants.MONK_TYPE] = cls.__name__
 
     @classmethod
     def create(cls, generic):
@@ -65,17 +67,14 @@ class MONKObjectFactory(object):
     def find(self, name):
         return [key for key in self.factory.iterkeys if key.find(name) >= 0]
         
-    def encode(self, obj):
-        return obj.generic()
-
     def decode(self, generic):
-        return self.factory[generic[__TYPE]](generic)
+        return self.factory[generic[constants.MONK_TYPE]](generic)
 
     def clone(self, obj, modification = {}):
         try:
             generic = obj.generic()
             generic['_id'] = ObjectId()
-            generic['creator'] = __DEFAULT_CREATOR
+            generic['creator'] = constants.DEFAULT_CREATOR
             generic['createdTime'] = datetime.now()
             generic['lastModified'] = datetime.now()            
             generic.update(modification)

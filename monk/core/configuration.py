@@ -6,7 +6,6 @@ Created on Sun Mar 16 23:42:45 2014
 """
 import yaml
 import socket
-from ..monk import get_UUID
 
 class Configuration(object):
 
@@ -37,13 +36,10 @@ class Configuration(object):
         self.logLevel = 'logging.DEBUG'
         self.kafkaConnectionString = "mozo.cloudapp.net:9092"
         self.kafkaGroup = 'test'
-        self.kafkaTopic = get_UUID()
+        self.kafkaTopic = 'test_topic'
         self.kafkaPartitionId = 0
         self.monkHost = socket.gethostbyname(socket.gethostname())
         self.monkPort = 8887
-        
-        self.dataDB = None
-        self.modelDB = None
-        
+                
         with open(configurationFileName, 'r') as conf:
             self.__dict__.update(yaml.load(conf))
