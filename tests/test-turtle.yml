@@ -11,5 +11,6 @@ pandas:
 tigress:
     monk_type: PatternTigress
     fields: [labels]
-    patterns: mouthOpen
+    patterns: 
+      mouthOpen: mouthOpen
     defaulting: True

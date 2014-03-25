@@ -5,10 +5,8 @@ The binary or linear optimizer that is the basic building block for
 solving machine learning problems
 @author: xm
 """
-import base
-from crane import mantisStore
+import base, crane
 from ..math.svm_solver_dual import SVMDual
-from ..math.flexible_vector import FlexibleVector
 import logging
 logger = logging.getLogger("monk.mantis")
 
@@ -46,6 +44,13 @@ class Mantis(base.MONKObject):
             logger.warning('deleting solvers failed {0}'.format(e.message))
         return result
 
+    def save(self, **kwargs):
+        if kwargs and kwargs.has_key('partition_id'):
+            pid = kwargs['partition_id']
+            self.save_one(pid)
+        else:
+            crane.mantisStore.update_one_in_fields(self, self.generic())
+                
     def get_solver(self, partition_id):
         try:
             return self.solvers[partition_id]
@@ -78,6 +83,7 @@ class Mantis(base.MONKObject):
         consensus.add(w, -1/t)
         w = self.panda.update_one_weight(partition_id)
         consensus.add(w, 1/t)
+        self.panda.save_consensus()
         
     def add_one(self, partition_id):
         w = self.panda.get_model(partition_id)
@@ -88,7 +94,7 @@ class Mantis(base.MONKObject):
     def load_one(self, partition_id):
         if not self.solvers.has_key(partition_id):
             fields = ['solvers.{0}'.format(partition_id)]
-            s = mantisStore.load_one_in_fields(self, fields)
+            s = crane.mantisStore.load_one_in_fields(self, fields)
             if s.has_key('solvers'):
                 self.solvers[partition_id] = SVMDual(s['solvers'][partition_id])
             else:
@@ -98,7 +104,7 @@ class Mantis(base.MONKObject):
             
     def save_one(self, partition_id):
         if self.solvers.has_key(partition_id):
-            mantisStore.update_one_in_fields(self, {'solvers.{0}'.format(partition_id):self.solvers[partition_id].generic()})
+            crane.mantisStore.update_one_in_fields(self, {'solvers.{0}'.format(partition_id):self.solvers[partition_id].generic()})
         else:
             logger.warning('can not find solver for {0} to save'.format(partition_id))
             

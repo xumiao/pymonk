@@ -10,36 +10,18 @@ import pymongo as pm
 #@todo: using cache
 #from monk.utils.cache import lru_cache
 import logging
-from pymongo.son_manipulator import SONManipulator
 import base
 from bson.objectid import ObjectId
 from uid import UID
 logger = logging.getLogger("monk.crane")
 
-class Transform(SONManipulator):
-
-    def transform_incoming(self, son, collection):
-        for (key, value) in son.items():
-            if isinstance(value, base.MONKObject):
-                son[key] = base.monkFactory.encode(value)
-            elif isinstance(value, dict):  # Make sure we recurse into sub-docs
-                son[key] = self.transform_incoming(value, collection)
-        return son
-
-    def transform_outgoing(self, son, collection):
-        monk_type = base.__TYPE
-        for (key, value) in son.items():
-            if isinstance(value, dict):
-                if monk_type in value:
-                    son[key] = base.monkFactory.decode(value)
-                else:  # Again, make sure to recurse into sub-docs
-                    son[key] = self.transform_outgoing(value, collection)
-        return son
-
 class Crane(object):
 
-    def __init__(self, database, collectionName, fields):
-        logger.info('Crane : initializing {0} '.format(collectionName))
+    def __init__(self, database=None, collectionName=None, fields={}):
+        if database is None or collectionName is None:
+            return
+            
+        logger.info('initializing {0} '.format(collectionName))
         self._database = database
         self._coll = self._database[collectionName]
         self._fields = fields        
@@ -69,40 +51,24 @@ class Crane(object):
     def __erase_all(self, objs):
         map(self.__erase_one, objs)
 
-    # database related operation
-    def alive(self):
-        return self._conn and self._conn.alive()
-
     def load_or_create(self, obj):
-        if obj and isinstance(obj, ObjectId):
+        if not obj:
+            return None
+        
+        if isinstance(obj, ObjectId):
             return self.load_one_by_id(obj)
         else:
-            obj = base.monkFactory.decode(obj)
-            self.insert_one(obj)
-            return obj
+            return self.create_one(obj)
 
     def load_or_create_all(self, objs):
-        if objs and isinstance(objs[0], ObjectId):
-            return self.load_one_by_ids(objs)
+        if not objs:
+            return []
+        
+        if isinstance(objs[0], ObjectId):
+            return self.load_all_by_ids(objs)
         else:
-            objs = map(base.monkFactory.decode, objs)
-            [self.insert_one for obj in objs]
-            return objs
+            return self.create_all(objs)
             
-    def insert_one(self, obj):
-        try:
-            if self._coll.find_one({'_id':obj._id}):
-                logger.warning('Object {0} already exists'.format(obj.generic()))
-                logger.warning('Use updating instead')
-                return False
-            self._coll.save(obj)
-            self.__put_one(obj)
-        except Exception as e:
-            logger.warning(e.message)
-            logger.warning('can not save document {0}'.format(obj.generic()))
-            return False
-        return True
-
     def exists_field(self, obj, field):
         query = {'_id':obj._id, field:{'$exists':1}}
         if self._coll.find(query, {'_id':1}):
@@ -120,10 +86,10 @@ class Crane(object):
         
     def update_one_in_fields(self, obj, fields):
         # fields are in flat form
-        # 'f1.f2':'v' is ok
-        # 'f1':{'f2':'v'} is NOT
+        # 'f1.f2':'v' is ok, 'f1.f3' won't be erased
+        # 'f1':{'f2':'v'} is NOT, 'f1':{'f3':vv} will be erased
         try:
-            self._coll.update({'_id':obj._id}, {'$set':fields}, upsert=False)
+            self._coll.update({'_id':obj._id}, {'$set':fields}, upsert=True)
         except Exception as e:
             logger.warning(e.message)
             logger.warning('can not update document {0} in fields {1}'.format(obj._id, fields))
@@ -138,7 +104,20 @@ class Crane(object):
             logger.warning(e.message)
             logger.warning('can not load document {0} in fields {1}'.format(obj._id, fields))
             return None
-            
+    
+    def create_one(self, obj):
+        obj = base.monkFactory.decode(obj)
+        self.__put_one(obj)
+        obj.save()
+        return obj
+    
+    def create_all(self, objs):
+        decode = base.monkFactory.decode
+        objs = map(decode, objs)
+        self.__put_all(objs)
+        [obj.save for obj in objs]
+        return objs
+        
     def load_one_by_id(self, objId):
         obj = self.__get_one(objId)
         if not obj:
@@ -203,23 +182,21 @@ class Crane(object):
         else:
             return False
 
-dataDB = None
-modelDB = None
-uidDB = None
-uidStore = None
-entityStore = None
-relationStore = None
-pandaStore = None
-mantisStore = None
-turtleStore = None
-tigressStore = None
+dataDB        = None
+modelDB       = None
+uidDB         = None
+uidStore      = None
+entityStore   = Crane()
+relationStore = Crane()
+pandaStore    = Crane()
+mantisStore   = Crane()
+turtleStore   = Crane()
+tigressStore  = Crane()
 
-def create_db(connectionString, databaseName, transformer=None):
+def create_db(connectionString, databaseName):
     try:
         conn = pm.Connection(connectionString)
         database = conn[databaseName]
-        if transformer:
-            database.add_son_manipulator(transformer)
     except Exception as e:
         logger.warning(e.message)
         logger.warning('failed to connection to database {0}.{1}'.format(connectionString, databaseName))
@@ -229,15 +206,20 @@ def create_db(connectionString, databaseName, transformer=None):
 def initialize_storage(config):
     global dataDB, modelDB, uidDB
     global uidStore, entityStore, relationStore, pandaStore, mantisStore, turtleStore, tigressStore
-    monkTransformer = Transform()
-    dataDB = create_db(config.dataConnectionString,
-                       config.dataDataBaseName,
-                       monkTransformer)
+    dataDB  = create_db(config.dataConnectionString,
+                       config.dataDataBaseName)
+    if dataDB is None:
+        return False
+        
     modelDB = create_db(config.modelConnectionString,
-                        config.modelDataBaseName,
-                        monkTransformer)
-    uidDB = create_db(config.uidConnectionString,
+                        config.modelDataBaseName)
+    if modelDB is None:
+        return False
+        
+    uidDB   = create_db(config.uidConnectionString,
                       config.uidDataBaseName)
+    if uidDB is None:
+        return False
                               
     logger.info('initializing uid store')
     uidStore = UID(uidDB)
@@ -259,4 +241,4 @@ def initialize_storage(config):
     tigressStore = Crane(modelDB,
                      config.tigressCollectionName,
                      config.tigressFields)
-                         
+    return True

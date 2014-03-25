@@ -5,7 +5,8 @@ The general object used in MONK
 @author: xm
 """
 from ..math.flexible_vector import FlexibleVector
-import base
+from datetime import datetime
+import base, crane
 import constants
 
 class Entity(base.MONKObject):
@@ -20,10 +21,21 @@ class Entity(base.MONKObject):
             self._raws = {}
 
     def generic(self):
-        result = super(Entity, self).generic()
+        result = {}
+        result['creator'] = self.creator
+        result['createdTime'] = self.createdTime
+        result['lastModified'] = datetime.now()
         result[constants.FEATURES] = self._features.generic()
+        result[constants.RAWS] = self._raws
         return result
-
+    
+    def save(self,**kwargs):
+        if kwargs and kwargs.has_key('fields'):
+            fields = kwargs['fields']
+        else:
+            fields = self.generic()
+        crane.entityStore.update_one_in_fields(self, fields)
+        
     def __contains__(self, key):
         return key in self._features or key in self._raws
 

@@ -5,10 +5,9 @@ A supervisor looks for signals and decides the training strategy
 @author: xm
 """
 
-import base 
+import base,crane
 import re
 from itertools import izip
-from crane import tigressStore
 import logging
 logger = logging.getLogger('monk.tigress')
 
@@ -29,7 +28,21 @@ class Tigress(base.MONKObject):
             self.confusionMatrix = {}
         if "costs" not in self.__dict__:
             self.costs = {}
-
+    
+    def generic(self):
+        result = super(Tigress, self).generic()
+        try:
+            del result['confusionMatrix']
+        except Exception as e:
+            logger.warning('deleting solvers failed {0}'.format(e.message))
+        return result
+    
+    def save(self, **kwargs):
+        if kwargs and kwargs.has_key('partition_id'):
+            self.save_one(kwargs['partition_id'])
+        else:
+            crane.tigressStore.update_one_in_fields(self, self.generic())
+            
     def has_partition(self, partition_id):
         return partition_id in self.confusionMatrix
         
@@ -50,7 +63,7 @@ class Tigress(base.MONKObject):
     def load_one(self, partition_id):
         if partition_id not in self.confusionMatrix:
             field = 'confusionMatrix.{0}'.format(partition_id)
-            tg = tigressStore.load_one_in_fields(self, [field])
+            tg = crane.tigressStore.load_one_in_fields(self, [field])
             try:
                 self.confusionMatrix[partition_id] = tg['confusionMatrix'][partition_id]
             except:
@@ -59,7 +72,7 @@ class Tigress(base.MONKObject):
     def save_one(self, partition_id):
         if partition_id in self.confusionMatrix:
             field = 'confusionMatrix.{0}'.format(partition_id)
-            tigressStore.update_one_in_fields(self, {field:self.confusionMatrix[partition_id]})
+            crane.tigressStore.update_one_in_fields(self, {field:self.confusionMatrix[partition_id]})
             
     def retrieve_target(self, entity):
         return () # an empty iterator
@@ -92,20 +105,14 @@ class PatternTigress(Tigress):
         if 'fields' not in self.__dict__:
             self.fields = []
         self.p = {re.compile(pattern) : target for target, pattern in self.patterns.iteritems()}
-        if 'mutualExclusive' in self.__dict__:
-            self.isMutualExclusive = True
-        else:
-            self.isMutualExclusive = False
-        if 'defaulting' in self.__dict__:
-            self.isDefaulting = True
-        else:
-            self.isDefaulting = False
+        if 'mutualExclusive' not in self.__dict__:
+            self.mutualExclusive = False
+        if 'defaulting' not in self.__dict__:
+            self.defaulting = False
 
     def generic(self):
         result = super(PatternTigress, self).generic()
         del result['p']
-        del result['isMutualExclusive']
-        del result['isDefaulting']
         return result
 
     def retrieve_target(self, entity):
@@ -119,10 +126,10 @@ class PatternTigress(Tigress):
             cost = self.costs[t]
             ys = turtle.mapping[t]
             [panda.mantis.set_data(partition_id, x, y, cost) for panda, y in izip(pandas, ys)]
-            if self.isMutualExclusive:
+            if self.mutualExclusive:
                 return
 
-        if self.isDefaulting:
+        if self.defaulting:
             # no pattern found, add all negative
             mincost = min(self.costs.itervalues())
             [panda.mantis.set_data(partition_id, x, -1, mincost) for panda in pandas]

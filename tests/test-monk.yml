@@ -1,8 +1,8 @@
-modelConnectionString : mozo.cloudapp.net:27017
+modelConnectionString : localhost
 modelDataBaseName : TestMONKModel
-dataConnectionString : mozo.cloudapp.net:27017
+dataConnectionString : localhost
 dataDataBaseName : TestMONKData
-uidConnectionString : mozo.cloudapp.net:27017
+uidConnectionString : localhost
 uidDataBaseName : uidDB
 logFileName : monk
 kafkaConnectionString : mozo.cloudapp.net:9092

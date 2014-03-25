@@ -13,11 +13,13 @@ logger = logging.getLogger("monk.base")
 class MONKObject(object):
 
     def __init__(self, generic=None):
-        try:
-            self.__dict__.update(generic)
-        except Exception as e:
-            logger.info('serializatin failed. {0}'.format(e.message))
-            logger.info('defaulting')
+        if generic:
+            try:
+                logger.debug('trying to deserialize {0}'.format(generic))
+                self.__dict__.update(generic)
+            except Exception as e:
+                logger.warning('deserializatin failed. {0}'.format(e.message))
+                logger.warning('defaulting')
         self.__restore__()
 
     def __restore__(self):
@@ -35,10 +37,15 @@ class MONKObject(object):
         and make neccessary conversion as needed"""
         result = {}
         result.update(self.__dict__)
-        self.appendType(result)
+        del result['_id']
         result['lastModified'] = datetime.now()
+        self.appendType(result)
         return result
-
+        
+    def save(self, **kwargs):
+        logger.warning('no store for abstract MONKObject')
+        return None
+        
     @classmethod
     def appendType(cls, result):
         result[constants.MONK_TYPE] = cls.__name__
@@ -60,9 +67,6 @@ class MONKObjectFactory(object):
     def find(self, name):
         return [key for key in self.factory.iterkeys if key.find(name) >= 0]
         
-    def encode(self, obj):
-        return obj.generic()
-
     def decode(self, generic):
         return self.factory[generic[constants.MONK_TYPE]](generic)
 

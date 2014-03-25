@@ -20,29 +20,29 @@ def yaml2json(yamlFileName):
     return None
     
 def initialize(config):
-    if isinstance(config, str):
+    if isinstance(config, basestring):
         config = configuration.Configuration(config)
     
     pid = os.getpid()
     logging.basicConfig(filename='{0}.{1}.log'.format(config.logFileName, pid),
                         filemode='w',
-                        format='[%(asctime)s]#[%(levelname)s] : %(message)s',
+                        format='[%(asctime)s]#%(name)-12s#[%(levelname)-8s] : %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=eval(config.logLevel))
     
-    crane.initialize_storage(config)
+    return crane.initialize_storage(config)
 
 def get_UUID():
     return ObjectId()
     
 # training APIs
 def create_turtle(turtle_script):
-    crane.turtleStore.load_or_create(turtle_script)
+    return crane.turtleStore.load_or_create(turtle_script)
 
-def update_turtle(turtle_script):
+def update_turtle(turtle_id):
     pass
 
-def remove_turtle(turtle_script):
+def remove_turtle(turtle_id):
     pass
 
 def add_data(turtle_id, partition_id, entity):
