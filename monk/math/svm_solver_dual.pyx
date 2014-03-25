@@ -55,7 +55,7 @@ cdef class SVMDual(object):
     cpdef float num_pos
     cdef int active_size
     cdef list x # features
-    cdef int*  y # target array
+    cdef int* y # target array
     cdef int* index # index array
     cdef float* QD
     cdef float* alpha
@@ -65,8 +65,6 @@ cdef class SVMDual(object):
         # @todo: check x, y, w not None
         # @todo: validate the parameters
         cdef int j
-        pos = 1e-8
-        neg = 1e-8
         self.eps = eps
         self.Cp = Cp
         self.Cn = Cn

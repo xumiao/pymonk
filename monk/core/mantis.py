@@ -60,10 +60,10 @@ class Mantis(base.MONKObject):
             solver.setModel(consensus)
             solver.trainModel()
     
-    def add_data(self, partition_id, x, y, c):
+    def set_data(self, partition_id, entity, y, c):
         solver = self.get_solver(partition_id)
         if solver:
-            solver.setData(x,y)
+            solver.setData(entity, y, c)
     
     def aggregate(self, partition_id):
         # @todo: incremental aggregation

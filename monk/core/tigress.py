@@ -114,18 +114,17 @@ class PatternTigress(Tigress):
         
     def supervise(self, turtle, partition_id, entity):
         pandas = turtle.pandas
-        x = entity._features
         for t in self.retrieve_target(entity):
             cost = self.costs[t]
             ys = turtle.mapping[t]
-            [panda.mantis.set_data(partition_id, x, y, cost) for panda, y in izip(pandas, ys)]
+            [panda.mantis.set_data(partition_id, entity, y, cost) for panda, y in izip(pandas, ys)]
             if self.isMutualExclusive:
                 return
 
         if self.isDefaulting:
             # no pattern found, add all negative
             mincost = min(self.costs.itervalues())
-            [panda.mantis.set_data(partition_id, x, -1, mincost) for panda in pandas]
+            [panda.mantis.set_data(partition_id, entity, -1, mincost) for panda in pandas]
         
 class SelfTigress(Tigress):
     pass

@@ -277,7 +277,7 @@ cdef class FlexibleVector(object):
             currA = currA.nextA[0]
         return a
 
-    def copyUpdate(self, FlexibleVector other):
+    cpdef copyUpdate(self, FlexibleVector other):
         cdef SkipNodeA* currA = other.head.nextA[0]
         cdef long i
         while currA != NULL:
