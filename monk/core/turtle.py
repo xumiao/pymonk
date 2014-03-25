@@ -5,6 +5,7 @@ The complex problem solver that manage a team of pandas.
 @author: xm
 """
 import base
+import constants
 from crane import tigressStore, pandaStore
 from ..math.cmath import sigmoid, sign0
 from tigress import Tigress
@@ -29,9 +30,9 @@ class Turtle(base.MONKObject):
             self.mapping = {}
         self.inverted_mapping = {v: k for k, v in self.mapping.iteritems()}
         if 'name' not in self.__dict__:
-            self.name = base.__DEFAULT_NONE
+            self.name = constants.DEFAULT_NONE
         if 'description' not in self.__dict__:
-            self.description = base.__DEFAULT_NONE
+            self.description = constants.DEFAULT_NONE
         if 'pPenalty' not in self.__dict__:
             self.pPenalty = 1.0
         if 'pEPS' not in self.__dict__:
@@ -92,8 +93,8 @@ class SingleTurtle(Turtle):
             self.tigress.measure(partition_id, entity, panda.name)
             return panda.name
         else:
-            self.tigress.measure(partition_id, entity, base.__DEFAULT_NONE)
-            return base.__DEFAULT_NONE
+            self.tigress.measure(partition_id, entity, constants.DEFAULT_NONE)
+            return constants.DEFAULT_NONE
         
     def train_one(self, partition_id):
         panda = self.pandas[0]

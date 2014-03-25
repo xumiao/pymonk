@@ -12,7 +12,7 @@ Solving a linear svm in dual
 from __future__ import division
 cimport cython
 from libc.stdlib cimport malloc, free, calloc, rand
-from pymonk.math.flexible_vector import FlexibleVector
+from monk.math.flexible_vector import FlexibleVector
 
 cdef inline _MEM_CHECK(void* p):
     if p == NULL:

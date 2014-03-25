@@ -5,15 +5,10 @@ The project object
 @author: xm
 """
 import logging
+import constants
 from datetime import datetime
 from bson.objectid import ObjectId
 logger = logging.getLogger("monk.base")
-
-__TYPE = '_monk_type'
-__DEFAULT_CREATOR = 'monk'
-__DEFAULT_NONE = 'None'
-__DEFAULT_EMPTY = ''
-
 
 class MONKObject(object):
 
@@ -29,7 +24,7 @@ class MONKObject(object):
         if '_id' not in self.__dict__:
             self._id = ObjectId()
         if 'creator' not in self.__dict__:
-            self.creator = __DEFAULT_CREATOR
+            self.creator = constants.DEFAULT_CREATOR
         if 'createdTime' not in self.__dict__:
             self.createdTime = datetime.now()
         if 'lastModified' not in self.__dict__:
@@ -46,7 +41,7 @@ class MONKObject(object):
 
     @classmethod
     def appendType(cls, result):
-        result[__TYPE] = cls.__name__
+        result[constants.MONK_TYPE] = cls.__name__
 
     @classmethod
     def create(cls, generic):
@@ -69,13 +64,13 @@ class MONKObjectFactory(object):
         return obj.generic()
 
     def decode(self, generic):
-        return self.factory[generic[__TYPE]](generic)
+        return self.factory[generic[constants.MONK_TYPE]](generic)
 
     def clone(self, obj, modification = {}):
         try:
             generic = obj.generic()
             generic['_id'] = ObjectId()
-            generic['creator'] = __DEFAULT_CREATOR
+            generic['creator'] = constants.DEFAULT_CREATOR
             generic['createdTime'] = datetime.now()
             generic['lastModified'] = datetime.now()            
             generic.update(modification)

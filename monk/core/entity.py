@@ -6,25 +6,22 @@ The general object used in MONK
 """
 from ..math.flexible_vector import FlexibleVector
 import base
-
-__FEATURES = '_features'
-__RAWS = '_raws'
-
+import constants
 
 class Entity(base.MONKObject):
 
     def __restore__(self):
         super(Entity, self).__restore__()
-        if __FEATURES in self.__dict__:
+        if constants.FEATURES in self.__dict__:
             self._features = FlexibleVector(generic=self._features)
         else:
             self._features = FlexibleVector()
-        if __RAWS not in self.__dict__:
+        if constants.RAWS not in self.__dict__:
             self._raws = {}
 
     def generic(self):
         result = super(Entity, self).generic()
-        result[__FEATURES] = self._features.generic()
+        result[constants.FEATURES] = self._features.generic()
         return result
 
     def __contains__(self, key):
@@ -40,7 +37,7 @@ class Entity(base.MONKObject):
         if rawKey in self._raws:
             return self._raws[rawKey]
         else:
-            return base.__DEFAULT_EMPTY
+            return constants.DEFAULT_EMPTY
 
     def setRaw(self, rawKey, rawValue):
         if isinstance(rawKey, basestring):
