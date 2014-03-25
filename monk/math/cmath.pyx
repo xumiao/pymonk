@@ -14,7 +14,7 @@ cpdef sigmoid(float v):
     return 1 - 2 / (ev2 + 1)
 
 cpdef sign0(float v):
-    if v > 0:
+    if v > 0.5:
         return 1
     else:
         return 0

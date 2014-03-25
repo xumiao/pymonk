@@ -5,117 +5,91 @@ Created on Sun Mar 02 12:29:03 2014
 @author: pacif_000
 """
 import logging
-from uid import UID
 from bson.objectid import ObjectId
-from crane import Crane
-import base
-logger = logging.getLogger("monk")
+# to register classes in base
+import base, crane, entity, relation, tigress, turtle, mantis, panda
+import configuration
+import os
+import yaml
 
+logger = logging.getLogger("monk.api")
+
+def yaml2json(yamlFileName):
+    with open(yamlFileName, 'r') as yf:
+        return yaml.load(yf)
+    return None
+    
 def initialize(config):
-    logging.basicConfig(format='[%(asctime)s]#[%(levelname)s] : %(message)s',
+    if isinstance(config, str):
+        config = configuration.Configuration(config)
+    
+    pid = os.getpid()
+    logging.basicConfig(filename='{0}.{1}.log'.format(config.logFileName, pid),
+                        filemode='w',
+                        format='[%(asctime)s]#[%(levelname)s] : %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=eval(config.logLevel))
     
-    dataDB = Crane.getDatabase(config.dataConnectionString,
-                               config.dataDataBaseName)
-    modelDB = Crane.getDatabase(config.modelConnectionString,
-                                config.modelDataBaseName)
-    uidDB = Crane.getDatabase(config.uidConnectionString,
-                              config.uidDataBaseName)
-                              
-    base.dataDB = dataDB
-    base.modelDB = modelDB
-    base.uidDB = uidDB
-    
-    logger.info('initializing uid store')
-    base.uidStore = UID(uidDB)
-    
-    logger.info('initializing entity store')
-    base.entityStore = Crane(dataDB,
-                        config.entityCollectionName,
-                        config.entityFields)
-                        
-    logger.info('initializing relation store')
-    base.relationStore = Crane(dataDB,
-                          config.relationCollectionName,
-                          config.relationFields)
-    
-    logger.info('initializing panda store')
-    base.pandaStore = Crane(modelDB,
-                       config.pandaCollectionName,
-                       config.pandaFields)
-    
-    logger.info('initializing mantis store')
-    base.mantisStore = Crane(modelDB,
-                        config.mantisCollectionName,
-                        config.mantisFields)
-    
-    logger.info('initializing turtle store')
-    base.turtleStore = Crane(modelDB,
-                        config.turtleCollectionName,
-                        config.turtleFields)
-    
-    logger.info('initializing tigress store')
-    base.tigressStore = Crane(modelDB,
-                         config.tigressCollectionName,
-                         config.tigressFields)
-    
-    logger.info('initializing viper store')
-    base.viperStore = Crane(modelDB,
-                       config.viperCollectionName,
-                       config.viperFields)
-    
+    crane.initialize_storage(config)
+
 def get_UUID():
     return ObjectId()
     
 # training APIs
-def create_turtle(turtle):
-    base.turtleStore.load_or_create(turtle)
+def create_turtle(turtle_script):
+    crane.turtleStore.load_or_create(turtle_script)
 
-def update_turtle(turtle):
+def update_turtle(turtle_script):
     pass
 
-def remove_turtle(turtle):
+def remove_turtle(turtle_script):
     pass
 
 def add_data(turtle_id, partition_id, entity):
-    turtle = base.turtleStore.load_one_by_id(turtle_id)
-    if turtle:
-        turtle.add_data(partition_id, entity)
+    _turtle = crane.turtleStore.load_one_by_id(turtle_id)
+    if _turtle:
+        _turtle.add_data(partition_id, entity)
     else:
-        logger.warning('can not find turtle by {0}'.format(turtle_id))
+        logger.warning('can not find turtle by {0} to add data'.format(turtle_id))
 
 def train_one(turtle_id, partition_id):
-    turtle = base.turtleStore.load_one_by_id(turtle_id)
-    if turtle:
-        turtle.train_one(partition_id)
-        turtle.save_one(partition_id)
+    _turtle = crane.turtleStore.load_one_by_id(turtle_id)
+    if _turtle:
+        _turtle.train_one(partition_id)
+        _turtle.save_one(partition_id)
     else:
-        logger.warning('can not find turtle by {0}'.format(turtle_id))
+        logger.warning('can not find turtle by {0} to train'.format(turtle_id))
 
 def aggregate(turtle_id, partition_id):
-    turtle = base.turtleStore.load_one_by_id(turtle_id)
-    if turtle:
-        turtle.aggregate(partition_id)
+    _turtle = crane.turtleStore.load_one_by_id(turtle_id)
+    if _turtle:
+        _turtle.aggregate(partition_id)
     else:
-        logger.warning('can not find turtle by {0}'.format(turtle_id))
+        logger.warning('can not find turtle by {0} to aggregate'.format(turtle_id))
     
 # testing APIs
 def predict(turtle_id, partition_id, entity):
-    turtle = base.turtleStore.load_one_by_id(turtle_id)
-    if turtle:
-        return turtle.infer(partition_id, entity)
+    _turtle = crane.turtleStore.load_one_by_id(turtle_id)
+    if _turtle:
+        return _turtle.predict(partition_id, entity)
     else:
-        logger.warning('can not find turtle by {0}'.format(turtle_id))
+        logger.warning('can not find turtle by {0} to predict'.format(turtle_id))
 
 # storage APIs
-def save_turtle(turtle_id, partition_id):
-    turtle = base.turtleStore.load_one_by_id(turtle_id)
-    if turtle:
-        turtle.save_one(partition_id)
+def save_one(turtle_id, partition_id):
+    _turtle = crane.turtleStore.load_one_by_id(turtle_id)
+    if _turtle:
+        _turtle.save_one(partition_id)
     else:
-        logger.warning('can not find turtle by {0}'.format(turtle_id))
+        logger.warning('can not find turtle by {0} to save'.format(turtle_id))
 
+def load_one(turtle_id, partition_id):
+    _turtle = crane.turtleStore.load_one_by_id(turtle_id)
+    if _turtle:
+        _turtle.load_one(partition_id)
+    else:
+        logger.warning('can not find turtle by {0} to load'.format(turtle_id))
+        
 # query APIs
 def find_type(type_name):
     return base.monkFactory.find(type_name)

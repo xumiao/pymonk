@@ -5,10 +5,14 @@ A supervisor looks for signals and decides the training strategy
 @author: xm
 """
 
-from base import MONKObject, monkFactory
+import base 
 import re
+from itertools import izip
+from crane import tigressStore
+import logging
+logger = logging.getLogger('monk.tigress')
 
-class Tigress(MONKObject):
+class Tigress(base.MONKObject):
     """
     The base class for Tigress, and does nothing
     """
@@ -26,27 +30,59 @@ class Tigress(MONKObject):
         if "costs" not in self.__dict__:
             self.costs = {}
 
-    def __defaults__(self):
-        super(Tigress, self).__defaults__()
-        self.pCuriosity = 0.0
-        self.confusionMatrix = {}
-
-    def generic(self):
-        result = super(Tigress, self).generic()
-        self.appendType(result)
-        return result
+    def has_partition(self, partition_id):
+        return partition_id in self.confusionMatrix
         
+    def measure(self, partition_id, entity, predicted):
+        cm = self.confusionMatrix[partition_id]
+        for target in self.retrieve_target(entity):
+            if target not in cm:
+                cm[target] = {predicted:1}
+            elif predicted not in cm[target]:
+                cm[target][predicted] = 1
+            else:
+                cm[target][predicted] += 1
+        if '__total__' not in cm:
+            cm['__total__'] = 0
+        else:
+            cm['__total__'] += 1
+    
+    def load_one(self, partition_id):
+        if partition_id not in self.confusionMatrix:
+            field = 'confusionMatrix.{0}'.format(partition_id)
+            tg = tigressStore.load_one_in_fields(self, [field])
+            try:
+                self.confusionMatrix[partition_id] = tg['confusionMatrix'][partition_id]
+            except:
+                self.confusionMatrix[partition_id] = {}
+                
+    def save_one(self, partition_id):
+        if partition_id in self.confusionMatrix:
+            field = 'confusionMatrix.{0}'.format(partition_id)
+            tigressStore.update_one_in_fields(self, {field:self.confusionMatrix[partition_id]})
+            
+    def retrieve_target(self, entity):
+        return () # an empty iterator
+    
     def accuracy(self, partition_id, target):
-        return self.confusionMatrix[partition_id][target]
+        try:
+            return self.confusionMatrix[partition_id][target]
+        except:
+            logger.warning('target {0} not found in confusion matrix'.format(target))
+            return {}
         
     def supervise(self, turtle, partition_id, entity):
         pass
     
 
-
 class PatternTigress(Tigress):
     """
     Find patterns for the targets. 
+    Fields:
+        patterns : regular expression based patterns for each target defined
+        fields   : fields for searching targets
+        mutualExclusive : only the first found pattern will be set as ground truth
+        defaulting : add as negative examples if no pattern found
     """
 
     def __restore__(self):
@@ -56,72 +92,56 @@ class PatternTigress(Tigress):
         if 'fields' not in self.__dict__:
             self.fields = []
         self.p = {re.compile(pattern) : target for target, pattern in self.patterns.iteritems()}
-
-    def __defaults__(self):
-        super(PatternTigress, self).__defaults__()
-        self.patterns = {}
-        self.p = {}
+        if 'mutualExclusive' in self.__dict__:
+            self.isMutualExclusive = True
+        else:
+            self.isMutualExclusive = False
+        if 'defaulting' in self.__dict__:
+            self.isDefaulting = True
+        else:
+            self.isDefaulting = False
 
     def generic(self):
         result = super(PatternTigress, self).generic()
-        self.appendType(result)
+        del result['p']
+        del result['isMutualExclusive']
+        del result['isDefaulting']
         return result
 
-    def supervise(self, turtle, partition_id, entity):
+    def retrieve_target(self, entity):
         combinedField = ' . '.join([str, self.fields])
+        return (t for r, t in self.p if r.search(combinedField))
+        
+    def supervise(self, turtle, partition_id, entity):
         pandas = turtle.pandas
-        for r, t in self.p:
-            if r.search(combinedField):
-                cost = self.costs[partition_id][t]
-                ys = turtle.mapping[t]
-                for i in xrange(len(ys)):
-                    pandas[i].mantis.set_data(partition_id, 
-                                              entity._features, 
-                                              ys[i], 
-                                              cost)
-                # found the target
+        x = entity._features
+        for t in self.retrieve_target(entity):
+            cost = self.costs[t]
+            ys = turtle.mapping[t]
+            [panda.mantis.set_data(partition_id, x, y, cost) for panda, y in izip(pandas, ys)]
+            if self.isMutualExclusive:
                 return
-        # no pattern found, looking for the _default bit
+
+        if self.isDefaulting:
+            # no pattern found, add all negative
+            mincost = min(self.costs.itervalues())
+            [panda.mantis.set_data(partition_id, x, -1, mincost) for panda in pandas]
         
 class SelfTigress(Tigress):
-
-    def generic(self):
-        result = super(SelfTigress, self).generic()
-        self.appendType(result)
-        return result
-
+    pass
 class SPNTigress(Tigress):
-
-    def generic(self):
-        result = super(SPNTigress, self).generic()
-        self.appendType(result)
-        return result
-        
+    pass        
 class LexiconTigress(Tigress):
-
-    def generic(self):
-        result = super(LexiconTigress, self).generic()
-        self.appendType(result)
-        return result
-        
+    pass        
 class ActiveTigress(Tigress):
-
-    def generic(self):
-        result = super(ActiveTigress, self).generic()
-        self.appendType(result)
-        return result
-        
+    pass        
 class CoTigress(Tigress):
+    pass
 
-    def generic(self):
-        result = super(CoTigress, self).generic()
-        self.appendType(result)
-        return result
-        
-monkFactory.register(Tigress)
-monkFactory.register(PatternTigress)
-monkFactory.register(SelfTigress)
-monkFactory.register(SPNTigress)
-monkFactory.register(LexiconTigress)
-monkFactory.register(ActiveTigress)
-monkFactory.register(CoTigress)
+base.register(Tigress)
+base.register(PatternTigress)
+base.register(SelfTigress)
+base.register(SPNTigress)
+base.register(LexiconTigress)
+base.register(ActiveTigress)
+base.register(CoTigress)
