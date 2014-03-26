@@ -16,10 +16,6 @@ class Mantis(base.MONKObject):
         super(Mantis, self).__restore__()
         if "eps" not in self.__dict__:
             self.eps = 1e-4
-        if "Cp" not in self.__dict__:
-            self.Cp = 1
-        if "Cn" not in self.__dict__:
-            self.Cn = 1
         if "lam" not in self.__dict__:
             self.lam = 1
         if "rho" not in self.__dict__:
@@ -32,6 +28,8 @@ class Mantis(base.MONKObject):
             self.max_num_partitions = 100
         if "panda" not in self.__dict__:
             self.panda = None
+        if "data" not in self.__dict__:
+            self.data = {}
         self.solvers = {}
 
     def generic(self):
@@ -65,10 +63,11 @@ class Mantis(base.MONKObject):
             solver.setModel(consensus)
             solver.trainModel()
     
-    def set_data(self, partition_id, entity, y, c):
+    def add_data(self, partition_id, entity, y, c):
         solver = self.get_solver(partition_id)
         if solver:
-            solver.setData(entity, y, c)
+            index = solver.setData(entity._features,y,c)
+            self.data[partition_id][entity._id] = (index, y, c)
     
     def aggregate(self, partition_id):
         # @todo: incremental aggregation
@@ -87,20 +86,34 @@ class Mantis(base.MONKObject):
         
     def add_one(self, partition_id):
         w = self.panda.get_model(partition_id)
-        self.solvers[partition_id] = SVMDual(w, self.eps, self.lam, self.Cp, self.Cn,
+        self.solvers[partition_id] = SVMDual(w, self.eps, self.lam,
                                              self.rho, self.max_num_iters,
                                              self.max_num_instances)
+        self.data[partition_id] = {}
     
     def load_one(self, partition_id):
-        if not self.solvers.has_key(partition_id):
-            fields = ['solvers.{0}'.format(partition_id)]
-            s = crane.mantisStore.load_one_in_fields(self, fields)
-            if s.has_key('solvers'):
-                self.solvers[partition_id] = SVMDual(s['solvers'][partition_id])
-            else:
-                logger.error('can not find solver for {0}'.format(partition_id))
-        else:
+        if self.solvers.has_key(partition_id):
             logger.warning('solver for {0} already exists'.format(partition_id))
+            return
+        
+        fields = ['data.{0}'.format(partition_id)]
+        s = crane.mantisStore.load_one_in_fields(self, fields)
+        if not s.has_key('data'):
+            logger.error('can not load solver for {0}'.format(partition_id))
+            return
+        
+        w = self.panda.get_model(partition_id)
+        solver = SVMDual(w, self.eps, self.lam,
+                         self.rho, self.max_num_iters,
+                         self.max_num_instances)
+        self.solvers[partition_id] = solver
+        #@todo: slow, need to optimize
+        da = self.data[partition_id]
+        ents = crane.entityStore.load_all_by_ids(da.keys())
+        for ent in ents:
+            index, y, c = da[ent._id]
+            ent._features.setIndex(index)
+            solver.setData(ent._features, y, c)
             
     def save_one(self, partition_id):
         if self.solvers.has_key(partition_id):

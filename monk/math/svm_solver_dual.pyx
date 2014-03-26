@@ -44,30 +44,25 @@ cdef inline float min(float v1, float v2):
 
 cdef class SVMDual(object):
     cpdef public float eps
-    cpdef public float Cp
-    cpdef public float Cn
     cpdef public float lam
     cpdef public int max_num_iter
     cpdef public int max_num_instances
     cpdef public int num_instances
     cpdef public float rho
-    cpdef float num_neg
-    cpdef float num_pos
     cdef int active_size
     cdef list x # features
     cdef int* y # target array
     cdef int* index # index array
     cdef float* QD
     cdef float* alpha
+    cdef float* c
     cdef float highest_score
     
-    def __init__(self, w, eps, lam, Cp, Cn, rho, max_num_iters, max_num_instances):
+    def __init__(self, w, eps, lam, rho, max_num_iters, max_num_instances):
         # @todo: check x, y, w not None
         # @todo: validate the parameters
         cdef int j
         self.eps = eps
-        self.Cp = Cp
-        self.Cn = Cn
         self.lam = lam
         self.rho = rho
         self.w = w
@@ -75,16 +70,17 @@ cdef class SVMDual(object):
         self.max_num_instances = max_num_instances
         self.num_instances = 0
         
-        self.x = [None for j in xrange(self.max_num_instances)]
-        self.y     = <int*>malloc(self.max_num_instances * cython.sizeof(int))
+        self.x     = [None for j in xrange(self.max_num_instances)]
+        self.y     = <int*>calloc(self.max_num_instances, cython.sizeof(int))
         _MEM_CHECK(self.y)
-        self.index = <int*>malloc(self.max_num_instances * cython.sizeof(int))
+        self.index = <int*>calloc(self.max_num_instances, cython.sizeof(int))
         _MEM_CHECK(self.index)
-        self.QD    = <float*>malloc(self.max_num_instances * cython.sizeof(float))
+        self.QD    = <float*>calloc(self.max_num_instances, cython.sizeof(float))
         _MEM_CHECK(self.QD)
-        self.alpha = <float*>malloc(self.max_num_instances * cython.sizeof(float))
+        self.alpha = <float*>calloc(self.max_num_instances, cython.sizeof(float))
         _MEM_CHECK(self.alpha)
-        
+        self.c     = <float*>calloc(self.max_num_instances, cython.sizeof(float))
+        _MEM_CHECK(self.c)
         for j in xrange(self.max_num_instances):
             self.index[j] = j
             
@@ -97,19 +93,9 @@ cdef class SVMDual(object):
             free(self.QD)
         if self.alpha != NULL:
             free(self.alpha)
+        if self.c != NULL:
+            free(self.c)
 
-    cdef inline addNP(self, int y):
-        if y > 0:
-            self.num_pos += 1
-        else:
-            self.num_neg += 1
-        
-    cdef inline delNP(self, int y):
-        if y > 0:
-            self.num_pos -= 1
-        else:
-            self.num_neg -= 1
-            
     cdef inline swap(self, int* index, int j, int k):
         cdef int tmp
         tmp = index[j]
@@ -121,20 +107,15 @@ cdef class SVMDual(object):
         for j in xrange(self.num_instances):
             self.alpha[j] = 0
             self.index[j] = j
-            if self.y[j] > 0:
-                self.QD[j] = 0.5 * self.rho / self.Cp
-            else:
-                self.QD[j] = 0.5 * self.rho / self.Cn
-            self.QD[j] += self.x[j].norm2()
+            self.QD[j] = 0.5 * self.rho / self.c[j] + self.x[j].norm2()
     
     def setData(self, x, y, c):
         cdef int j
-        if x.getIndex() >= 0:
+        j = x.getIndex()
+        if j >= 0 and j < self.max_num_instances:
             # x is set, use its index, and modify label
-            j = x.getIndex()
             if y == self.y[j]:
                 return
-            self.delNP(self.y[j])
             # @todo: rewind the alpha and weight to remove the old data
             # for now, assume it is just forgotten
         elif self.num_instances < self.max_num_instances:
@@ -147,17 +128,13 @@ cdef class SVMDual(object):
             # it is possibly the one far away from the decision boundary
             j = self.index[-1]
             x.setIndex(j)
-            self.delNP(self.y[j])
             
         self.x[j] = x
         self.y[j] = y
-        self.addNP(y)
+        self.c[j] = c
         self.alpha[j] = 0
-        if y > 0:
-            self.QD[j] = 0.5 * self.rho / self.Cp
-        else:
-            self.QD[j] = 0.5 * self.rho / self.Cn
-        self.QD[j] += x.norm2()
+        self.QD[j] = 0.5 * self.rho / c + x.norm2()
+        return x.getIndex()
         
     def setModel(self, z):
         cdef int j
@@ -197,11 +174,7 @@ cdef class SVMDual(object):
                 xj = self.x[j]
                 
                 G = self.w.dot(xj) * yj - 1
-                
-                if yj > 0:
-                    G += alpha[j] * 0.5 * self.rho / self.Cp
-                else:
-                    G += alpha[j] * 0.5 * self.rho / self.Cn
+                G += alpha[j] * 0.5 * self.rho / self.c[j]
                 
                 PG = 0
                 if alpha[j] <= 0:
