@@ -41,6 +41,8 @@ class Turtle(base.MONKObject):
             self.pMaxPathLength = 1
         if 'pMaxInferenceSteps' not in self.__dict__:
             self.pMaxInferenceSteps = 1
+        if "maxNumPartitions" not in self.__dict__:
+            self.maxNumPartitions = 100            
 
     def generic(self):
         result = super(Turtle, self).generic()
@@ -52,15 +54,11 @@ class Turtle(base.MONKObject):
         return result
     
     def save(self, **kwargs):
-        if kwargs and kwargs.has_key('partition_id'):
-            self.save_one(kwargs['partition_id'])
-        else:
-            crane.turtleStore.update_one_in_fields(self, self.generic())
-            logger.debug('tigress {0} to save'.format(self.tigress.generic()))
-            logger.debug('tigress save {0}'.format(self.tigress.save))
-            self.tigress.save()
-            for pa in self.pandas:
-                pa.save()
+        crane.turtleStore.update_one_in_fields(self, self.generic())
+        logger.debug('tigress {0} to save'.format(self.tigress.generic()))
+        logger.debug('tigress save {0}'.format(self.tigress.save))
+        self.tigress.save()
+        [pa.save() for pa in self.pandas]
                 
     def add_panda(self, panda):
         pass
@@ -87,14 +85,30 @@ class Turtle(base.MONKObject):
         [panda.mantis.aggregate(partition_id) for panda in self.pandas if panda.has_mantis()]
         
     def load_one(self, partition_id):
-        if not self.tigress.has_partition(partition_id):
-            self.tigress.load_one(partition_id)
-            [panda.load_one(partition_id) for panda in self.pandas]
+        if self.tigress.has_partition(partition_id):
+            logger.warning('partition {0} already exists'.format(partition_id))
+            return False
+            
+        if self.tigress.num_partition() >= self.maxNumPartitions:
+            logger.warning('maximun number ({0}) of partitions has been reached'.format(self.maxNumPartitions))
+            return False
+        
+        self.tigress.load_one(partition_id)
+        [panda.load_one(partition_id) for panda in self.pandas]
+        return True
     
     def save_one(self, partition_id):
-        if self.tigress.has_partition(partition_id):
-            self.tigress.save_one(partition_id)
-            [panda.save_one(partition_id) for panda in self.pandas]
+        if not self.tigress.has_partition(partition_id):
+            logger.error('turtle {0} does not has partition {1}'.format(self._id, partition_id))
+            return False
+        
+        if not self.tigress.save_one(partition_id):
+            return False
+            
+        if len([False for panda in self.pandas if not panda.save_one(partition_id)]) > 0:
+            return False
+        
+        return True
 
 class SingleTurtle(Turtle):
     

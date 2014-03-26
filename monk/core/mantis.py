@@ -20,12 +20,10 @@ class Mantis(base.MONKObject):
             self.lam = 1
         if "rho" not in self.__dict__:
             self.rho = 1
-        if "max_num_iters" not in self.__dict__:
-            self.max_num_iters = 1000
-        if "max_num_instances" not in self.__dict__:
-            self.max_num_instances = 1000
-        if "max_num_partitions" not in self.__dict__:
-            self.max_num_partitions = 100
+        if "maxNumIters" not in self.__dict__:
+            self.maxNumIters = 1000
+        if "maxNumInstances" not in self.__dict__:
+            self.maxNumInstances = 1000
         if "panda" not in self.__dict__:
             self.panda = None
         if "data" not in self.__dict__:
@@ -43,11 +41,7 @@ class Mantis(base.MONKObject):
         return result
 
     def save(self, **kwargs):
-        if kwargs and kwargs.has_key('partition_id'):
-            pid = kwargs['partition_id']
-            self.save_one(pid)
-        else:
-            crane.mantisStore.update_one_in_fields(self, self.generic())
+        crane.mantisStore.update_one_in_fields(self, self.generic())
                 
     def get_solver(self, partition_id):
         try:
@@ -74,7 +68,7 @@ class Mantis(base.MONKObject):
         # @todo: ADMM aggregation
         consensus = self.panda.consensus
         t = len(self.panda.weights)
-        if self.panda.weights.has_key(partition_id):
+        if partition_id in self.panda.weights:
             w = self.panda.weights[partition_id]
         else:
             w = consensus
@@ -85,22 +79,27 @@ class Mantis(base.MONKObject):
         self.panda.save_consensus()
         
     def add_one(self, partition_id):
+        if partition_id in self.solvers:
+            logger.debug('solver for {0} already exists'.format(partition_id))
+            return False
+            
         w = self.panda.get_model(partition_id)
         self.solvers[partition_id] = SVMDual(w, self.eps, self.lam,
-                                             self.rho, self.max_num_iters,
-                                             self.max_num_instances)
+                                             self.rho, self.maxNumIters,
+                                             self.maxNumInstances)
         self.data[partition_id] = {}
+        return True
     
     def load_one(self, partition_id):
-        if self.solvers.has_key(partition_id):
-            logger.warning('solver for {0} already exists'.format(partition_id))
-            return
+        if partition_id in self.solvers:
+            logger.debug('solver for {0} already exists'.format(partition_id))
+            return False
         
         fields = ['data.{0}'.format(partition_id)]
         s = crane.mantisStore.load_one_in_fields(self, fields)
-        if not s.has_key('data'):
+        if 'data' not in s:
             logger.error('can not load solver for {0}'.format(partition_id))
-            return
+            return False
         
         w = self.panda.get_model(partition_id)
         solver = SVMDual(w, self.eps, self.lam,
@@ -114,11 +113,15 @@ class Mantis(base.MONKObject):
             index, y, c = da[ent._id]
             ent._features.setIndex(index)
             solver.setData(ent._features, y, c)
-            
+        return True
+        
     def save_one(self, partition_id):
-        if self.solvers.has_key(partition_id):
-            crane.mantisStore.update_one_in_fields(self, {'solvers.{0}'.format(partition_id):self.solvers[partition_id].generic()})
-        else:
+        if partition_id not in self.solvers:
             logger.warning('can not find solver for {0} to save'.format(partition_id))
+            return False
+            
+        fields = {'data.{0}'.format(partition_id):self.data[partition_id]}
+        crane.mantisStore.update_one_in_fields(self, fields)
+        return True
             
 base.register(Mantis)

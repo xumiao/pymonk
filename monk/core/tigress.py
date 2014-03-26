@@ -38,10 +38,7 @@ class Tigress(base.MONKObject):
         return result
     
     def save(self, **kwargs):
-        if kwargs and kwargs.has_key('partition_id'):
-            self.save_one(kwargs['partition_id'])
-        else:
-            crane.tigressStore.update_one_in_fields(self, self.generic())
+        crane.tigressStore.update_one_in_fields(self, self.generic())
             
     def has_partition(self, partition_id):
         return partition_id in self.confusionMatrix
@@ -124,14 +121,14 @@ class PatternTigress(Tigress):
         for t in self.retrieve_target(entity):
             cost = self.costs[t]
             ys = turtle.mapping[t]
-            [panda.mantis.set_data(partition_id, entity, y, cost) for panda, y in izip(pandas, ys)]
+            [panda.mantis.add_data(partition_id, entity, y, cost) for panda, y in izip(pandas, ys)]
             if self.mutualExclusive:
                 return
 
         if self.defaulting:
             # no pattern found, add all negative
             mincost = min(self.costs.itervalues())
-            [panda.mantis.set_data(partition_id, entity, -1, mincost) for panda in pandas]
+            [panda.mantis.add_data(partition_id, entity, -1, mincost) for panda in pandas]
         
 class SelfTigress(Tigress):
     pass

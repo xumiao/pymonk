@@ -30,7 +30,7 @@ class Entity(base.MONKObject):
         return result
     
     def save(self,**kwargs):
-        if kwargs and kwargs.has_key('fields'):
+        if kwargs and 'fields' in kwargs:
             fields = kwargs['fields']
         else:
             fields = self.generic()

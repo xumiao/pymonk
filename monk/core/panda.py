@@ -91,18 +91,15 @@ class LinearPanda(Panda):
         return result
     
     def save(self, **kwargs):
-        if kwargs and kwargs.has_key('partition_id'):
-            self.save_one(kwargs['partition_id'])
-        else:
-            crane.pandaStore.update_one_in_fields(self, self.generic())
-            self.mantis.save()
+        crane.pandaStore.update_one_in_fields(self, self.generic())
+        self.mantis.save()
             
     def has_mantis(self):
         return True
         
     def add_one(self, partition_id):
         field = 'weights.{0}'.format(partition_id)
-        if not self.weights.has_key(partition_id) and \
+        if partition_id not in self.weights and \
            not crane.pandaStore.exists_field(field):
             self.weights[partition_id] = self.consensus.clone()
             self.mantis.add_one(partition_id)
@@ -127,7 +124,7 @@ class LinearPanda(Panda):
         crane.pandaStore.update_one_in_fields(self, {'consensus':self.consensus.generic()})
         
     def load_one(self, partition_id):
-        if not self.weights.has_key(partition_id):
+        if partition_id not in self.weights:
             field = 'weights.{0}'.format(partition_id)
             pa = crane.pandaStore.load_one_in_fields(self, [field])
             if 'weights' in pa:
@@ -137,7 +134,7 @@ class LinearPanda(Panda):
                 logger.warning('can not find model for partition {0}'.format(partition_id))
             
     def save_one(self, partition_id):
-        if self.weights.has_key(partition_id):
+        if partition_id in self.weights:
             field = 'weights.{0}'.format(partition_id)
             crane.pandaStore.update_one_in_fields(self, {field:self.weights[partition_id].generic()})
             self.mantis.save_one(partition_id)
