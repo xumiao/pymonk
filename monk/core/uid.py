@@ -4,6 +4,8 @@ Created on Sat Dec 14 15:02:18 2013
 Generate UID from a database
 @author: xm
 """
+import logging
+logger = logging.getLogger('monk.uid')
 
 class UID:
     uidChunk = 1024L
@@ -15,6 +17,7 @@ class UID:
         self.__pivotUid = 0L
         self.__currentUid = 0L
         self.__nextChunk()
+        logger.info('initializing uid store')
 
     def __nextChunk(self):
         doc = self.__coll.find_and_modify({}, {'$inc': {'Uid': self.uidChunk}})

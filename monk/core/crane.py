@@ -182,16 +182,15 @@ class Crane(object):
         else:
             return False
 
-dataDB        = None
-modelDB       = None
-uidDB         = None
-uidStore      = None
-entityStore   = Crane()
-relationStore = Crane()
-pandaStore    = Crane()
-mantisStore   = Crane()
-turtleStore   = Crane()
-tigressStore  = Crane()
+dataDB       = None
+modelDB      = None
+uidDB        = None
+uidStore     = None
+entityStore  = Crane()
+pandaStore   = Crane()
+mantisStore  = Crane()
+turtleStore  = Crane()
+tigressStore = Crane()
 
 def create_db(connectionString, databaseName):
     try:
@@ -205,40 +204,49 @@ def create_db(connectionString, databaseName):
     
 def initialize_storage(config):
     global dataDB, modelDB, uidDB
-    global uidStore, entityStore, relationStore, pandaStore, mantisStore, turtleStore, tigressStore
-    dataDB  = create_db(config.dataConnectionString,
+    global uidStore, entityStore, pandaStore
+    global mantisStore, turtleStore, tigressStore
+    
+    #initialize uid store
+    uidDB = create_db(config.uidConnectionString,
+                      config.uidDataBaseName)
+    if uidDB is None:
+        logger.error('can not access the database {0} at {1}'.format(
+                     config.uidDataBaseName,
+                     config.uidConnectionString))
+        return False
+    uidStore = UID(uidDB)
+
+    #initialize data store
+    dataDB = create_db(config.dataConnectionString,
                        config.dataDataBaseName)
     if dataDB is None:
+        logger.error('can not access the database {0} at {1}'.format(
+                     config.dataDataBaseName,
+                     config.dataConnectionString))
         return False
-        
+    entityStore   = Crane(dataDB,
+                          config.entityCollectionName,
+                          config.entityFields)
+
+    #initialize model store
     modelDB = create_db(config.modelConnectionString,
                         config.modelDataBaseName)
     if modelDB is None:
+        logger.error('can not access the database {0} at {1}'.format(
+                     config.modelDataBaseName,
+                     config.modelConnectionString))
         return False
-        
-    uidDB   = create_db(config.uidConnectionString,
-                      config.uidDataBaseName)
-    if uidDB is None:
-        return False
-                              
-    logger.info('initializing uid store')
-    uidStore = UID(uidDB)
-    entityStore = Crane(dataDB,
-                    config.entityCollectionName,
-                    config.entityFields)
-    relationStore = Crane(dataDB,
-                      config.relationCollectionName,
-                      config.relationFields)
-    pandaStore = Crane(modelDB,
-                   config.pandaCollectionName,
-                   config.pandaFields)
-    mantisStore = Crane(modelDB,
-                    config.mantisCollectionName,
-                    config.mantisFields)
-    turtleStore = Crane(modelDB,
-                    config.turtleCollectionName,
-                    config.turtleFields)
+    pandaStore   = Crane(modelDB,
+                         config.pandaCollectionName,
+                         config.pandaFields)
+    mantisStore  = Crane(modelDB,
+                         config.mantisCollectionName,
+                         config.mantisFields)
+    turtleStore  = Crane(modelDB,
+                         config.turtleCollectionName,
+                         config.turtleFields)
     tigressStore = Crane(modelDB,
-                     config.tigressCollectionName,
-                     config.tigressFields)
+                         config.tigressCollectionName,
+                         config.tigressFields)
     return True
