@@ -7,12 +7,12 @@ mapping:
     mouthOpen: (0,1,0)
     mouthClosed: (0,0,1)
 pandas:
-   - monk_type: LinearPanda
+   - monkType: LinearPanda
      name: mouthOpen
-   - monk_type: LinearPanda
+   - monkType: LinearPanda
      name: mouthClosed
 tigress:
-    monk_type: PatternTigress
+    monkType: PatternTigress
     fields: [labels]
     patterns: mouthOpen
-    isDefaulting: True
+    defaulting: True

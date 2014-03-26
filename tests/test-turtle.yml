@@ -1,15 +1,15 @@
 # mouth open turtle
 ---
-monk_type: SingleTurtle
+monkType: SingleTurtle
 name:  mouth_open_turtle
 description:  classify mouth openness
 mapping:
     mouthOpen: 1
 pandas:
-   - monk_type: LinearPanda
+   - monkType: LinearPanda
      name: mouthOpen
 tigress:
-    monk_type: PatternTigress
+    monkType: PatternTigress
     fields: [labels]
     patterns: 
       mouthOpen: mouthOpen

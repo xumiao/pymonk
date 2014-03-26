@@ -55,8 +55,6 @@ class Turtle(base.MONKObject):
     
     def save(self, **kwargs):
         crane.turtleStore.update_one_in_fields(self, self.generic())
-        logger.debug('tigress {0} to save'.format(self.tigress.generic()))
-        logger.debug('tigress save {0}'.format(self.tigress.save))
         self.tigress.save()
         [pa.save() for pa in self.pandas]
                 

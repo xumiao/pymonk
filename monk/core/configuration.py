@@ -43,4 +43,4 @@ class Configuration(object):
         
         self.pandaFields['weights'] = False
         self.entityFields[constants.FEATURES] = True
-        self.entityFields[constants.RAWS]
+        self.entityFields[constants.RAWS] = True
