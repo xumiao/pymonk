@@ -129,7 +129,10 @@ cdef class SVMDual(object):
                 self.QD[j] = 0.5 * self.rho / self.Cn
             self.QD[j] += self.x[j].norm2()
     
-    def setData(self, x, y, c):
+    def generic(self):
+        return {}
+        
+    def setData(self, x, y):
         cdef int j
         if x.getIndex() >= 0:
             # x is set, use its index, and modify label
