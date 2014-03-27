@@ -45,7 +45,7 @@ cdef inline float min(float v1, float v2):
 cdef class SVMDual(object):
     cpdef public float eps
     cpdef public float lam
-    cpdef public int max_num_iter
+    cpdef public int max_num_iters
     cpdef public int max_num_instances
     cpdef public int num_instances
     cpdef public float rho
@@ -57,6 +57,7 @@ cdef class SVMDual(object):
     cdef float* alpha
     cdef float* c
     cdef float highest_score
+    cdef object w
     
     def __init__(self, w, eps, lam, rho, max_num_iters, max_num_instances):
         # @todo: check x, y, w not None

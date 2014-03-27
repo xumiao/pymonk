@@ -28,14 +28,17 @@ class Panda(base.MONKObject):
     def has_mantis():
         return False
     
+    def add_features(self, uids):
+        pass
+    
     def add_one(self, partition_id):
         pass
     
     def load_one(self, partition_id):
-        pass
+        return True
     
     def save_one(self, partition_id):
-        pass
+        return True
     
     def train_one(self, partition_id):
         pass
@@ -96,15 +99,18 @@ class LinearPanda(Panda):
             
     def has_mantis(self):
         return True
+    
+    def add_features(self, uids):
+        self.consensus.addKeys(uids)
         
     def add_one(self, partition_id):
         field = 'weights.{0}'.format(partition_id)
-        if partition_id not in self.weights and \
-           not crane.pandaStore.exists_field(field):
-            self.weights[partition_id] = self.consensus.clone()
-            self.mantis.add_one(partition_id)
-        else:
+        if partition_id in self.weights or crane.pandaStore.exists_field(self, field):
             logger.warning('partition {0} already exists'.format(partition_id))
+            return False
+        
+        self.weights[partition_id] = self.consensus.clone()
+        return self.mantis.add_one(partition_id)
 
     def update_one_weight(self, partition_id):
         field = 'weights.{0}'.format(partition_id)
@@ -124,22 +130,29 @@ class LinearPanda(Panda):
         crane.pandaStore.update_one_in_fields(self, {'consensus':self.consensus.generic()})
         
     def load_one(self, partition_id):
-        if partition_id not in self.weights:
-            field = 'weights.{0}'.format(partition_id)
-            pa = crane.pandaStore.load_one_in_fields(self, [field])
-            if 'weights' in pa:
-                self.weights[partition_id] = FlexibleVector(generic=pa['weights'][partition_id])
-                self.mantis.load_one(partition_id)
-            else:
-                logger.warning('can not find model for partition {0}'.format(partition_id))
-            
-    def save_one(self, partition_id):
         if partition_id in self.weights:
-            field = 'weights.{0}'.format(partition_id)
-            crane.pandaStore.update_one_in_fields(self, {field:self.weights[partition_id].generic()})
-            self.mantis.save_one(partition_id)
-        else:
-            logger.warning('partition {0} not found'.format(partition_id))
+            logger.warning('partition {0} already exists'.format(partition_id))
+            return False
+            
+        field = 'weights.{0}'.format(partition_id)
+        pa = crane.pandaStore.load_one_in_fields(self, [field])
+        try:
+            self.weights[partition_id] = FlexibleVector(generic=pa['weights'][partition_id])
+        except:
+            logger.error('can not find model for partition {0}'.format(partition_id))
+            return False
+        
+        return self.mantis.load_one(partition_id)
+        
+    def save_one(self, partition_id):
+        if partition_id not in self.weights:
+            logger.warning('parititon {0} not found to save'.format(partition_id))
+            return False
+        
+        field = 'weights.{0}'.format(partition_id)
+        crane.pandaStore.update_one_in_fields(self, {field:self.weights[partition_id].generic()})
+        
+        return self.mantis.save_one(partition_id)
 
     def get_model(self, partition_id=None):
         if partition_id is None:

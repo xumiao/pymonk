@@ -39,7 +39,10 @@ class Tigress(base.MONKObject):
     
     def save(self, **kwargs):
         crane.tigressStore.update_one_in_fields(self, self.generic())
-            
+    
+    def num_partition(self):
+        return len(self.confusionMatrix)
+        
     def has_partition(self, partition_id):
         return partition_id in self.confusionMatrix
         
@@ -57,19 +60,38 @@ class Tigress(base.MONKObject):
         else:
             cm['__total__'] += 1
     
+    def add_one(self, partition_id):
+        field = 'confusionMatrix.{0}'.format(partition_id)
+        if partition_id in self.confusionMatrix or crane.tigressStore.exists_field(self, field):
+            logger.warning('partition {0} already in tigress'.format(partition_id))
+            return False
+        
+        self.confusionMatrix[partition_id] = {}
+        return True
+        
     def load_one(self, partition_id):
-        if partition_id not in self.confusionMatrix:
-            field = 'confusionMatrix.{0}'.format(partition_id)
-            tg = crane.tigressStore.load_one_in_fields(self, [field])
-            try:
-                self.confusionMatrix[partition_id] = tg['confusionMatrix'][partition_id]
-            except:
-                self.confusionMatrix[partition_id] = {}
+        if partition_id in self.confusionMatrix:
+            logger.warning('partition {0} already in tigress'.format(partition_id))
+            return False
+            
+        field = 'confusionMatrix.{0}'.format(partition_id)
+        tg = crane.tigressStore.load_one_in_fields(self, [field])
+        try:
+            self.confusionMatrix[partition_id] = tg['confusionMatrix'][partition_id]
+        except:
+            logger.error('partition {0} does not exists'.format(partition_id))
+            return False
+            
+        return True
                 
     def save_one(self, partition_id):
-        if partition_id in self.confusionMatrix:
-            field = 'confusionMatrix.{0}'.format(partition_id)
-            crane.tigressStore.update_one_in_fields(self, {field:self.confusionMatrix[partition_id]})
+        if partition_id not in self.confusionMatrix:
+            logger.error('partition {0} not found for save'.format(partition_id))
+            return False
+            
+        field = 'confusionMatrix.{0}'.format(partition_id)
+        crane.tigressStore.update_one_in_fields(self, {field:self.confusionMatrix[partition_id]})
+        return True
             
     def retrieve_target(self, entity):
         return () # an empty iterator

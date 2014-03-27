@@ -80,14 +80,20 @@ class Mantis(base.MONKObject):
         
     def add_one(self, partition_id):
         if partition_id in self.solvers:
-            logger.debug('solver for {0} already exists'.format(partition_id))
+            logger.error('solver for {0} already exists'.format(partition_id))
+            return False
+        
+        try:
+            w = self.panda.get_model(partition_id)
+            self.solvers[partition_id] = SVMDual(w, self.eps, self.lam,
+                                                 self.rho, self.maxNumIters,
+                                                 self.maxNumInstances)
+            self.data[partition_id] = {}
+        except Exception as e:
+            logger.error('can not create a solver for {0}'.format(partition_id))
+            logger.error('error {0}'.format(e.message))
             return False
             
-        w = self.panda.get_model(partition_id)
-        self.solvers[partition_id] = SVMDual(w, self.eps, self.lam,
-                                             self.rho, self.maxNumIters,
-                                             self.maxNumInstances)
-        self.data[partition_id] = {}
         return True
     
     def load_one(self, partition_id):

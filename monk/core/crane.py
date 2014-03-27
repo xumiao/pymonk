@@ -70,16 +70,16 @@ class Crane(object):
             return self.create_all(objs)
             
     def exists_field(self, obj, field):
-        query = {'_id':obj._id, field:{'$exists':1}}
-        if self._coll.find(query, {'_id':1}):
+        query = {'_id':obj._id, field:{'$exists':True}}
+        if self._coll.find_one(query, {'_id':1}):
             return True
         else:
             return False
             
     def exists_fields(self, obj, fields):
-        query = {field:{'$exists':1} for field in fields}
+        query = {field:{'$exists':True} for field in fields}
         query['_id'] = obj._id
-        if self._coll.find(query, {'_id':1}):
+        if self._coll.find_one(query,{'_id':1}):
             return True
         else:
             return False
