@@ -47,6 +47,8 @@ class Turtle(base.MONKObject):
             logger.info('turtle {0} will use all features seen'.format(self.name))
         elif 'uids' in self.requires:
             uids = self.requires['uids']
+            if isinstance(uids, basestring):
+                uids = eval(uids)
             [panda.add_features(uids) for panda in self.pandas]
         elif 'turtle_ids' in self.requires:
             turtles = crane.turtleStore.load_all_by_ids(self.requires['turtle_ids'])
@@ -147,7 +149,7 @@ class SingleTurtle(Turtle):
     
     def predict(self, partition_id, entity):
         panda = self.pandas[0]
-        entity[panda.Uid] = sigmoid(panda.predict(partition_id, entity))
+        entity[panda.uid] = sigmoid(panda.predict(partition_id, entity))
         if sign0(entity[panda.Uid]) > 0:
             self.tigress.measure(partition_id, entity, panda.name)
             return panda.name

@@ -28,6 +28,11 @@ class Tigress(base.MONKObject):
             self.confusionMatrix = {}
         if "costs" not in self.__dict__:
             self.costs = {}
+        if "defaultCost" not in self.__dict__:
+            if len(self.costs) > 0:
+                self.defaultCost = min(self.costs.values())
+            else:
+                self.defaultCost = 1.0
     
     def generic(self):
         result = super(Tigress, self).generic()
@@ -135,8 +140,8 @@ class PatternTigress(Tigress):
         return result
 
     def retrieve_target(self, entity):
-        combinedField = ' . '.join([str, self.fields])
-        return (t for r, t in self.p if r.search(combinedField))
+        combinedField = ' . '.join(self.fields)
+        return (t for r, t in self.p.iteritems() if r.search(combinedField))
         
     def supervise(self, turtle, partition_id, entity):
         pandas = turtle.pandas
@@ -149,8 +154,7 @@ class PatternTigress(Tigress):
 
         if self.defaulting:
             # no pattern found, add all negative
-            mincost = min(self.costs.itervalues())
-            [panda.mantis.add_data(partition_id, entity, -1, mincost) for panda in pandas]
+            [panda.mantis.add_data(partition_id, entity, -1, self.defaultCost) for panda in pandas]
         
 class SelfTigress(Tigress):
     pass

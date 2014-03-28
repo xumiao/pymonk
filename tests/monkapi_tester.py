@@ -13,3 +13,9 @@ turtle.add_one('xumiao')
 turtle.add_one('xumiao')
 turtle.load_one('xumiao')
 turtle.save_one('xumiao')
+ent = monkapi.entity.Entity()
+ent[1] = 1
+ent[2] = 2
+ent[3] = -2
+turtle.add_data('xumiao', ent)
+turtle.save_one('xumiao')

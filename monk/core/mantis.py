@@ -7,6 +7,7 @@ solving machine learning problems
 """
 import base, crane
 from ..math.svm_solver_dual import SVMDual
+from bson.objectid import ObjectId
 import logging
 logger = logging.getLogger("monk.mantis")
 
@@ -112,8 +113,11 @@ class Mantis(base.MONKObject):
                          self.rho, self.max_num_iters,
                          self.max_num_instances)
         self.solvers[partition_id] = solver
+
         #@todo: slow, need to optimize
-        da = self.data[partition_id]
+        da = s['data'][partition_id]
+        da = {ObjectId(k) : v for k,v in da.iteritems()}
+        self.data[partition_id] = da
         ents = crane.entityStore.load_all_by_ids(da.keys())
         for ent in ents:
             index, y, c = da[ent._id]
@@ -126,7 +130,7 @@ class Mantis(base.MONKObject):
             logger.warning('can not find solver for {0} to save'.format(partition_id))
             return False
             
-        fields = {'data.{0}'.format(partition_id):self.data[partition_id]}
+        fields = {'data.{0}'.format(partition_id):{str(k):v for k,v in self.data[partition_id].iteritems()}}
         crane.mantisStore.update_one_in_fields(self, fields)
         return True
             

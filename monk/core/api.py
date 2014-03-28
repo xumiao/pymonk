@@ -23,10 +23,13 @@ def initialize(config):
     if isinstance(config, basestring):
         config = configuration.Configuration(config)
     
-    pid = os.getpid()
-    logging.basicConfig(filename='{0}.{1}.log'.format(config.logFileName, pid),
-                        filemode='w',
-                        format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(message)s',
+#    pid = os.getpid()
+#    logging.basicConfig(filename='{0}.{1}.log'.format(config.logFileName, pid),
+#                        filemode='w',
+#                        format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(message)s',
+#                        datefmt='%m/%d/%Y %I:%M:%S %p',
+#                        level=eval(config.logLevel))
+    logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=eval(config.logLevel))
     
