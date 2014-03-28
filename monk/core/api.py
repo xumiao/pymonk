@@ -14,6 +14,10 @@ import yaml
 
 logger = logging.getLogger("monk.api")
 
+# utility APIs
+def get_UUID():
+    return ObjectId()
+
 def yaml2json(yamlFileName):
     with open(yamlFileName, 'r') as yf:
         return yaml.load(yf)
@@ -34,13 +38,14 @@ def initialize(config):
                         level=eval(config.logLevel))
     
     return crane.initialize_storage(config)
-
-def get_UUID():
-    return ObjectId()
     
-# training APIs
-def create_turtle(turtle_script):
-    return crane.turtleStore.load_or_create(turtle_script)
+# project(turtle) management APIs
+def find_turtle(turtle_script):
+    t = crane.turtleStore.load_or_create(turtle_script)
+    if turtle is None:
+        logger.error('failed to load or create the turtle {0}'.format(turtle_script))
+        return None
+    return t._id
 
 def update_turtle(turtle_id):
     pass
@@ -48,6 +53,7 @@ def update_turtle(turtle_id):
 def remove_turtle(turtle_id):
     pass
 
+# training APIs
 def add_data(turtle_id, partition_id, entity):
     _turtle = crane.turtleStore.load_one_by_id(turtle_id)
     if _turtle:
@@ -78,23 +84,48 @@ def predict(turtle_id, partition_id, entity):
     else:
         logger.warning('can not find turtle by {0} to predict'.format(turtle_id))
 
-# storage APIs
+# partition APIs
 def save_one(turtle_id, partition_id):
     _turtle = crane.turtleStore.load_one_by_id(turtle_id)
     if _turtle:
-        _turtle.save_one(partition_id)
+        return _turtle.save_one(partition_id)
     else:
-        logger.warning('can not find turtle by {0} to save'.format(turtle_id))
+        logger.warning('can not find turtle by {0} to save a partition'.format(turtle_id))
+        return False
+
+def add_one(turtle_id, partition_id):
+    _turtle = crane.turtleStore.load_one_by_id(turtle_id)
+    if _turtle:
+        return _turtle.add_one(partition_id)
+    else:
+        logger.warning('can not find turtle by {0} to add a partition'.format(turtle_id))
+        return False
+
+def remove_one(turtle_id, partition_id):
+    _turtle = crane.turtleStore.load_one_by_id(turtle_id)
+    if _turtle:
+        return _turtle.remove_one(partition_id)
+    else:
+        logger.warning('can not find turtle by {0} to remove a partition'.format(turtle_id))
+        return False
 
 def load_one(turtle_id, partition_id):
     _turtle = crane.turtleStore.load_one_by_id(turtle_id)
     if _turtle:
-        _turtle.load_one(partition_id)
+        return _turtle.load_one(partition_id)
     else:
-        logger.warning('can not find turtle by {0} to load'.format(turtle_id))
-        
-# query APIs
+        logger.warning('can not find turtle by {0} to load a partition'.format(turtle_id))
+        return False
+
+def unload_one(turtle_id, partition_id):
+    _turtle = crane.turtleStore.load_one_by_id(turtle_id)
+    if _turtle:
+        return _turtle.unload_one(partition_id)
+    else:
+        logger.warning('can not find turtle by {0} to unload a partition'.format(turtle_id))
+        return False
+                
+# meta query APIs
 def find_type(type_name):
     return base.monkFactory.find(type_name)
-
 
