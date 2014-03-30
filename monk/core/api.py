@@ -38,7 +38,10 @@ def initialize(config):
                         level=eval(config.logLevel))
     
     return crane.initialize_storage(config)
-    
+
+def exit():
+    return True
+
 # project(turtle) management APIs
 def find_turtle(turtle_script):
     t = crane.turtleStore.load_or_create(turtle_script)
@@ -57,7 +60,7 @@ def remove_turtle(turtle_id):
 def add_data(turtle_id, partition_id, entity):
     _turtle = crane.turtleStore.load_one_by_id(turtle_id)
     if _turtle:
-        _turtle.add_data(partition_id, entity)
+        return _turtle.add_data(partition_id, entity)
     else:
         logger.warning('can not find turtle by {0} to add data'.format(turtle_id))
 
@@ -85,6 +88,22 @@ def predict(turtle_id, partition_id, entity):
         logger.warning('can not find turtle by {0} to predict'.format(turtle_id))
 
 # partition APIs
+def has_one_in_store(turtle_id, partition_id):
+    _turtle = crane.turtleStore.load_one_by_id(turtle_id)
+    if _turtle:
+        return _turtle.has_partition_in_store(partition_id)
+    else:
+        logger.warning('can not find turtle by {0} to save a partition'.format(turtle_id))
+        return False
+
+def has_one(turtle_id, partition_id):
+    _turtle = crane.turtleStore.load_one_by_id(turtle_id)
+    if _turtle:
+        return _turtle.has_partition(partition_id)
+    else:
+        logger.warning('can not find turtle by {0} to save a partition'.format(turtle_id))
+        return False
+
 def save_one(turtle_id, partition_id):
     _turtle = crane.turtleStore.load_one_by_id(turtle_id)
     if _turtle:

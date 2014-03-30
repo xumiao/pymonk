@@ -89,7 +89,7 @@ class Turtle(base.MONKObject):
         return predicted
 
     def add_data(self, partition_id, entity):
-        self.tigress.supervise(self, partition_id, entity)
+        return self.tigress.supervise(self, partition_id, entity)
         
     def train_one(self, partition_id):
         [panda.mantis.train_one(partition_id) for panda in self.pandas if panda.has_mantis()]
@@ -97,12 +97,32 @@ class Turtle(base.MONKObject):
     
     def aggregate(self, partition_id):
         [panda.mantis.aggregate(partition_id) for panda in self.pandas if panda.has_mantis()]
+    
+    def has_partition(self, partition_id):
+        if not self.tigress.has_partition(partition_id) or \
+            [False for panda in self.pandas if not panda.has_partition(partition_id)]:
+            return False
+        return True
+    
+    def has_partition_in_store(self, partition_id):
+        if not self.tigress.has_partition_in_store(partition_id) or \
+            [False for panda in self.pandas if not panda.has_partition_in_store(partition_id)]:
+            return False
+        return True
+
+    def not_has_partition(self, partition_id):
+        if self.tigress.has_partition(partition_id) or \
+            [True for panda in self.pandas if panda.has_partition(partition_id)]:
+            return False
+        return True
+    
+    def not_has_partition_in_store(self, partition_id):
+        if self.tigress.has_partition_in_store(partition_id) or \
+            [True for panda in self.pandas if panda.has_partition_in_store(partition_id)]:
+            return False
+        return True
         
     def add_one(self, partition_id):
-        if self.tigress.has_partition(partition_id):
-            logger.warning('partition {0} already exists'.format(partition_id))
-            return False
-
         if self.tigress.num_partition() >= self.maxNumPartitions:
             logger.warning('maximun number ({0}) of partitions has been reached'.format(self.maxNumPartitions))
             return False
@@ -112,14 +132,19 @@ class Turtle(base.MONKObject):
         
         if [False for panda in self.pandas if not panda.add_one(partition_id)]:
             return False
-        
-        return True
             
-    def load_one(self, partition_id):
-        if self.tigress.has_partition(partition_id):
-            logger.warning('partition {0} already exists'.format(partition_id))
+        return True
+    
+    def remove_one(self, partition_id):
+        if not self.tigress.remove_one(partition_id):
             return False
             
+        if [False for panda in self.pandas if not panda.remove_one(partition_id)]:
+            return False
+            
+        return True
+        
+    def load_one(self, partition_id):
         if self.tigress.num_partition() >= self.maxNumPartitions:
             logger.warning('maximun number ({0}) of partitions has been reached'.format(self.maxNumPartitions))
             return False
@@ -132,15 +157,20 @@ class Turtle(base.MONKObject):
             
         return True
     
-    def save_one(self, partition_id):
-        if not self.tigress.has_partition(partition_id):
-            logger.error('turtle {0} does not has partition {1}'.format(self._id, partition_id))
+    def unload_one(self, partition_id):
+        if not self.tigress.unload_one(partition_id):
             return False
         
+        if [False for panda in self.pandas if not panda.unload_one(partition_id)]:
+            return False
+        
+        return True
+        
+    def save_one(self, partition_id):
         if not self.tigress.save_one(partition_id):
             return False
             
-        if len([False for panda in self.pandas if not panda.save_one(partition_id)]) > 0:
+        if [False for panda in self.pandas if not panda.save_one(partition_id)]:
             return False
         
         return True

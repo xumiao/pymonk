@@ -83,6 +83,24 @@ class Crane(object):
             return True
         else:
             return False
+            
+    def remove_field(self, obj, field):
+        try:
+            self._coll.update({'_id':obj._id}, {'$unset':{field:1}})
+        except Exception as e:
+            logger.warning(e.message)
+            logger.warning('can not remove field {0} for obj {1}'.format(field, obj._id))
+            return False
+        return True
+
+    def remove_fields(self, obj, fields):
+        try:
+            self._coll.update({'_id':obj._id}, {'$unset':fields})
+        except Exception as e:
+            logger.warning(e.message)
+            logger.warning('can not remove fields [{0}] for obj {1}'.format(' , '.join(fields), obj._id))
+            return False
+        return True
         
     def update_one_in_fields(self, obj, fields):
         # fields are in flat form
