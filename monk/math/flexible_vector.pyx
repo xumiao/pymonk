@@ -267,13 +267,13 @@ cdef class FlexibleVector(object):
             print self.found[height].index
     
     def generic(self):
-        cdef dict a = {}
+        cdef list a = []
         cdef SkipNodeA* currA = self.head.nextA[0]
         cdef long i
         while currA != NULL:
             for i in xrange(currA.length):
                 if currA.values[i] != 0:
-                    a[i + currA.index] = currA.values[i]
+                    a.append((i + currA.index, currA.values[i]))
             currA = currA.nextA[0]
         return a
 
@@ -286,13 +286,11 @@ cdef class FlexibleVector(object):
                     self.upsert(i + currA.index, currA.values[i])
             currA = currA.nextA[0]
         
-    def update(self, dict f):
-        # bulk-insertion can not handle more than 2^32 continuous index span
-        cdef list kvps = f.items()
-        cdef long sz = len(kvps)
+    def update(self, list f):
+        # bulk-insertion can not handle more than 2^32 entries although indices can exceed 2^32
         cdef long i
-        for i in xrange(sz):
-            self.upsert(kvps[i][0], kvps[i][1])
+        for i in xrange(len(f)):
+            self.upsert(f[i][0], f[i][1])
             
     def addKeys(self, list f):
         cdef long sz = len(f)

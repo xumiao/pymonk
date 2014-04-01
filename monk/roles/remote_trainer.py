@@ -10,7 +10,7 @@ import logging
 from kafka.client import KafkaClient
 from kafka.consumer import SimpleConsumer
 from kafka.producer import KeyedProducer
-from ..core.api import initialize, add_data, train_one, load_one
+from ..core.api import initialize, add_data, train_one, load_one, add_one
 import simplejson
 
 config = configuration.Configuration("remote_trainer.yml")
@@ -33,7 +33,9 @@ try:
             add_data(turtle_id, user_id, entity, fields)
         elif op == 'train_one':
             train_one(turtle_id, user_id)
-            producer.send(turtle_id, 0, simplejson.dumps({'userId':user_id}))
+            producer.send(turtle_id, 0, simplejson.dumps({'userId':user_id, 'operation':'aggregate'}))
+        elif op == 'add_one':
+            add_one(turtle_id, user_id)
         elif op == 'load_one':
             load_one(turtle_id, user_id)
         else:

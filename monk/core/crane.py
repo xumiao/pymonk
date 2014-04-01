@@ -6,7 +6,7 @@ The persistent storage manager that talks to different databases
 @author: xm
 """
 
-import pymongo as pm
+from pymongo import MongoClient
 #@todo: using cache
 #from monk.utils.cache import lru_cache
 import logging
@@ -212,13 +212,15 @@ tigressStore = Crane()
 
 def create_db(connectionString, databaseName):
     try:
-        conn = pm.Connection(connectionString)
+        conn = MongoClient(connectionString)
         database = conn[databaseName]
     except Exception as e:
         logger.warning(e.message)
         logger.warning('failed to connection to database {0}.{1}'.format(connectionString, databaseName))
         return None
     return database
+
+def exits():
     
 def initialize_storage(config):
     global dataDB, modelDB, uidDB
