@@ -1,0 +1,16 @@
+# tags turtle
+---
+monkType: SingleTurtle
+name:  tags_prediction
+description:  recommend tags
+mapping:
+    relevant: 1
+pandas:
+   - monkType: LinearPanda
+     name: relevant_tags
+tigress:
+    monkType: PatternTigress
+    fields: [labels]
+    patterns: 
+      relevant: relevant
+    defaulting: True

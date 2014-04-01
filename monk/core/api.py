@@ -42,6 +42,10 @@ def initialize(config):
 def exit():
     return True
 
+# entity APIs
+def get_entities():
+    return crane.entityStore.load_all({},{})
+    
 # project(turtle) management APIs
 def find_turtle(turtle_script):
     t = crane.turtleStore.load_or_create(turtle_script)
