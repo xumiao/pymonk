@@ -21,7 +21,7 @@ class TestMONKAPI:
     
     @classmethod
     def teardown_class(cls):
-        result = monkapi.exit()
+        result = monkapi.exits()
         assert result == True
         print "monkapi is torn down --OK"
     

@@ -39,7 +39,8 @@ def initialize(config):
     
     return crane.initialize_storage(config)
 
-def exit():
+def exits():
+    crane.exit_storage()
     return True
 
 # entity APIs

@@ -200,8 +200,11 @@ class Crane(object):
         else:
             return False
 
+dataClient   = None
 dataDB       = None
+modelClient  = None
 modelDB      = None
+uidClient    = None
 uidDB        = None
 uidStore     = None
 entityStore  = Crane()
@@ -212,24 +215,29 @@ tigressStore = Crane()
 
 def create_db(connectionString, databaseName):
     try:
-        conn = MongoClient(connectionString)
-        database = conn[databaseName]
+        client = MongoClient(connectionString)
+        database = client[databaseName]
     except Exception as e:
         logger.warning(e.message)
         logger.warning('failed to connection to database {0}.{1}'.format(connectionString, databaseName))
         return None
-    return database
+    return client, database
 
-def exits():
+def exit_storage():
+    global dataClient, modelClient, uidClient
+    dataClient.close()
+    modelClient.close()
+    uidClient.close()
     
 def initialize_storage(config):
+    global dataClient, modelClient, uidClient
     global dataDB, modelDB, uidDB
     global uidStore, entityStore, pandaStore
     global mantisStore, turtleStore, tigressStore
     
     #initialize uid store
-    uidDB = create_db(config.uidConnectionString,
-                      config.uidDataBaseName)
+    uidClient, uidDB = create_db(config.uidConnectionString,
+                                 config.uidDataBaseName)
     if uidDB is None:
         logger.error('can not access the database {0} at {1}'.format(
                      config.uidDataBaseName,
@@ -238,8 +246,8 @@ def initialize_storage(config):
     uidStore = UID(uidDB)
 
     #initialize data store
-    dataDB = create_db(config.dataConnectionString,
-                       config.dataDataBaseName)
+    dataClient, dataDB = create_db(config.dataConnectionString,
+                                   config.dataDataBaseName)
     if dataDB is None:
         logger.error('can not access the database {0} at {1}'.format(
                      config.dataDataBaseName,
@@ -250,8 +258,8 @@ def initialize_storage(config):
                           config.entityFields)
 
     #initialize model store
-    modelDB = create_db(config.modelConnectionString,
-                        config.modelDataBaseName)
+    modelClient, modelDB = create_db(config.modelConnectionString,
+                                     config.modelDataBaseName)
     if modelDB is None:
         logger.error('can not access the database {0} at {1}'.format(
                      config.modelDataBaseName,
