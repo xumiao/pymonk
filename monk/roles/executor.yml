@@ -1,0 +1,9 @@
+modelConnectionString : flydragon.cloudapp.net:27017
+modelDataBaseName : MONKModel
+dataConnectionString : flydragon.cloudapp.net:27017
+dataDataBaseName : ZeroDB
+entityCollectionName : activitytags
+uidConnectionString : flydragon.cloudapp.net:27017
+uidDataBaseName : uidDB
+logFileName : monk
+monkPort: 4242
