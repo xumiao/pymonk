@@ -12,4 +12,6 @@ MONK_TYPE       = 'monkType'
 FEATURES        = '_features'
 RAWS            = '_raws'
 ARGUMENTS       = '_arguments'
-
+WEIGHTS         = 'weights'
+CONCENSUS       = 'consensus'
+DATA            = 'data'

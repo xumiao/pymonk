@@ -123,24 +123,28 @@ class Crane(object):
             logger.warning('can not load document {0} in fields {1}'.format(obj._id, fields))
             return None
     
+    def save_one(self, obj):
+        obj.save()
+    
+    def save_all(self, objs):
+        [obj.save for obj in objs]
+        
     def create_one(self, obj):
         obj = base.monkFactory.decode(obj)
         self.__put_one(obj)
-        obj.save()
         return obj
     
     def create_all(self, objs):
         decode = base.monkFactory.decode
         objs = map(decode, objs)
         self.__put_all(objs)
-        [obj.save for obj in objs]
         return objs
         
     def load_one_by_id(self, objId):
         obj = self.__get_one(objId)
         if not obj:
             try:
-                obj = self._coll.find_one({'_id': objId}, self._fields)
+                obj = base.monkFactory.decode(self._coll.find_one({'_id': objId}, self._fields))
                 self.__put_one(obj)
             except Exception as e:
                 logger.warning(e.message)
@@ -151,9 +155,9 @@ class Crane(object):
     def load_all_by_ids(self, objIds):
         objs, rems = self.__get_all(objIds)
         if rems:
-            try:    
-                remainObjs = self._coll.find(
-                    {'_id': {'$in', rems}}, self._fields)
+            try:
+                remainObjs = map(base.monkFactory.decode, 
+                                 self._coll.find({'_id': {'$in':rems}}, self._fields))
             except Exception as e:
                 logger.warning(e.message)
                 logger.warning('can not load remains {0} ...'.format(rems[0]))

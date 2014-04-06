@@ -83,7 +83,7 @@ class Tigress(base.MONKObject):
                 del self.confusionMatrix[partition_id]
             field = 'confusionMatrix.{0}'.format(partition_id)
             return crane.tigressStore.remove_field(self, field)
-        else:
+        else:            
             logger.error('tigress {0} does not store partition {1}'.format(self._id, partition_id))
             return False
             
@@ -145,6 +145,8 @@ class PatternTigress(Tigress):
             self.patterns = {}
         if 'fields' not in self.__dict__:
             self.fields = []
+        else:
+            crane.entityStore._fields.update({field:True for field in self.fields})
         self.p = {re.compile(pattern) : target for target, pattern in self.patterns.iteritems()}
         if 'mutualExclusive' not in self.__dict__:
             self.mutualExclusive = False

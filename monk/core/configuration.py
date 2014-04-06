@@ -16,31 +16,41 @@ class Configuration(object):
         self.modelConnectionString = 'localhost'
         self.modelDataBaseName = 'TestMONKModel'
         self.pandaCollectionName = 'PandaStore'
-        self.pandaFields = {}
+        self.pandaFields = None
         self.turtleCollectionName = 'TurtleStore'
-        self.turtleFields = {}
+        self.turtleFields = None
         self.mantisCollectionName = 'MantisStore'
-        self.mantisFields = {}
+        self.mantisFields = None
         self.tigressCollectionName = 'TigressStore'
-        self.tigressFields = {}
+        self.tigressFields = None
         
         self.dataConnectionString = 'localhost'
         self.dataDataBaseName = 'TestMONKData'
         self.entityCollectionName = 'EntityStore'
-        self.entityFields = {} 
+        self.entityFields = None
         
         self.logFileName = 'monk'
         self.logLevel = 'logging.DEBUG'
         self.kafkaConnectionString = "mozo.cloudapp.net:9092"
         self.kafkaGroup = 'test'
         self.kafkaTopic = 'test_topic'
-        self.kafkaPartitionId = 0
+        self.kafkaMasterPartition = 0
+        self.kafkaPartitions = [1]
         self.monkHost = socket.gethostbyname(socket.gethostname())
         self.monkPort = 8887
                 
         with open(configurationFileName, 'r') as conf:
             self.__dict__.update(yaml.load(conf))
         
-        self.pandaFields['weights'] = False
+        # TODO: move these to class file
+        if self.pandaFields is None:
+            self.pandaFields = {}
+        self.pandaFields[constants.WEIGHTS] = False
+        if self.mantisFields is None:
+            self.mantisFields = {}
+        self.mantisFields[constants.DATA] = False
+        if self.entityFields is None:
+            self.entityFields = {}
+        self.entityFields[constants.MONK_TYPE] = True
         self.entityFields[constants.FEATURES] = True
         self.entityFields[constants.RAWS] = True

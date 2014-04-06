@@ -43,7 +43,7 @@ class Entity(base.MONKObject):
         self._features[key] = value
 
     def __getitem__(self, key):
-        return self._features.find(key)
+        return self._features[key]
 
     def getRaw(self, rawKey):
         if rawKey in self._raws:

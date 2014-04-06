@@ -87,7 +87,6 @@ class LinearPanda(Panda):
 
     def generic(self):
         result = super(LinearPanda, self).generic()
-        # @error: problematic when saving, only works on updating
         result['consensus'] = self.consensus.generic()
         result['mantis'] = self.mantis._id
         del result['weights']
