@@ -31,28 +31,28 @@ class Panda(base.MONKObject):
     def add_features(self, uids):
         pass
     
-    def add_one(self, partition_id):
+    def add_one(self, userId):
         pass
     
-    def load_one(self, partition_id):
+    def load_one(self, userId):
         return True
     
-    def save_one(self, partition_id):
+    def save_one(self, userId):
         return True
     
-    def train_one(self, partition_id):
+    def train_one(self, userId):
         pass
     
-    def predict(self, partition_id, entity):
+    def predict(self, userId, entity):
         return 0
 
-    def get_model(self, partition_id):
+    def get_model(self, userId):
         return None
 
 
 class ExistPanda(Panda):
 
-    def predict(self, partition_id, entity):
+    def predict(self, userId, entity):
         def extract(x, y):
             try:
                 if entity[y].find(self.name) >= 0:
@@ -65,7 +65,7 @@ class ExistPanda(Panda):
 
 class RegexPanda(Panda):
 
-    def predict(self, partition_id, entity):
+    def predict(self, userId, entity):
         pass
 
 class LinearPanda(Panda):
@@ -102,42 +102,45 @@ class LinearPanda(Panda):
     def add_features(self, uids):
         self.consensus.addKeys(uids)
     
-    def has_partition(self, partition_id):
-        return partition_id in self.weights
+    def has_user(self, userId):
+        return userId in self.weights
     
-    def has_partition_in_store(self, partition_id):
-        field = 'weights.{0}'.format(partition_id)
+    def has_user_in_store(self, userId):
+        field = 'weights.{0}'.format(userId)
         return crane.pandaStore.exists_field(self, field)
         
-    def add_one(self, partition_id):
-        if not self.has_partition_in_store(partition_id):
-            self.weights[partition_id] = self.consensus.clone()
-            field = 'weights.{0}'.format(partition_id)
-            result = crane.pandaStore.update_one_in_fields(self, {field:self.weights[partition_id].generic()})
-            return result and self.mantis.add_one(partition_id)
+    def add_one(self, userId):
+        if not self.has_user_in_store(userId):
+            self.weights[userId] = self.consensus.clone()
+            field = 'weights.{0}'.format(userId)
+            result = crane.pandaStore.update_one_in_fields(self, {field:self.weights[userId].generic()})
+            return result and self.mantis.add_one(userId)
         else:
-            logger.error('panda {0} already stores partition {1}'.format(self._id, partition_id))
+            logger.error('panda {0} already stores user {1}'.format(self._id, userId))
             return False
     
-    def remove_one(self, partition_id):
-        if self.has_partition_in_store(partition_id):
-            field = 'weights.{0}'.format(partition_id)
+    def remove_one(self, userId):
+        if self.has_user_in_store(userId):
+            field = 'weights.{0}'.format(userId)
             result = crane.pandaStore.remove_field(self, field)
-            del self.weights[partition_id]
-            return result and self.mantis.remove_one(partition_id)
+            del self.weights[userId]
+            return result and self.mantis.remove_one(userId)
         else:
-            logger.error('panda {0} does not store partition {1}'.format(self._id, partition_id))
+            logger.error('panda {0} does not store user {1}'.format(self._id, userId))
             return False            
         
-    def update_one_weight(self, partition_id):
-        field = 'weights.{0}'.format(partition_id)
-        pa = crane.pandaStore.load_one_in_fields(self, [field])
-        w = self.weights[partition_id]
-        if 'weights' in pa:
-            w.update(pa['weights'][partition_id])
+    def load_one_weight(self, userId):
+        if self.has_user_in_store(userId):
+            field = 'weights.{0}'.format(userId)
+            genericW = crane.pandaStore.load_one_in_fields(self, [field])['weights'][userId]
+            if userId in self.weights:
+                self.weights[userId].update(genericW)
+            else:
+                self.weights[userId] = FlexibleVector(generic=genericW)
+            return True
         else:
-            logger.error('can not find partition {0} in panda {1}'.format(partition_id, self._id))
-        return w
+            logger.error('panda {0} does not store user {1}'.format(self._id, userId))
+            return False            
     
     def update_consensus(self):
         pa = crane.pandaStore.load_one_in_fields(self,['consensus'])
@@ -148,47 +151,41 @@ class LinearPanda(Panda):
     def save_consensus(self):
         crane.pandaStore.update_one_in_fields(self, {'consensus':self.consensus.generic()})
         
-    def load_one(self, partition_id):
-        if self.has_partition_in_store(partition_id):
-            field = 'weights.{0}'.format(partition_id)
-            pa = crane.pandaStore.load_one_in_fields(self, [field])
-            self.weights[partition_id] = FlexibleVector(generic=pa['weights'][partition_id])
-            return self.mantis.load_one(partition_id)
-        else:
-            logger.error('panda {0} does not store partition {1}'.format(self._id, partition_id))
-            return False            
+    def load_one(self, userId):
+        self.load_one_weight(userId)
+        self.mantis.load_one(userId)
 
-    def unload_one(self, partition_id):
-        if self.has_partition(partition_id):
-            field = 'weights.{0}'.format(partition_id)
-            result = crane.pandaStore.update_one_in_fields(self, {field:self.weights[partition_id].generic()})
-            del self.weights[partition_id]
-            return result and self.mantis.unload_one(partition_id)
+    def unload_one(self, userId):
+        if self.has_user(userId):
+            field = 'weights.{0}'.format(userId)
+            result = crane.pandaStore.update_one_in_fields(self, {field:self.weights[userId].generic()})
+            del self.weights[userId]
+            return result and self.mantis.unload_one(userId)
         else:
-            logger.error('panda {0} does not have partition {1}'.format(self._id, partition_id))
+            logger.error('panda {0} does not have user {1}'.format(self._id, userId))
             return False            
         
-    def save_one(self, partition_id):
-        if self.has_partition(partition_id):
-            field = 'weights.{0}'.format(partition_id)
-            crane.pandaStore.update_one_in_fields(self, {field:self.weights[partition_id].generic()})
-            return self.mantis.save_one(partition_id)
+    def save_one(self, userId):
+        if self.has_user(userId):
+            field = 'weights.{0}'.format(userId)
+            crane.pandaStore.update_one_in_fields(self, {field:self.weights[userId].generic()})
+            return self.mantis.save_one(userId)
         else:
-            logger.error('panda {0} does not have partition {1}'.format(self._id, partition_id))
+            logger.error('panda {0} does not have user {1}'.format(self._id, userId))
             return False            
 
-    def get_model(self, partition_id=None):
-        if partition_id is None:
+    def get_model(self, userId=None):
+        if userId is None:
             return self.consensus
 
-        if partition_id in self.weights:
-            return self.weights[partition_id]
+        if userId in self.weights:
+            return self.weights[userId]
         else:
-            logger.warning('LinearPanda has no model for {0}'.format(partition_id))
+            logger.warning('LinearPanda has no model for {0}'.format(userId))
             return None
         
-    def predict(self, partition_id, entity):
-        model = self.get_model(partition_id)
+    def predict(self, userId, entity):
+        model = self.get_model(userId)
         if model:
             return sigmoid(model.dot(entity._features))
         else:

@@ -12,6 +12,8 @@ from kafka.consumer import SimpleConsumer
 import simplejson
 import sys, getopt
 
+logger = logging.getLogger("monk.master")
+
 def print_help():
     print 'master.py -c <configFile>'
     
@@ -33,7 +35,6 @@ def main(argv):
     
     config = Configuration(configFile)
     monkapi.initialize(config)
-    logger = logging.getLogger("monk.master")
         
     try:
         kafka = KafkaClient(config.kafkaConnectionString)
@@ -45,7 +46,7 @@ def main(argv):
             decodedMessage = simplejson.loads(message.message.value)
             op = decodedMessage['operation']
             if op == 'aggregate':
-                turtleId = monkapi.get_UUID(decodedMessage['turtleId'])
+                turtleId = monkapi.UUID(decodedMessage['turtleId'])
                 userId = decodedMessage['userId']
                 monkapi.aggregate(turtleId, userId)
             elif op == 'create':

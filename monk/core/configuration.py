@@ -10,7 +10,7 @@ import constants
 
 class Configuration(object):
 
-    def __init__(self, configurationFileName):
+    def __init__(self, configurationFileName=None):
         self.uidConnectionString = 'localhost'
         self.uidDataBaseName = 'uidDB'
         self.modelConnectionString = 'localhost'
@@ -39,10 +39,11 @@ class Configuration(object):
         self.monkHost = socket.gethostbyname(socket.gethostname())
         self.monkPort = 8887
                 
-        with open(configurationFileName, 'r') as conf:
-            self.__dict__.update(yaml.load(conf))
+        if configurationFileName:
+            with open(configurationFileName, 'r') as conf:
+                self.__dict__.update(yaml.load(conf))
         
-        # TODO: move these to class file
+        # TODO: factor it better
         if self.pandaFields is None:
             self.pandaFields = {}
         self.pandaFields[constants.WEIGHTS] = False
@@ -54,3 +55,4 @@ class Configuration(object):
         self.entityFields[constants.MONK_TYPE] = True
         self.entityFields[constants.FEATURES] = True
         self.entityFields[constants.RAWS] = True
+        

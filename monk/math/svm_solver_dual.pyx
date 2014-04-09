@@ -116,8 +116,8 @@ cdef class SVMDual(object):
         if j >= 0 and j < self.max_num_instances:
             # x is set, use its index, and modify label
             if y == self.y[j]:
-                return
-            # @todo: rewind the alpha and weight to remove the old data
+                return j
+            # TODO: rewind the alpha and weight to remove the old data
             # for now, assume it is just forgotten
         elif self.num_instances < self.max_num_instances:
             # add the data to the end of the arrays
@@ -127,7 +127,7 @@ cdef class SVMDual(object):
         else:
             # pick the last one in the index
             # it is possibly the one far away from the decision boundary
-            j = self.index[-1]
+            j = self.index[self.max_num_instances - 1]
             x.setIndex(j)
             
         self.x[j] = x
