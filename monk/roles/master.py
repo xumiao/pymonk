@@ -53,12 +53,16 @@ def main(argv):
                 turtleScript = decodedMessage['turtleScript']
                 turtleId = monkapi.find_turtle(turtleScript)
                 monkapi.save_turtle(turtleId)
+            elif op == 'shutdown':
+                logger.info('shutting down master server')
+                break
             else:
                 logger.error('Operation unrecognizable {0}'.format(op))
     except Exception as e:
         logger.warning('Exception {0}'.format(e.message))
         logger.warning('Can not consume messages')
     finally:
+        consumer.stop()
         kafka.close()
         monkapi.exits()
     

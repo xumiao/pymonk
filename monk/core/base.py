@@ -15,7 +15,7 @@ class MONKObject(object):
     def __init__(self, generic=None):
         if generic:
             try:
-                logger.debug('trying to deserialize {0}'.format(generic))
+                #logger.debug('trying to deserialize {0}'.format(generic))
                 self.__dict__.update(generic)
             except Exception as e:
                 logger.warning('deserializatin failed. {0}'.format(e.message))

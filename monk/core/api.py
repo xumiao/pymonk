@@ -39,6 +39,7 @@ def initialize(config=None):
             _config = config
     
     logging.config.dictConfig(_config.loggingConfig)
+    logger.info('------start up------')
     return crane.initialize_storage(_config)
 
 def exits():

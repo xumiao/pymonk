@@ -10,7 +10,7 @@ import monk.core.api as monkapi
 import logging
 from kafka.client import KafkaClient
 from kafka.consumer import SimpleConsumer
-#from kafka.producer import KeyedProducer
+from kafka.producer import KeyedProducer
 import simplejson
 import sys, getopt
 
@@ -22,12 +22,15 @@ def print_help():
 def server(configFile, partitions):
     config = Configuration(configFile)
     if config.kafkaMasterPartition in partitions:
-        logger.error('master is using partition {0}'.format(config.kafkaMasterPartition))
+        print 'master is using partition {0}'.format(config.kafkaMasterPartition)
         return
     monkapi.initialize(config)
+    
     try:
         kafka = KafkaClient(config.kafkaConnectionString)
-#        producer = KeyedProducer(kafka, async=True)
+        producer = KeyedProducer(kafka, async=False,
+                                 req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE,
+                                 ack_timeout=2000)
         consumer = SimpleConsumer(kafka, config.kafkaGroup,
                                   config.kafkaTopic,
                                   partitions=partitions)
@@ -54,22 +57,27 @@ def server(configFile, partitions):
                 monkapi.add_data(turtleId, userId, entity)
             elif op == 'train_one':
                 monkapi.train_one(turtleId, userId)
-#                encodedMessage = simplejson.dumps({'turtleId':str(turtleId),
-#                                                    'userId':userId, 
-#                                                    'operation':'aggregate'})
-#                producer.send(config.kafkaTopic, config.kafkaMasterPartition, encodedMessage)
+                encodedMessage = simplejson.dumps({'turtleId':str(turtleId),
+                                                    'userId':userId, 
+                                                    'operation':'aggregate'})
+                producer.send(config.kafkaTopic, config.kafkaMasterPartition, encodedMessage)
             elif op == 'add_one':
                 monkapi.add_one(turtleId, userId)
             elif op == 'load_one':
                 monkapi.load_one(turtleId, userId)
             elif op == 'save_one':
                 monkapi.save_one(turtleId, userId)
+            elif op == 'shutdown':
+                logger.info('shutting down remote trainer server')
+                break
             else:
                 logger.error('Operation not recognized {0}'.format(op))
     except Exception as e:
         logger.warning('Exception {0}'.format(e))
         logger.warning('Can not consume actions')
     finally:
+        consumer.stop()
+        producer.stop()
         kafka.close()
         monkapi.exits()
     

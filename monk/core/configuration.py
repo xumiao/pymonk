@@ -29,8 +29,6 @@ class Configuration(object):
         self.entityCollectionName = 'EntityStore'
         self.entityFields = None
         
-        self.logFileName = 'monk'
-        self.logLevel = 'logging.DEBUG'
         self.kafkaConnectionString = "mozo.cloudapp.net:9092"
         self.kafkaGroup = 'test'
         self.kafkaTopic = 'test_topic'
