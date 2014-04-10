@@ -13,6 +13,7 @@ from kafka.consumer import SimpleConsumer
 from kafka.producer import KeyedProducer
 import simplejson
 import sys, getopt
+import os
 
 logger = logging.getLogger("monk.remote_trainer")
 
@@ -24,13 +25,16 @@ def server(configFile, partitions):
     if config.kafkaMasterPartition in partitions:
         print 'master is using partition {0}'.format(config.kafkaMasterPartition)
         return
+    pid = os.getpid()
+    fn = config.loggingConfig['handlers']['files']['filename']
+    config.loggingConfig['handlers']['files']['filename'] = '.'.join([fn[:-4],'remote',str(pid),'log'])
     monkapi.initialize(config)
     
     try:
-        kafka = KafkaClient(config.kafkaConnectionString)
+        kafka = KafkaClient(config.kafkaConnectionString,timeout=None)
         producer = KeyedProducer(kafka, async=False,
                                  req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE,
-                                 ack_timeout=2000)
+                                 ack_timeout=200)
         consumer = SimpleConsumer(kafka, config.kafkaGroup,
                                   config.kafkaTopic,
                                   partitions=partitions)
@@ -43,18 +47,25 @@ def server(configFile, partitions):
                 logger.error('Message {0} is not in json format'.format(message.message.value))
                 continue
             
-            try:
-                userId = decodedMessage['userId']
-                turtleId = monkapi.UUID(decodedMessage['turtleId'])
-            except Exception as e:
-                logger.error('Exception {0}'.format(e))
-                logger.error('Message {0} does not have userId or turtleId'.format(message.message.value))
-                continue
+            op = decodedMessage.get('operation')
+            userId = decodedMessage.get('userId')
+            turtleId = decodedMessage.get('turtleId')
+            entity = decodedMessage.get('entity')
+            if op == 'shutdown':
+                logger.info('shutting down remote trainer server')
+                break
             
-            op = decodedMessage['operation']
+            if userId is None or turtleId is None:
+                logger.error('needs turtleId and userId')
+                continue
+
+            turtleId = monkapi.UUID(turtleId)
             if op == 'add_data':
-                entity = monkapi.UUID(decodedMessage['entity'])
-                monkapi.add_data(turtleId, userId, entity)
+                if 'entity' in decodedMessage:
+                    entity = monkapi.UUID(decodedMessage['entity'])
+                    monkapi.add_data(turtleId, userId, entity)
+                else:
+                    logger.error('add_data needs entity in string id')
             elif op == 'train_one':
                 monkapi.train_one(turtleId, userId)
                 encodedMessage = simplejson.dumps({'turtleId':str(turtleId),
@@ -67,15 +78,13 @@ def server(configFile, partitions):
                 monkapi.load_one(turtleId, userId)
             elif op == 'save_one':
                 monkapi.save_one(turtleId, userId)
-            elif op == 'shutdown':
-                logger.info('shutting down remote trainer server')
-                break
             else:
                 logger.error('Operation not recognized {0}'.format(op))
     except Exception as e:
         logger.warning('Exception {0}'.format(e))
         logger.warning('Can not consume actions')
     finally:
+        consumer.commit()
         consumer.stop()
         producer.stop()
         kafka.close()

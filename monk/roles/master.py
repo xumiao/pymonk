@@ -11,6 +11,7 @@ from kafka.client import KafkaClient
 from kafka.consumer import SimpleConsumer
 import simplejson
 import sys, getopt
+import os
 
 logger = logging.getLogger("monk.master")
 
@@ -34,18 +35,30 @@ def main(argv):
             configFile = arg
     
     config = Configuration(configFile)
+    pid = os.getpid()
+    fn = config.loggingConfig['handlers']['files']['filename']
+    config.loggingConfig['handlers']['files']['filename'] = '.'.join([fn[:-4],'master',str(pid),'log'])
     monkapi.initialize(config)
-        
+    
     try:
-        kafka = KafkaClient(config.kafkaConnectionString)
+        kafka = KafkaClient(config.kafkaConnectionString, timeout=None)
         consumer = SimpleConsumer(kafka, config.kafkaGroup,
                                   config.kafkaTopic,
                                   partitions=[config.kafkaMasterPartition])
         for message in consumer:
             logger.debug(message)
-            decodedMessage = simplejson.loads(message.message.value)
-            op = decodedMessage['operation']
-            if op == 'aggregate':
+            try:
+                decodedMessage = simplejson.loads(message.message.value)
+            except Exception as e:
+                logger.error('Exception {0}'.format(e))
+                logger.error('Message {0} is not in json format'.format(message.message.value))
+                continue
+            
+            op = decodedMessage.get('operation')
+            if op == 'shutdown':
+                logger.info('shutting down master server')
+                break
+            elif op == 'aggregate':
                 turtleId = monkapi.UUID(decodedMessage['turtleId'])
                 userId = decodedMessage['userId']
                 monkapi.aggregate(turtleId, userId)
@@ -53,15 +66,13 @@ def main(argv):
                 turtleScript = decodedMessage['turtleScript']
                 turtleId = monkapi.find_turtle(turtleScript)
                 monkapi.save_turtle(turtleId)
-            elif op == 'shutdown':
-                logger.info('shutting down master server')
-                break
             else:
                 logger.error('Operation unrecognizable {0}'.format(op))
     except Exception as e:
         logger.warning('Exception {0}'.format(e.message))
         logger.warning('Can not consume messages')
     finally:
+        consumer.commit()
         consumer.stop()
         kafka.close()
         monkapi.exits()
