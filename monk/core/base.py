@@ -15,12 +15,15 @@ class MONKObject(object):
     def __init__(self, generic=None):
         if generic:
             try:
-                #logger.debug('trying to deserialize {0}'.format(generic))
                 self.__dict__.update(generic)
             except Exception as e:
+                logger.debug('trying to deserialize {0}'.format(generic))
                 logger.warning('deserializatin failed. {0}'.format(e.message))
                 logger.warning('defaulting')
-        self.__restore__()
+        try:
+            self.__restore__()
+        except Exception as e:
+            logger.warning('restoration failed. {0}'.format(e.message))
 
     def __restore__(self):
         if '_id' not in self.__dict__:

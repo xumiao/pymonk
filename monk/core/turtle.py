@@ -82,8 +82,8 @@ class Turtle(base.MONKObject):
             
     def predict(self, userId, entity):
         def _predict(panda):
-            entity[panda.Uid] = sigmoid(panda.predict(userId, entity))
-            return sign0(entity[panda.Uid])
+            entity[panda.uid] = sigmoid(panda.predict(userId, entity))
+            return sign0(entity[panda.uid])
         predicted = self.inverted_mapping[tuple([_predict(panda) for panda in self.pandas])]
         self.tigress.measure(userId, entity, predicted)
         return predicted
@@ -180,7 +180,7 @@ class SingleTurtle(Turtle):
     def predict(self, userId, entity):
         panda = self.pandas[0]
         entity[panda.uid] = sigmoid(panda.predict(userId, entity))
-        if sign0(entity[panda.Uid]) > 0:
+        if sign0(entity[panda.uid]) > 0:
             self.tigress.measure(userId, entity, panda.name)
             return panda.name
         else:

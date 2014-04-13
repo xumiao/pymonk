@@ -43,6 +43,7 @@ def initialize(config=None):
     return crane.initialize_storage(_config)
 
 def exits():
+    logger.info('------end-----------')
     crane.exit_storage()
     return True
 
@@ -66,6 +67,8 @@ def get_entities(query=None, fields=None):
     return crane.entityStore.load_all(query, fields)
 
 def load_entities(entities):
+    if not entities:
+        entities = [ent['_id'] for ent in crane.entityStore.load_all_in_ids({})]
     return crane.entityStore.load_or_create_all(entities)
 
 def load_entity(entity):
