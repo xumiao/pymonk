@@ -7,7 +7,7 @@ The persistent storage manager that talks to different databases
 """
 
 from pymongo import MongoClient
-#@todo: using cache
+#TODO: using cache
 #from monk.utils.cache import lru_cache
 import logging
 import base
@@ -79,7 +79,27 @@ class Crane(object):
             return self.load_all_by_ids(objs)
         else:
             return self.create_all(objs)
-            
+    
+    def lazy_load(self, field):
+        if self._fields is None:
+            self._fields = {}
+        if True in self._fields.values:
+            logger.error('can only be all lazy or explicit')
+            logger.debug('original fields {0}'.format(self._fields))
+            logger.debug('try to lazy load field {0}'.format(field))
+            self._fields = {}
+        self._fields[field] = False
+    
+    def explicit_load(self, field):
+        if self._fields is None:
+            self._fields = {}
+        if False in self._fields.values:
+            logger.error('can only be all lazy or explicit')
+            logger.debug('original fields {0}'.format(self._fields))
+            logger.debug('try to explicitly load field {0}'.format(field))
+            self._fields = {}
+        self._fields[field] = True
+        
     def exists_field(self, obj, field):
         query = {'_id':obj._id, field:{'$exists':True}}
         if self._coll.find_one(query, {'_id':1}):
