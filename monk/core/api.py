@@ -83,6 +83,7 @@ def remove_turtle(turtleId):
 def add_data(turtleId, partitionId, ent):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
     if _turtle:
+        crane.entityStore.set_collection_name(_turtle.entityCollectionName)
         ent = crane.entityStore.load_or_create(ent)
         return _turtle.add_data(partitionId, ent)
     else:

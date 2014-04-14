@@ -43,6 +43,8 @@ class Turtle(base.MONKObject):
             self.pMaxInferenceSteps = 1
         if "maxNumPartitions" not in self.__dict__:
             self.maxNumPartitions = 100
+        if "entityCollectionName" not in self.__dict__:
+            self.entityCollectionName = constants.DEFAULT_EMPTY
         if "requires" not in self.__dict__:
             logger.info('turtle {0} will use all features seen'.format(self.name))
         elif 'uids' in self.requires:
