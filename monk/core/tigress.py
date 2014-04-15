@@ -45,18 +45,18 @@ class Tigress(base.MONKObject):
     def save(self, **kwargs):
         crane.tigressStore.update_one_in_fields(self, self.generic())
     
-    def num_partition(self):
+    def num_user(self):
         return len(self.confusionMatrix)
         
-    def has_partition(self, partition_id):
-        return partition_id in self.confusionMatrix
+    def has_user(self, userId):
+        return userId in self.confusionMatrix
     
-    def has_partition_in_store(self, partition_id):
-        field = 'confusionMatrix.{0}'.format(partition_id)
+    def has_user_in_store(self, userId):
+        field = 'confusionMatrix.{0}'.format(userId)
         return crane.tigressStore.exists_field(self, field)
         
-    def measure(self, partition_id, entity, predicted):
-        cm = self.confusionMatrix[partition_id]
+    def measure(self, userId, entity, predicted):
+        cm = self.confusionMatrix[userId]
         for target in self.retrieve_target(entity):
             if target not in cm:
                 cm[target] = {predicted:1}
@@ -69,64 +69,64 @@ class Tigress(base.MONKObject):
         else:
             cm['__total__'] += 1
     
-    def add_one(self, partition_id):
-        if not self.has_partition_in_store(partition_id):
-            self.confusionMatrix[partition_id] = {}
-            return self.save_one(partition_id)
+    def add_one(self, userId):
+        if not self.has_user_in_store(userId):
+            self.confusionMatrix[userId] = {}
+            return self.save_one(userId)
         else:
-            logger.error('tigress {0} already stores partition {1}'.format(self._id, partition_id))
+            logger.error('tigress {0} already stores user {1}'.format(self._id, userId))
             return False
     
-    def remove_one(self, partition_id):
-        if self.has_partition_in_store(partition_id):
-            if partition_id in self.confusionMatrix:
-                del self.confusionMatrix[partition_id]
-            field = 'confusionMatrix.{0}'.format(partition_id)
+    def remove_one(self, userId):
+        if self.has_user_in_store(userId):
+            if userId in self.confusionMatrix:
+                del self.confusionMatrix[userId]
+            field = 'confusionMatrix.{0}'.format(userId)
             return crane.tigressStore.remove_field(self, field)
         else:            
-            logger.error('tigress {0} does not store partition {1}'.format(self._id, partition_id))
+            logger.error('tigress {0} does not store user {1}'.format(self._id, userId))
             return False
             
-    def load_one(self, partition_id):
-        if self.has_partition_in_store(partition_id):
-            field = 'confusionMatrix.{0}'.format(partition_id)
+    def load_one(self, userId):
+        if self.has_user_in_store(userId):
+            field = 'confusionMatrix.{0}'.format(userId)
             tg = crane.tigressStore.load_one_in_fields(self, [field])
-            self.confusionMatrix[partition_id] = tg['confusionMatrix'][partition_id]
+            self.confusionMatrix[userId] = tg['confusionMatrix'][userId]
             return True
         else:
-            logger.error('tigress {0} does not store partition {1}'.format(self._id, partition_id))
+            logger.error('tigress {0} does not store user {1}'.format(self._id, userId))
             return False
 
-    def unload_one(self, partition_id):
-        if self.has_partition(partition_id):
-            field = 'confusionMatrix.{0}'.format(partition_id)
-            result = crane.tigressStore.update_one_in_fields(self, {field:self.confusionMatrix[partition_id]})
-            del self.confusionMatrix[partition_id]
+    def unload_one(self, userId):
+        if self.has_user(userId):
+            field = 'confusionMatrix.{0}'.format(userId)
+            result = crane.tigressStore.update_one_in_fields(self, {field:self.confusionMatrix[userId]})
+            del self.confusionMatrix[userId]
             return result
         else:
-            logger.warning('tigress {0} does not has partition {1}'.format(self._id, partition_id))
+            logger.warning('tigress {0} does not has user {1}'.format(self._id, userId))
             return False
         
-    def save_one(self, partition_id):
-        if self.has_partition(partition_id):
-            field = 'confusionMatrix.{0}'.format(partition_id)
-            return crane.tigressStore.update_one_in_fields(self, {field:self.confusionMatrix[partition_id]})
+    def save_one(self, userId):
+        if self.has_user(userId):
+            field = 'confusionMatrix.{0}'.format(userId)
+            return crane.tigressStore.update_one_in_fields(self, {field:self.confusionMatrix[userId]})
         else:
-            logger.warning('tigress {0} does not has partition {1}'.format(self._id, partition_id))
+            logger.warning('tigress {0} does not has user {1}'.format(self._id, userId))
             return False
             
     def retrieve_target(self, entity):
         return () # an empty iterator
     
-    def accuracy(self, partition_id, target):
+    def accuracy(self, userId, target):
         try:
-            return self.confusionMatrix[partition_id][target]
+            return self.confusionMatrix[userId][target]
         except:
             logger.warning('target {0} not found in confusion matrix'.format(target))
             return {}
         
-    def supervise(self, turtle, partition_id, entity):
-        pass
+    def supervise(self, turtle, userId, entity):
+        return True
     
 
 class PatternTigress(Tigress):
@@ -162,18 +162,18 @@ class PatternTigress(Tigress):
         combinedField = ' . '.join(self.fields)
         return (t for r, t in self.p.iteritems() if r.search(combinedField))
         
-    def supervise(self, turtle, partition_id, entity):
+    def supervise(self, turtle, userId, entity):
         pandas = turtle.pandas
         for t in self.retrieve_target(entity):
             cost = self.costs[t]
             ys = turtle.mapping[t]
-            [panda.mantis.add_data(partition_id, entity, y, cost) for panda, y in izip(pandas, ys)]
+            [panda.mantis.add_data(userId, entity, y, cost) for panda, y in izip(pandas, ys)]
             if self.mutualExclusive:
                 return True
 
         if self.defaulting:
             # no pattern found, add all negative
-            [panda.mantis.add_data(partition_id, entity, -1, self.defaultCost) for panda in pandas]
+            [panda.mantis.add_data(userId, entity, -1, self.defaultCost) for panda in pandas]
         
         return True
         

@@ -13,51 +13,86 @@ from kafka.consumer import SimpleConsumer
 from kafka.producer import KeyedProducer
 import simplejson
 import sys, getopt
-from multiprocessing import Process
+import os
+
+logger = logging.getLogger("monk.remote_trainer")
 
 def print_help():
-    print 'remote_trainer.py -c <configFile> -p <kafkaPartitions e.g. range(1,9)>'
+    print 'remote_trainer.py -c <configFile> -p <kafkaPartitions, e.g., range(1,8)>'
 
-def server(configFile, partition):
+def server(configFile, partitions):
     config = Configuration(configFile)
+    if config.kafkaMasterPartition in partitions:
+        print 'master is using partition {0}'.format(config.kafkaMasterPartition)
+        return
+    pid = os.getpid()
+    fn = config.loggingConfig['handlers']['files']['filename']
+    config.loggingConfig['handlers']['files']['filename'] = '.'.join([fn[:-4],'remote',str(pid),'log'])
     monkapi.initialize(config)
-    logger = logging.getLogger("monk.remote_trainer")
+    
     try:
-        kafka = KafkaClient(config.kafkaConnectionString)
-        producer = KeyedProducer(kafka, async=True)
+        kafka = KafkaClient(config.kafkaConnectionString,timeout=None)
+        producer = KeyedProducer(kafka, async=False,
+                                 req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE,
+                                 ack_timeout=200)
         consumer = SimpleConsumer(kafka, config.kafkaGroup,
                                   config.kafkaTopic,
-                                  partitions=[partition])
+                                  partitions=partitions)
         for message in consumer:
-            decodedMessage = simplejson.loads(message.message.value)
-            userId = decodedMessage['userId']
-            turtleId = monkapi.get_UUID(decodedMessage['turtleId'])
-            op = decodedMessage['operation']
+            logger.debug(message)
+            try:
+                decodedMessage = simplejson.loads(message.message.value)
+            except Exception as e:
+                logger.error('Exception {0}'.format(e))
+                logger.error('Message {0} is not in json format'.format(message.message.value))
+                continue
+            
+            op = decodedMessage.get('operation')
+            userId = decodedMessage.get('userId')
+            turtleId = decodedMessage.get('turtleId')
+            entity = decodedMessage.get('entity')
+            if op == 'shutdown':
+                logger.info('shutting down remote trainer server')
+                break
+            
+            if userId is None or turtleId is None:
+                logger.error('needs turtleId and userId')
+                continue
+
+            turtleId = monkapi.UUID(turtleId)
             if op == 'add_data':
-                entity = monkapi.get_UUID(decodedMessage['entity'])
-                monkapi.add_data(turtleId, userId, entity)
+                if 'entity' in decodedMessage:
+                    entity = monkapi.UUID(decodedMessage['entity'])
+                    monkapi.add_data(turtleId, userId, entity)
+                else:
+                    logger.error('add_data needs entity in string id')
             elif op == 'train_one':
                 monkapi.train_one(turtleId, userId)
-                encodedMessage = simplejson.dumps({'turtleId':turtleId, 
+                encodedMessage = simplejson.dumps({'turtleId':str(turtleId),
                                                     'userId':userId, 
                                                     'operation':'aggregate'})
-                producer.send(config.kafkaTopic, config.masterKafkaPartition, encodedMessage)
+                producer.send(config.kafkaTopic, config.kafkaMasterPartition, encodedMessage)
             elif op == 'add_one':
                 monkapi.add_one(turtleId, userId)
             elif op == 'load_one':
                 monkapi.load_one(turtleId, userId)
+            elif op == 'save_one':
+                monkapi.save_one(turtleId, userId)
             else:
                 logger.error('Operation not recognized {0}'.format(op))
     except Exception as e:
         logger.warning('Exception {0}'.format(e))
         logger.warning('Can not consume actions')
     finally:
+        consumer.commit()
+        consumer.stop()
+        producer.stop()
         kafka.close()
         monkapi.exits()
     
 if __name__=='__main__':
     configFile = 'remote_trainer.yml'
-    kafkaPartitions = [1]
+    kafkaPartition = 1
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hc:p:',['configFile=', 'kafkaPartitions='])
     except getopt.GetoptError:
@@ -70,14 +105,7 @@ if __name__=='__main__':
             sys.exit()
         elif opt in ('-c', '--configFile'):
             configFile = arg
-        elif opt in ('-p', '--kafkaPartitions'):
+        elif opt in ('-p', '--kafkaPartition'):
             kafkaPartitions = eval(arg)
-    
-    ps = []
-    for partition in kafkaPartitions:
-        p = Process(target=server, args=(configFile, partition))
-        ps.append(p)
-        p.start()
-    
-    print len(kafkaPartitions), ' servers have been started'
-    [p.join() for p in ps]
+
+    server(configFile, kafkaPartitions)

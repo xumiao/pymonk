@@ -41,8 +41,10 @@ class Turtle(base.MONKObject):
             self.pMaxPathLength = 1
         if 'pMaxInferenceSteps' not in self.__dict__:
             self.pMaxInferenceSteps = 1
-        if "maxNumPartitions" not in self.__dict__:
-            self.maxNumPartitions = 100
+        if "entityCollectionName" not in self.__dict__:
+            self.entityCollectionName = constants.DEFAULT_EMPTY
+        if "maxNumUsers" not in self.__dict__:
+            self.maxNumUsers = 100
         if "requires" not in self.__dict__:
             logger.info('turtle {0} will use all features seen'.format(self.name))
         elif 'uids' in self.requires:
@@ -80,133 +82,133 @@ class Turtle(base.MONKObject):
     def delete_panda(self, panda):
         pass
             
-    def predict(self, partition_id, entity):
+    def predict(self, userId, entity):
         def _predict(panda):
-            entity[panda.Uid] = sigmoid(panda.predict(partition_id, entity))
-            return sign0(entity[panda.Uid])
+            entity[panda.uid] = sigmoid(panda.predict(userId, entity))
+            return sign0(entity[panda.uid])
         predicted = self.inverted_mapping[tuple([_predict(panda) for panda in self.pandas])]
-        self.tigress.measure(partition_id, entity, predicted)
+        self.tigress.measure(userId, entity, predicted)
         return predicted
 
-    def add_data(self, partition_id, entity):
-        return self.tigress.supervise(self, partition_id, entity)
+    def add_data(self, userId, entity):
+        return self.tigress.supervise(self, userId, entity)
         
-    def train_one(self, partition_id):
-        [panda.mantis.train_one(partition_id) for panda in self.pandas if panda.has_mantis()]
-        [panda.save_one(partition_id) for panda in self.pandas]
+    def train_one(self, userId):
+        [panda.mantis.train_one(userId) for panda in self.pandas if panda.has_mantis()]
+        [panda.save_one(userId) for panda in self.pandas]
     
-    def aggregate(self, partition_id):
-        [panda.mantis.aggregate(partition_id) for panda in self.pandas if panda.has_mantis()]
+    def aggregate(self, userId):
+        [panda.mantis.aggregate(userId) for panda in self.pandas if panda.has_mantis()]
     
-    def has_partition(self, partition_id):
-        if not self.tigress.has_partition(partition_id) or \
-            [False for panda in self.pandas if not panda.has_partition(partition_id)]:
+    def has_user(self, userId):
+        if not self.tigress.has_user(userId) or \
+            [False for panda in self.pandas if not panda.has_user(userId)]:
             return False
         return True
     
-    def has_partition_in_store(self, partition_id):
-        if not self.tigress.has_partition_in_store(partition_id) or \
-            [False for panda in self.pandas if not panda.has_partition_in_store(partition_id)]:
+    def has_user_in_store(self, userId):
+        if not self.tigress.has_user_in_store(userId) or \
+            [False for panda in self.pandas if not panda.has_user_in_store(userId)]:
             return False
         return True
 
-    def not_has_partition(self, partition_id):
-        if self.tigress.has_partition(partition_id) or \
-            [True for panda in self.pandas if panda.has_partition(partition_id)]:
+    def not_has_user(self, userId):
+        if self.tigress.has_user(userId) or \
+            [True for panda in self.pandas if panda.has_user(userId)]:
             return False
         return True
     
-    def not_has_partition_in_store(self, partition_id):
-        if self.tigress.has_partition_in_store(partition_id) or \
-            [True for panda in self.pandas if panda.has_partition_in_store(partition_id)]:
+    def not_has_user_in_store(self, userId):
+        if self.tigress.has_user_in_store(userId) or \
+            [True for panda in self.pandas if panda.has_user_in_store(userId)]:
             return False
         return True
         
-    def add_one(self, partition_id):
-        if self.tigress.num_partition() >= self.maxNumPartitions:
-            logger.warning('maximun number ({0}) of partitions has been reached'.format(self.maxNumPartitions))
+    def add_one(self, userId):
+        if self.tigress.num_user() >= self.maxNumUsers:
+            logger.warning('maximun number ({0}) of users has been reached'.format(self.maxNumUsers))
             return False
         
-        if not self.tigress.add_one(partition_id):
+        if not self.tigress.add_one(userId):
             return False
         
-        if [False for panda in self.pandas if not panda.add_one(partition_id)]:
-            return False
-            
-        return True
-    
-    def remove_one(self, partition_id):
-        if not self.tigress.remove_one(partition_id):
-            return False
-            
-        if [False for panda in self.pandas if not panda.remove_one(partition_id)]:
-            return False
-            
-        return True
-        
-    def load_one(self, partition_id):
-        if self.tigress.num_partition() >= self.maxNumPartitions:
-            logger.warning('maximun number ({0}) of partitions has been reached'.format(self.maxNumPartitions))
-            return False
-        
-        if not self.tigress.load_one(partition_id):
-            return False
-            
-        if [False for panda in self.pandas if not panda.load_one(partition_id)]:
+        if [False for panda in self.pandas if not panda.add_one(userId)]:
             return False
             
         return True
     
-    def unload_one(self, partition_id):
-        if not self.tigress.unload_one(partition_id):
+    def remove_one(self, userId):
+        if not self.tigress.remove_one(userId):
+            return False
+            
+        if [False for panda in self.pandas if not panda.remove_one(userId)]:
+            return False
+            
+        return True
+        
+    def load_one(self, userId):
+        if self.tigress.num_user() >= self.maxNumUsers:
+            logger.warning('maximun number ({0}) of users has been reached'.format(self.maxNumUsers))
             return False
         
-        if [False for panda in self.pandas if not panda.unload_one(partition_id)]:
+        if not self.tigress.load_one(userId):
+            return False
+            
+        if [False for panda in self.pandas if not panda.load_one(userId)]:
+            return False
+            
+        return True
+    
+    def unload_one(self, userId):
+        if not self.tigress.unload_one(userId):
+            return False
+        
+        if [False for panda in self.pandas if not panda.unload_one(userId)]:
             return False
         
         return True
         
-    def save_one(self, partition_id):
-        if not self.tigress.save_one(partition_id):
+    def save_one(self, userId):
+        if not self.tigress.save_one(userId):
             return False
             
-        if [False for panda in self.pandas if not panda.save_one(partition_id)]:
+        if [False for panda in self.pandas if not panda.save_one(userId)]:
             return False
         
         return True
 
 class SingleTurtle(Turtle):
     
-    def predict(self, partition_id, entity):
+    def predict(self, userId, entity):
         panda = self.pandas[0]
-        entity[panda.uid] = sigmoid(panda.predict(partition_id, entity))
-        if sign0(entity[panda.Uid]) > 0:
-            self.tigress.measure(partition_id, entity, panda.name)
+        entity[panda.uid] = sigmoid(panda.predict(userId, entity))
+        if sign0(entity[panda.uid]) > 0:
+            self.tigress.measure(userId, entity, panda.name)
             return panda.name
         else:
-            self.tigress.measure(partition_id, entity, constants.DEFAULT_NONE)
+            self.tigress.measure(userId, entity, constants.DEFAULT_NONE)
             return constants.DEFAULT_NONE
         
-    def train_one(self, partition_id):
+    def train_one(self, userId):
         panda = self.pandas[0]
         if panda.has_mantis():
-            panda.mantis.train_one(partition_id)
+            panda.mantis.train_one(userId)
     
 class RankingTurtle(Turtle):
         
-    def predict(self, partition_id, entity):
+    def predict(self, userId, entity):
         pass
     
-    def add_data(self, partition_id, entity):
+    def add_data(self, userId, entity):
         pass
     
-    def train_one(self, partition_id):
+    def train_one(self, userId):
         pass
     
-    def load_one(self, partition_id):
+    def load_one(self, userId):
         pass
     
-    def save_one(self, partition_id):
+    def save_one(self, userId):
         pass
     
 class SPNTurtle(Turtle):

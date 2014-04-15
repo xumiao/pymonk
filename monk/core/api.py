@@ -5,18 +5,19 @@ Created on Sun Mar 02 12:29:03 2014
 @author: pacif_000
 """
 import logging
+import logging.config
 from bson.objectid import ObjectId
 # to register classes in base
 import base, crane, entity, relation, tigress, turtle, mantis, panda
 import configuration
-import os
 import yaml
 from constants import *
 
 logger = logging.getLogger("monk.api")
+_config = None
 
 # utility APIs
-def get_UUID(objId=None):
+def UUID(objId=None):
     if objId is None:
         return ObjectId()
     elif isinstance(objId, basestring):
@@ -29,34 +30,51 @@ def yaml2json(yamlFileName):
         return yaml.load(yf)
     return None
     
-def initialize(config):
-    if isinstance(config, basestring):
-        config = configuration.Configuration(config)
+def initialize(config=None):
+    global _config
+    if config is not None:
+        if isinstance(config, basestring):
+            _config = configuration.Configuration(config)
+        else:
+            _config = config
     
-    pid = os.getpid()
-    logging.basicConfig(filename='{0}.{1}.log'.format(config.logFileName, pid),
-                        filemode='w',
-                        format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=eval(config.logLevel))
-#    logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(message)s',
-#                        datefmt='%m/%d/%Y %I:%M:%S %p',
-#                        level=eval(config.logLevel))
-    
-    return crane.initialize_storage(config)
+    logging.config.dictConfig(_config.loggingConfig)
+    logger.info('------start up------')
+    return crane.initialize_storage(_config)
 
 def exits():
+    logger.info('------end-----------')
     crane.exit_storage()
     return True
 
+def reloads():
+    global _config
+    if _config is None:
+        return
+    exits()
+    reload(base)
+    reload(crane)
+    reload(entity)
+    reload(relation)
+    reload(tigress)
+    reload(turtle)
+    reload(mantis)
+    reload(panda)
+    initialize()
+    
 # entity APIs
-def get_entities(query=None, fields=None):
+def get_entities(query=None, fields=None, collectionName=None):
+    crane.entityStore.set_collection_name(collectionName)
     return crane.entityStore.load_all(query, fields)
 
-def load_entities(entities):
+def load_entities(entities, collectionName=None):
+    if not entities:
+        crane.entityStore.set_collection_name(collectionName)
+        entities = [ent['_id'] for ent in crane.entityStore.load_all_in_ids({})]
     return crane.entityStore.load_or_create_all(entities)
 
-def load_entity(entity):
+def load_entity(entity, collectionName=None):
+    crane.entityStore.set_collection_name(collectionName)
     return crane.entityStore.load_or_create(entity)
     
 # project(turtle) management APIs
@@ -80,92 +98,110 @@ def remove_turtle(turtleId):
     pass
 
 # training APIs
-def add_data(turtleId, partitionId, ent):
+def add_data(turtleId, userId, ent):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
     if _turtle:
+        crane.entityStore.set_collection_name(_turtle.entityCollectionName)
+        if not _turtle.has_user(userId):
+            if _turtle.has_user_in_store(userId):
+                _turtle.load_one(userId)
+            else:
+                _turtle.add_one(userId)
+                _turtle.save_one(userId)
         ent = crane.entityStore.load_or_create(ent)
-        return _turtle.add_data(partitionId, ent)
+        return _turtle.add_data(userId, ent)
     else:
         logger.warning('can not find turtle by {0} to add data'.format(turtleId))
+        return False
 
-def train_one(turtleId, partitionId):
+def train_one(turtleId, userId):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
     if _turtle:
-        _turtle.train_one(partitionId)
-        _turtle.save_one(partitionId)
+        if not _turtle.has_user(userId):
+            if _turtle.has_user_in_store(userId):
+                _turtle.load_one(userId)
+            else:
+                logger.warning('can not find user by {0} in turtle {1}'.format(userId, turtleId))
+                return False
+        _turtle.train_one(userId)
+        _turtle.save_one(userId)
+        return True
     else:
         logger.warning('can not find turtle by {0} to train'.format(turtleId))
+        return False
 
-def aggregate(turtleId, partitionId):
+def aggregate(turtleId, userId):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
     if _turtle:
-        _turtle.aggregate(partitionId)
+        return _turtle.aggregate(userId)
     else:
         logger.warning('can not find turtle by {0} to aggregate'.format(turtleId))
+        return False
     
 # testing APIs
-def predict(turtleId, partitionId, entity):
+def predict(turtleId, userId, entity):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
     if _turtle:
-        return _turtle.predict(partitionId, entity)
+        return _turtle.predict(userId, entity)
     else:
         logger.warning('can not find turtle by {0} to predict'.format(turtleId))
+        return 0
 
-# partition APIs
-def has_one_in_store(turtleId, partitionId):
+# user APIs
+def has_one_in_store(turtleId, userId):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
     if _turtle:
-        return _turtle.has_partition_in_store(partitionId)
+        return _turtle.has_user_in_store(userId)
     else:
-        logger.warning('can not find turtle by {0} to save a partition'.format(turtleId))
+        logger.warning('can not find turtle by {0} to save a user'.format(turtleId))
         return False
 
-def has_one(turtleId, partitionId):
+def has_one(turtleId, userId):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
     if _turtle:
-        return _turtle.has_partition(partitionId)
+        return _turtle.has_user(userId)
     else:
-        logger.warning('can not find turtle by {0} to save a partition'.format(turtleId))
+        logger.warning('can not find turtle by {0} to save a user'.format(turtleId))
         return False
 
-def save_one(turtleId, partitionId):
+def save_one(turtleId, userId):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
     if _turtle:
-        return _turtle.save_one(partitionId)
+        return _turtle.save_one(userId)
     else:
-        logger.warning('can not find turtle by {0} to save a partition'.format(turtleId))
+        logger.warning('can not find turtle by {0} to save a user'.format(turtleId))
         return False
 
-def add_one(turtleId, partitionId):
+def add_one(turtleId, userId):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
     if _turtle:
-        return _turtle.add_one(partitionId)
+        return _turtle.add_one(userId)
     else:
-        logger.warning('can not find turtle by {0} to add a partition'.format(turtleId))
+        logger.warning('can not find turtle by {0} to add a user'.format(turtleId))
         return False
 
-def remove_one(turtleId, partitionId):
+def remove_one(turtleId, userId):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
     if _turtle:
-        return _turtle.remove_one(partitionId)
+        return _turtle.remove_one(userId)
     else:
-        logger.warning('can not find turtle by {0} to remove a partition'.format(turtleId))
+        logger.warning('can not find turtle by {0} to remove a user'.format(turtleId))
         return False
 
-def load_one(turtleId, partitionId):
+def load_one(turtleId, userId):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
     if _turtle:
-        return _turtle.load_one(partitionId)
+        return _turtle.load_one(userId)
     else:
-        logger.warning('can not find turtle by {0} to load a partition'.format(turtleId))
+        logger.warning('can not find turtle by {0} to load a user'.format(turtleId))
         return False
 
-def unload_one(turtleId, partitionId):
+def unload_one(turtleId, userId):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
     if _turtle:
-        return _turtle.unload_one(partitionId)
+        return _turtle.unload_one(userId)
     else:
-        logger.warning('can not find turtle by {0} to unload a partition'.format(turtleId))
+        logger.warning('can not find turtle by {0} to unload a user'.format(turtleId))
         return False
                 
 # meta query APIs
