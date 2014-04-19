@@ -29,8 +29,11 @@ def add_data():
                           req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                           ack_timeout=200)
         coll = mcl.DataSet['PMLExpression']
-
+        ii = 0      # max is 151413 (number of doc in PMLExpression)
         for ent in coll.find(None, {'_id':True, 'userId':True}, timeout=False):
+            if ii == 10:
+                break
+            ii += 1
             entity = str(ent['_id'])
             userId = ent['userId']
             encodedMessage = simplejson.dumps({'turtleId':turtleId,

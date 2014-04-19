@@ -16,7 +16,7 @@ loggingConfig:
         verbose : 
             format : '[%(asctime)s][%(process)-5d][%(name)-12s][%(levelname)-8s][%(lineno)-4d] : %(message)s'
         simple :
-            format : '[%(name)-12s][%(levelname)-8s][%(pid)s] : %(message)s'
+            format : '[%(name)-12s][%(levelname)-8s] : %(message)s'
     handlers :
         console :
             class : logging.StreamHandler
