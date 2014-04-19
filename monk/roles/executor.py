@@ -13,36 +13,36 @@ from bson.objectid import ObjectId
 monkapi.initialize("executor.yml")
 logger = logging.getLogger("monk.executor")
 
-def get_entities(self, args):
+def get_entities(args):
     args = simplejson.loads(args)
     query = args.get('query')
     fields = args.get('fields')
     return monkapi.get_entities(query, fields)
 
-def load_entities(self, args):
+def load_entities(args):
     args = simplejson.loads(args)
     entities = args.get('entities')
     return monkapi.load_entities(entities)
 
-def load_entity(self, args):
+def load_entity(args):
     args = simplejson.loads(args)
     entity = args.get('entity')
     return monkapi.load_entity(entity)
     
-def find_turtle(self, args):
+def find_turtle(args):
     args = simplejson.loads(args)
     turtleScript = args.get('turtleScript')
     return monkapi.find_turtle(turtleScript)
 
-def save_turtle(self, args):
+def save_turtle(args):
     args = simplejson.loads(args)
     turtleId = args.get('turtleId')
     return monkapi.save_turtle(ObjectId(turtleId))
 
-def remove_turtle(self, args):
+def remove_turtle(args):
     pass
 
-def add_data(self, args):
+def add_data(args):
     args = simplejson.loads(args)
     turtleId = args.get('turtleId')
     userId = args.get('userId')
@@ -51,7 +51,7 @@ def add_data(self, args):
     ent = args.get('ent')
     return monkapi.add_data(ObjectId(turtleId), userId, ent)
 
-def train_one(self, args):
+def train_one(args):
     args = simplejson.loads(args)
     turtleId = args.get('turtleId')
     userId = args.get('userId')
@@ -59,7 +59,7 @@ def train_one(self, args):
         return False
     return monkapi.train_one(ObjectId(turtleId), userId)
 
-def aggregate(self, args):
+def aggregate(args):
     args = simplejson.loads(args)
     turtleId = args.get('turtleId')
     userId = args.get('userId')
@@ -67,7 +67,7 @@ def aggregate(self, args):
         return False
     return monkapi.aggregate(ObjectId(turtleId), userId)
     
-def predict(self, args):
+def predict(args):
     args = simplejson.loads(args)
     turtleId = args.get('turtleId')
     userId = args.get('userId')
@@ -76,8 +76,7 @@ def predict(self, args):
         return False
     return monkapi.predict(ObjectId(turtleId), userId, entity)
     
-<<<<<<< HEAD
-def has_one_in_store(self, args):
+def has_one_in_store(args):
     args = simplejson.loads(args)
     turtleId = args.get('turtleId')
     userId = args.get('userId')
@@ -85,7 +84,7 @@ def has_one_in_store(self, args):
         return False
     return monkapi.has_one_in_store(ObjectId(turtleId), userId)
 
-def has_one(self, args):
+def has_one(args):
     args = simplejson.loads(args)
     turtleId = args.get('turtleId')
     userId = args.get('userId')
@@ -93,7 +92,7 @@ def has_one(self, args):
         return False
     return monkapi.has_one(ObjectId(turtleId), userId)
 
-def save_one(self, args):
+def save_one(args):
     args = simplejson.loads(args)
     turtleId = args.get('turtleId')
     userId = args.get('userId')
@@ -101,7 +100,7 @@ def save_one(self, args):
         return False
     return monkapi.save_one(ObjectId(turtleId), userId)
 
-def add_one(self, args):
+def add_one(args):
     args = simplejson.loads(args)
     turtleId = args.get('turtleId')
     userId = args.get('userId')
@@ -109,7 +108,7 @@ def add_one(self, args):
         return False
     return monkapi.add_one(ObjectId(turtleId), userId)
 
-def remove_one(self, args):
+def remove_one(args):
     args = simplejson.loads(args)
     turtleId = args.get('turtleId')
     userId = args.get('userId')
@@ -117,7 +116,7 @@ def remove_one(self, args):
         return False
     return monkapi.remove_one(ObjectId(turtleId), userId)
 
-def load_one(self, args):
+def load_one(args):
     args = simplejson.loads(args)
     turtleId = args.get('turtleId')
     userId = args.get('userId')
@@ -125,7 +124,7 @@ def load_one(self, args):
         return False
     return monkapi.load_one(ObjectId(turtleId), userId)
 
-def unload_one(self, args):
+def unload_one(args):
     args = simplejson.loads(args)
     turtleId = args.get('turtleId')
     userId = args.get('userId')
@@ -133,12 +132,12 @@ def unload_one(self, args):
         return False
     return monkapi.unload_one(ObjectId(turtleId), userId)
                 
-def find_type(self, args):
+def find_type(args):
     args = simplejson.loads(args)
     typeName = args.get('typeName')
     return monkapi.find_type(typeName)
 
-def recommend(self, args):
+def recommend(args):
     args = simplejson.loads(args)
     turtleId = args.get('turtleId')
     userContext = args.get('userContext')
@@ -159,7 +158,7 @@ def recommend(self, args):
     results.sort(reverse=True)
     return simplejson.dumps([{'id':str(result[1]), 'score':result[0]} for result in results])
 
-def hello(self):
+def hello():
     return simplejson.dumps({'result':'hello world!'})
 
 def exits():
