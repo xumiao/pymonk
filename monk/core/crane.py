@@ -22,6 +22,8 @@ class Crane(object):
             return
             
         logger.info('initializing {0} '.format(collectionName))
+        self._defaultCollectionName = collectionName
+        self._currentCollectionName = collectionName
         self._database = database
         self._coll = self._database[collectionName]
         self._fields = fields        
@@ -51,6 +53,15 @@ class Crane(object):
     def __erase_all(self, objs):
         map(self.__erase_one, objs)
 
+    def set_collection_name(self, collectionName):
+        if collectionName:
+            self._coll = self._database[collectionName]
+            self._currentCollectionName = collectionName
+    
+    def reset_collection_name(self, collectionName):
+        self._coll = self._database[self._defaultCollectionName]
+        self._currentCollectionName = self._defaultCollectionName
+        
     def load_or_create(self, obj):
         if not obj:
             return None

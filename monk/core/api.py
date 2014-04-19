@@ -63,15 +63,18 @@ def reloads():
     initialize()
     
 # entity APIs
-def get_entities(query=None, fields=None):
+def get_entities(query=None, fields=None, collectionName=None):
+    crane.entityStore.set_collection_name(collectionName)
     return crane.entityStore.load_all(query, fields)
 
-def load_entities(entities):
+def load_entities(entities, collectionName=None):
     if not entities:
+        crane.entityStore.set_collection_name(collectionName)
         entities = [ent['_id'] for ent in crane.entityStore.load_all_in_ids({})]
     return crane.entityStore.load_or_create_all(entities)
 
-def load_entity(entity):
+def load_entity(entity, collectionName=None):
+    crane.entityStore.set_collection_name(collectionName)
     return crane.entityStore.load_or_create(entity)
     
 # project(turtle) management APIs
@@ -98,6 +101,7 @@ def remove_turtle(turtleId):
 def add_data(turtleId, userId, ent):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
     if _turtle:
+        crane.entityStore.set_collection_name(_turtle.entityCollectionName)
         if not _turtle.has_user(userId):
             if _turtle.has_user_in_store(userId):
                 _turtle.load_one(userId)

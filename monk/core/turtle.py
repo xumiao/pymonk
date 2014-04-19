@@ -41,6 +41,8 @@ class Turtle(base.MONKObject):
             self.pMaxPathLength = 1
         if 'pMaxInferenceSteps' not in self.__dict__:
             self.pMaxInferenceSteps = 1
+        if "entityCollectionName" not in self.__dict__:
+            self.entityCollectionName = constants.DEFAULT_EMPTY
         if "maxNumUsers" not in self.__dict__:
             self.maxNumUsers = 100
         if "requires" not in self.__dict__:
