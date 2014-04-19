@@ -68,7 +68,7 @@ class MONKObjectFactory(object):
         self.factory[MONKObjectClass.__name__] = MONKObjectClass.create
 
     def find(self, name):
-        return [key for key in self.factory.iterkeys if key.find(name) >= 0]
+        return [key for key in self.factory.iterkeys() if key.find(name) >= 0]
         
     def decode(self, generic):
         return self.factory[generic[constants.MONK_TYPE]](generic)

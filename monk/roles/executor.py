@@ -159,7 +159,10 @@ class Executor(object):
         results = [(monkapi.predict(turtleId, userId, ent), ent._id) for ent in ents]
         results.sort(reverse=True)
         return simplejson.dumps([{'id':str(result[1]), 'score':result[0]} for result in results])
-
+    
+    def hello(self, args):
+        return simplejson.dumps({'result':'hello world!'})
+        
 s = zerorpc.Server(Executor())
 s.bind("tcp://0.0.0.0:4242")
 try:
