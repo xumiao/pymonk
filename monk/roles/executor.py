@@ -76,6 +76,7 @@ def predict(self, args):
         return False
     return monkapi.predict(ObjectId(turtleId), userId, entity)
     
+<<<<<<< HEAD
 def has_one_in_store(self, args):
     args = simplejson.loads(args)
     turtleId = args.get('turtleId')
@@ -158,10 +159,9 @@ def recommend(self, args):
     results.sort(reverse=True)
     return simplejson.dumps([{'id':str(result[1]), 'score':result[0]} for result in results])
 
-s = zerorpc.Server(Executor())
-s.bind("tcp://0.0.0.0:4242")
-try:
-    s.run()
-finally:
+def hello(self):
+    return simplejson.dumps({'result':'hello world!'})
+
+def exits():
     monkapi.exits()
-    s.close()
+    exit()
