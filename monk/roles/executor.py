@@ -5,12 +5,18 @@ Execute turtle for each entity
 @author: pacif_000
 """
 import monk.core.api as monkapi
-import zerorpc
+from monk.core.configuration import Configuration
 import logging
 import simplejson
+import os
 from bson.objectid import ObjectId
 
-monkapi.initialize("executor.yml")
+config = Configuration("executor.yml")
+pid = os.getpid()
+fn = config.loggingConfig['handlers']['files']['filename']
+config.loggingConfig['handlers']['files']['filename'] = '.'.join([fn[:-4],'remote',str(pid),'log'])
+
+monkapi.initialize(config)
 logger = logging.getLogger("monk.executor")
 
 def get_entities(args):
