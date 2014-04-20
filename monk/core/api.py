@@ -97,6 +97,14 @@ def save_turtle(turtleId):
 def remove_turtle(turtleId):
     pass
 
+def entity_collection(turtleId):
+    _turtle = crane.turtleStore.load_one_by_id(turtleId)
+    if _turtle:
+        return _turtle.entityCollectionName
+    else:
+        logger.warning('can not find turtle {0} to get entity collection'.format(turtleId))
+        return None
+        
 # training APIs
 def add_data(turtleId, userId, ent):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
