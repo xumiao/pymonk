@@ -250,7 +250,7 @@ tigressStore = Crane()
 
 def create_db(connectionString, databaseName):
     try:
-        client = MongoClient(connectionString)
+        client = MongoClient(connectionString, connectionTimeoutMS=None)
         database = client[databaseName]
     except Exception as e:
         logger.warning(e.message)
