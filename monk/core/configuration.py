@@ -51,6 +51,7 @@ class Configuration(object):
         self.mantisFields[constants.DATA] = False
         if self.entityFields is None:
             self.entityFields = {}
+        self.entityFields['_id'] = True
         self.entityFields[constants.MONK_TYPE] = True
         self.entityFields[constants.FEATURES] = True
         self.entityFields[constants.RAWS] = True

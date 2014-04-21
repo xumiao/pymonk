@@ -5,35 +5,28 @@ The general object used in MONK
 @author: xm
 """
 from ..math.flexible_vector import FlexibleVector
-from datetime import datetime
 import base, crane
-import constants
+import constants as cons
 
 class Entity(base.MONKObject):
 
     def __restore__(self):
         super(Entity, self).__restore__()
-        if constants.FEATURES in self.__dict__:
-            self._features = FlexibleVector(generic=self._features)
-        else:
-            self._features = FlexibleVector()
-        if constants.RAWS not in self.__dict__:
-            self._raws = {}
-
+        self._default(cons.FEATURES, [])
+        self._default(cons.RAWS, {})
+        self._features = FlexibleVector(generic=self._features)
+        
     def generic(self):
-        result = {}
-        result['creator'] = self.creator
-        result['createdTime'] = self.createdTime
-        result['lastModified'] = datetime.now()
-        result[constants.FEATURES] = self._features.generic()
-        result[constants.RAWS] = self._raws
+        result = super(Entity, self).generic()
+        result[cons.FEATURES] = self._features.generic()
         return result
     
     def save(self,**kwargs):
         if kwargs and 'fields' in kwargs:
             fields = kwargs['fields']
         else:
-            fields = self.generic()
+            fields = {cons.FEATURES:self._features.generic(),
+                      cons.RAWS:self._raws}
         crane.entityStore.update_one_in_fields(self, fields)
         
     def __contains__(self, key):
@@ -49,11 +42,10 @@ class Entity(base.MONKObject):
         if rawKey in self._raws:
             return self._raws[rawKey]
         else:
-            return constants.DEFAULT_EMPTY
+            return cons.DEFAULT_EMPTY
 
     def setRaw(self, rawKey, rawValue):
         if isinstance(rawKey, basestring):
-            self._raws[
-                rawKey.replace('.', '\uff0e').replace('$', '\uff04')] = rawValue
+            self._raws[rawKey.replace('.', '\uff0e').replace('$', '\uff04')] = rawValue
 
 base.register(Entity)

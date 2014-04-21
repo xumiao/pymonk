@@ -15,12 +15,15 @@ from deffered_resource import DefferedResource
 import monk.core.api as monkapi
 import monk.core.constants as cons
 import monk.core.configuration as Config
-from monk.utils.utils import TimeEncoder
 
 config = Config.Configuration("executor.yml", "executorREST", str(os.getpid()))
 monkapi.initialize(config)
 logger = logging.getLogger("monk.executor")
 
+class MonkAPI(DefferedResource):
+    def __del__(self):
+        monkapi.exits()
+        
 class Recommend(DefferedResource):
     isLeaf = True
     def __init__(self, turtleId=None, delayTime=0.0):
@@ -48,7 +51,7 @@ class Recommend(DefferedResource):
             entityCollectionName = monkapi.entity_collection(turtleId)
             ents = monkapi.load_entities(entityIds, entityCollectionName)
             # @todo: add user_context features
-            results = [(monkapi.predict(turtleId, userId, ent), ent.generic()) for ent in ents]
+            results = [(monkapi.predict(turtleId, userId, ent), str(ent._id_)) for ent in ents]
             results.sort(reverse=True)
         except Exception as e:
             logger.error(e.message)
@@ -61,8 +64,8 @@ class Recommend(DefferedResource):
         results = self._recommend(request.args)
         simplejson.dump(
         {
-            "results":[result[1] for result in results]
-        }, request, cls=TimeEncoder)
+            "results":results
+        }, request)
         request.finish()
         
     def _delayedRender_POST(self, request):
@@ -70,11 +73,11 @@ class Recommend(DefferedResource):
         results = self._recommend(request.args)
         simplejson.dump(
         {
-            "results":[result[1] for result in results]
-        }, request, cls=TimeEncoder)
+            "results":results
+        }, request)
         request.finish()
 
-root = DefferedResource()
+root = MonkAPI()
 root.putChild("recommend", Recommend())
 root.putChild("recommendTags", Recommend("5338c7562524830c64a2d599"))
 

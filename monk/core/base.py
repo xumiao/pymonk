@@ -5,7 +5,7 @@ The project object
 @author: xm
 """
 import logging
-import constants
+import constants as cons
 from datetime import datetime
 from bson.objectid import ObjectId
 logger = logging.getLogger("monk.base")
@@ -26,22 +26,22 @@ class MONKObject(object):
             logger.warning('restoration failed. {0}'.format(e.message))
 
     def __restore__(self):
-        if '_id' not in self.__dict__:
-            self._id = ObjectId()
-        if 'creator' not in self.__dict__:
-            self.creator = constants.DEFAULT_CREATOR
-        if 'createdTime' not in self.__dict__:
-            self.createdTime = datetime.now()
-        if 'lastModified' not in self.__dict__:
-            self.lastModified = datetime.now()
-
+        self._default(cons.ID, ObjectId())
+        self._default(cons.CREATOR, cons.DEFAULT_CREATOR)
+        self._default(cons.CREATED_TIME, datetime.now())
+        self._default(cons.LAST_MODIFIED, datetime.now())
+    
+    def _default(self, key, value):
+        if key not in self.__dict__:
+            self.__dict__[key] = value
+            
     def generic(self):
         """ A shallow copy of the __dict__, 
         and make neccessary conversion as needed"""
         result = {}
         result.update(self.__dict__)
-        del result['_id']
-        result['lastModified'] = datetime.now()
+        del result[cons.ID]
+        result[cons.LAST_MODIFIED] = datetime.now()
         self.appendType(result)
         return result
         
@@ -51,7 +51,7 @@ class MONKObject(object):
         
     @classmethod
     def appendType(cls, result):
-        result[constants.MONK_TYPE] = cls.__name__
+        result[cons.MONK_TYPE] = cls.__name__
 
     @classmethod
     def create(cls, generic):
@@ -62,7 +62,6 @@ class MONKObjectFactory(object):
 
     def __init__(self):
         self.factory = {}
-        self.factory['MONKObject'] = MONKObject.create
 
     def register(self, MONKObjectClass):
         self.factory[MONKObjectClass.__name__] = MONKObjectClass.create
@@ -71,15 +70,15 @@ class MONKObjectFactory(object):
         return [key for key in self.factory.iterkeys() if key.find(name) >= 0]
         
     def decode(self, generic):
-        return self.factory[generic[constants.MONK_TYPE]](generic)
+        return self.factory[generic[cons.MONK_TYPE]](generic)
 
     def clone(self, obj, modification = {}):
         try:
             generic = obj.generic()
-            generic['_id'] = ObjectId()
-            generic['creator'] = constants.DEFAULT_CREATOR
-            generic['createdTime'] = datetime.now()
-            generic['lastModified'] = datetime.now()            
+            generic[cons.ID] = ObjectId()
+            generic[cons.CREATOR] = cons.DEFAULT_CREATOR
+            generic[cons.CREATED_TIME] = datetime.now()
+            generic[cons.LAST_MODIFIED] = datetime.now()            
             generic.update(modification)
             return self.decode(generic)
         except Exception as e:
@@ -90,4 +89,5 @@ monkFactory = MONKObjectFactory()
 
 def register(MONKObjectClass):
     monkFactory.register(MONKObjectClass)
-    
+
+register(MONKObject)
