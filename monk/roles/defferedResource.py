@@ -10,6 +10,7 @@ from twisted.internet import reactor
 
 class DefferedResource(Resource):
     def __init__(self, delayTime = 0.0):
+        Resource.__init__(self)
         self.delayTime = delayTime
 
     def render_GET(self, request):
