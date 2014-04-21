@@ -4,7 +4,7 @@ Created on Sat Apr 19 16:20:55 2014
 
 @author: pacif_000
 """
-from defferedResource import DefferedResource
+from monk.roles.defferedResource import DefferedResource
 import simplejson
 import logging
 import monk.core.api as monkapi
