@@ -24,16 +24,21 @@ class Recommend(DefferedResource):
     isLeaf = True
     def __init__(self, turtleId=None, delayTime=0.0):
         DefferedResource.__init__(self, delayTime)
-        self.defaultTurtleId = [turtleId]
-        self.defaultUserContext = [{'userId' : cons.DEFAULT_USER}]
+        self.defaultTurtleId = turtleId
+        self.defaultUserContext = {'userId' : cons.DEFAULT_USER}
         
     def _recommend(self, args):
-        turtleId = args.get('turtleId', self.defaultTurtleId)[0]
-        userContext = args.get('userContext', self.defaultUserContext)[0]
-        entityIds = args.get('entityIds')
         try:
-            turtleId = ObjectId(turtleId)
-            userId = userContext.get('userId', cons.DEFAULT_USER)
+            if 'turtleId' in args:
+                turtleId = ObjectId(args['turtleId'][0])
+            else:
+                turtleId = ObjectId(self.defaultTurtleId)
+            if 'userContext' in args:
+                userContext = simplejson.loads(args.get('userContext')[0])
+            else:
+                userContext = self.defaultUserContext
+            entityIds = args.get('entityIds')
+            userId = userContext['userId']
             if not monkapi.has_one(turtleId, userId):
                 if not monkapi.has_one_in_store(turtleId, userId):
                     monkapi.add_one(turtleId, userId)
@@ -46,7 +51,7 @@ class Recommend(DefferedResource):
             results.sort(reverse=True)
         except Exception as e:
             logger.error(e.message)
-            logger.error('can not parse request args'.format(args))
+            logger.error('can not parse request {0}'.format(args))
             results = []
         return results
         
