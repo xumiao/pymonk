@@ -11,7 +11,7 @@ from bson.objectid import ObjectId
 from twisted.web import server
 from twisted.internet import reactor
 
-from monk.roles.defferedResource import DefferedResource
+from defferedResource import DefferedResource
 import monk.core.api as monkapi
 import monk.core.constants as cons
 from monk.core.configuration import Configuration
