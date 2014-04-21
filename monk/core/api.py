@@ -216,3 +216,5 @@ def unload_one(turtleId, userId):
 def find_type(typeName):
     return base.monkFactory.find(typeName)
 
+def show_help():
+    return {'help':'hello'}

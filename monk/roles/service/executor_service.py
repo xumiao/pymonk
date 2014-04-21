@@ -5,34 +5,53 @@ Created on Sat Apr 19 16:20:55 2014
 @author: pacif_000
 """
 from defferedResource import DefferedResource
-from twisted.web.resource import Resource
 import simplejson
 import logging
 import monk.core.api as monkapi
 from monk.core.configuration import Configuration
+import monk.core.constants as cons
 import os
 from bson.objectid import ObjectId
 
 config = Configuration("executor.yml")
-pid = os.getpid()
-fn = config.loggingConfig['handlers']['files']['filename']
-config.loggingConfig['handlers']['files']['filename'] = '.'.join([fn[:-4],'executor_rest',str(pid),'log'])
-
+config.set_log_file('executorREST', str(os.getpid()))
 monkapi.initialize(config)
 logger = logging.getLogger("monk.executor")
 
-class Recommend(DefferedResource):
+class MONKAPI(DefferedResource):
+    def __init__(self, delayTime=0.0):
+        DefferedResource.__init__(self, delayTime)
     
+    def _delayedRender_GET(self, request):
+        simplejson.dump(
+        {
+            "results":monkapi.show_help()
+        }, request)
+        request.finish()
+        
+    def _delayedRender_POST(self, request):
+        simplejson.dump(
+        {
+            "results":monkapi.show_help()
+        }, request)
+        request.finish()
+        
+class Recommend(DefferedResource):
+    def __init__(self, turtleId=None, delayTime=0.0):
+        DefferedResource.__init__(self, delayTime)
+        self.defaultTurtleId = turtleId
+        self.defaultUserContext = {'userId' : cons.DEFAULT_USER}
+        
     def _recommend(self, args):
-        turtleId = args.get('turtleId')
-        userContext = args.get('userContext')
+        turtleId = args.get('turtleId', self.defaultTurtleId)
+        userContext = args.get('userContext', self.defaultUserContext)
         entityIds = args.get('entityIds')
-        if not turtleId or not userContext:
-            logger.error('turtleId {0} userContext {1}'.format(turtleId, userContext))
+        if not turtleId:
+            logger.error('no turlte id is given')
             results = []
         else:
             turtleId = ObjectId(turtleId)
-            userId = userContext['userId']
+            userId = userContext.get('userId', cons.DEFAULT_USER)
             if not monkapi.has_one(turtleId, userId):
                 if not monkapi.has_one_in_store(turtleId, userId):
                     monkapi.add_one(turtleId, userId)
@@ -65,5 +84,6 @@ class Recommend(DefferedResource):
         }, request)
         request.finish()
         
-resource = Resource()
-resource.putChild("recommend", Recommend())
+root = MONKAPI()
+root.putChild("recommend", Recommend())
+root.putChild("recommendTags", Recommend())

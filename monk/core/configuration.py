@@ -36,7 +36,8 @@ class Configuration(object):
         self.kafkaPartitions = [1]
         self.monkHost = socket.gethostbyname(socket.gethostname())
         self.monkPort = 8887
-                
+        
+        self.logFileNameStub = 'monk'
         if configurationFileName:
             with open(configurationFileName, 'r') as conf:
                 self.__dict__.update(yaml.load(conf))
@@ -53,4 +54,7 @@ class Configuration(object):
         self.entityFields[constants.MONK_TYPE] = True
         self.entityFields[constants.FEATURES] = True
         self.entityFields[constants.RAWS] = True
+        
+    def set_log_file(self, name, pid):
+        self.loggingConfig['handlers']['files']['filename'] = '.'.join([self.logFileNameStub, name, pid, 'log'])
         
