@@ -61,7 +61,7 @@ class Recommend(DefferedResource):
         simplejson.dump(
         {
             "results":[result[1] for result in results]
-        }, request)
+        }, request, skipkeys =True)
         request.finish()
         
     def _delayedRender_POST(self, request):
@@ -70,7 +70,7 @@ class Recommend(DefferedResource):
         simplejson.dump(
         {
             "results":[result[1] for result in results]
-        }, request)
+        }, request, skipkeys =True)
         request.finish()
 
 root = DefferedResource()
