@@ -21,6 +21,8 @@ monkapi.initialize(config)
 logger = logging.getLogger("monk.executor")
 
 class MONKAPI(DefferedResource):
+    isLeaf = True
+    
     def __init__(self, delayTime=0.0):
         DefferedResource.__init__(self, delayTime)
     
@@ -44,6 +46,8 @@ class MONKAPI(DefferedResource):
         request.finish()
         
 class Recommend(DefferedResource):
+    isLeaf = True
+    
     def __init__(self, turtleId=None, delayTime=0.0):
         DefferedResource.__init__(self, delayTime)
         self.defaultTurtleId = turtleId
@@ -97,6 +101,6 @@ root = MONKAPI()
 root.putChild("recommend", Recommend())
 root.putChild("recommendTags", Recommend("5338c7562524830c64a2d599"))
 
-site = server.Site(root)
+site = server.Site(root, "web.log")
 reactor.listenTCP(8080, site)
 reactor.run()

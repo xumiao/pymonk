@@ -37,7 +37,7 @@ class Configuration(object):
         self.monkHost = socket.gethostbyname(socket.gethostname())
         self.monkPort = 8887
         
-        self.logFileNameStub = 'monk'
+        self.logFileNameStub = 'logs/monk'
         if configurationFileName:
             with open(configurationFileName, 'r') as conf:
                 self.__dict__.update(yaml.load(conf))
