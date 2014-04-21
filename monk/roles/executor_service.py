@@ -86,4 +86,4 @@ class Recommend(DefferedResource):
         
 root = MONKAPI()
 root.putChild("recommend", Recommend())
-root.putChild("recommendTags", Recommend())
+root.putChild("recommendTags", Recommend("5338c7562524830c64a2d599"))

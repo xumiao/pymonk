@@ -1,2 +1,0 @@
-cp recommend_tags.py recommend_tags.rpy
-python twistd.py web --path=. --ignore-ext=py --port 80
