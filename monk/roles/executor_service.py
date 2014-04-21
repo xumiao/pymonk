@@ -14,9 +14,9 @@ from twisted.internet import reactor
 from defferedResource import DefferedResource
 import monk.core.api as monkapi
 import monk.core.constants as cons
-from monk.core.configuration import Configuration
+import monk.core.configuration as Config
 
-config = Configuration("executor.yml", "executorREST", str(os.getpid()))
+config = Config.Configuration("executor.yml", "executorREST", str(os.getpid()))
 monkapi.initialize(config)
 logger = logging.getLogger("monk.executor")
 
