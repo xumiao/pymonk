@@ -20,38 +20,16 @@ config = Config.Configuration("executor.yml", "executorREST", str(os.getpid()))
 monkapi.initialize(config)
 logger = logging.getLogger("monk.executor")
 
-class MONKAPI(DefferedResource):
-    def __init__(self, delayTime=0.0):
-        DefferedResource.__init__(self, delayTime)
-    
-    def __del__(self):
-        monkapi.exits()
-        
-    def _delayedRender_GET(self, request):
-        logger.info('request {0}'.format(request))
-        simplejson.dump(
-        {
-            "results":monkapi.show_help()
-        }, request)
-        request.finish()
-        
-    def _delayedRender_POST(self, request):
-        logger.info('request {0}'.format(request))
-        simplejson.dump(
-        {
-            "results":monkapi.show_help()
-        }, request)
-        request.finish()
-        
 class Recommend(DefferedResource):
+    isLeaf = True
     def __init__(self, turtleId=None, delayTime=0.0):
         DefferedResource.__init__(self, delayTime)
-        self.defaultTurtleId = turtleId
-        self.defaultUserContext = {'userId' : cons.DEFAULT_USER}
+        self.defaultTurtleId = [turtleId]
+        self.defaultUserContext = [{'userId' : cons.DEFAULT_USER}]
         
     def _recommend(self, args):
-        turtleId = args.get('turtleId', self.defaultTurtleId)
-        userContext = args.get('userContext', self.defaultUserContext)
+        turtleId = args.get('turtleId', self.defaultTurtleId)[0]
+        userContext = args.get('userContext', self.defaultUserContext)[0]
         entityIds = args.get('entityIds')
         if not turtleId:
             logger.error('no turlte id is given')
@@ -72,10 +50,8 @@ class Recommend(DefferedResource):
         return results
         
     def _delayedRender_GET(self, request):
-        logger.info('request {0}'.format(request))
-        query = request.content.getvalue()
-        args = simplejson.loads(query)
-        results = self._recommend(args)
+        logger.info('request {0}'.format(request.args))
+        results = self._recommend(request.args)
         simplejson.dump(
         {
             "results":[result[1] for result in results]
@@ -83,20 +59,18 @@ class Recommend(DefferedResource):
         request.finish()
         
     def _delayedRender_POST(self, request):
-        logger.info('request {0}'.format(request))
-        query = request.content.getvalue()
-        args = simplejson.loads(query)
-        results = self._recommend(args)
+        logger.info('request {0}'.format(request.args))
+        results = self._recommend(request.args)
         simplejson.dump(
         {
             "results":[result[1] for result in results]
         }, request)
         request.finish()
 
-root = MONKAPI()
+root = DefferedResource()
 root.putChild("recommend", Recommend())
 root.putChild("recommendTags", Recommend("5338c7562524830c64a2d599"))
 
-site = server.Site(root)
+site = server.Site(root, "web.log")
 reactor.listenTCP(8080, site)
 reactor.run()
