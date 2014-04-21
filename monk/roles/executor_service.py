@@ -31,10 +31,7 @@ class Recommend(DefferedResource):
         turtleId = args.get('turtleId', self.defaultTurtleId)[0]
         userContext = args.get('userContext', self.defaultUserContext)[0]
         entityIds = args.get('entityIds')
-        if not turtleId:
-            logger.error('no turlte id is given')
-            results = []
-        else:
+        try:
             turtleId = ObjectId(turtleId)
             userId = userContext.get('userId', cons.DEFAULT_USER)
             if not monkapi.has_one(turtleId, userId):
@@ -47,6 +44,10 @@ class Recommend(DefferedResource):
             # @todo: add user_context features
             results = [(monkapi.predict(turtleId, userId, ent), ent) for ent in ents]
             results.sort(reverse=True)
+        except Exception as e:
+            logger.error(e.message)
+            logger.error('can not parse request args'.format(args))
+            results = []
         return results
         
     def _delayedRender_GET(self, request):
