@@ -47,7 +47,7 @@ class Recommend(DefferedResource):
             entityCollectionName = monkapi.entity_collection(turtleId)
             ents = monkapi.load_entities(entityIds, entityCollectionName)
             # @todo: add user_context features
-            results = [(monkapi.predict(turtleId, userId, ent), ent) for ent in ents]
+            results = [(monkapi.predict(turtleId, userId, ent), ent.generic()) for ent in ents]
             results.sort(reverse=True)
         except Exception as e:
             logger.error(e.message)
