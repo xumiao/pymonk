@@ -33,3 +33,4 @@ loggingConfig:
     root :
         level : DEBUG
         handlers : [console, files]
+        
