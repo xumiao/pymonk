@@ -7,6 +7,8 @@ Created on Mon Nov 11 08:19:09 2013
 from twisted.web.resource import Resource
 from twisted.web.server import NOT_DONE_YET
 from twisted.internet import reactor
+import logging
+logger = logging.getLogger('monk.deffered_resource')
 
 class DefferedResource(Resource):
     def __init__(self, delayTime = 0.0):
@@ -14,6 +16,7 @@ class DefferedResource(Resource):
         self.delayTime = delayTime
 
     def render_GET(self, request):
+        logger.info('request {0}'.format(request))
         request.setHeader('Content-Type', 'application/json')
         request.setHeader('Access-Control-Allow-Origin', '*')
         request.setHeader('Access-Control-Allow-Methods', 'GET')
@@ -23,6 +26,7 @@ class DefferedResource(Resource):
         return NOT_DONE_YET
     
     def render_POST(self, request):
+        logger.info('request {0}'.format(request))
         request.setHeader('Content-Type', 'application/json')
         request.setHeader('Access-Control-Allow-Origin', '*')
         request.setHeader('Access-Control-Allow-Methods', 'POST')

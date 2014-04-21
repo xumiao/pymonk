@@ -11,7 +11,7 @@ from bson.objectid import ObjectId
 from twisted.web import server
 from twisted.internet import reactor
 
-from defferedResource import DefferedResource
+from deffered_resource import DefferedResource
 import monk.core.api as monkapi
 import monk.core.constants as cons
 import monk.core.configuration as Config
@@ -28,6 +28,7 @@ class MONKAPI(DefferedResource):
         monkapi.exits()
         
     def _delayedRender_GET(self, request):
+        logger.info('request {0}'.format(request))
         simplejson.dump(
         {
             "results":monkapi.show_help()
@@ -35,6 +36,7 @@ class MONKAPI(DefferedResource):
         request.finish()
         
     def _delayedRender_POST(self, request):
+        logger.info('request {0}'.format(request))
         simplejson.dump(
         {
             "results":monkapi.show_help()
@@ -70,6 +72,7 @@ class Recommend(DefferedResource):
         return results
         
     def _delayedRender_GET(self, request):
+        logger.info('request {0}'.format(request))
         query = request.content.getvalue()
         args = simplejson.loads(query)
         results = self._recommend(args)
@@ -80,6 +83,7 @@ class Recommend(DefferedResource):
         request.finish()
         
     def _delayedRender_POST(self, request):
+        logger.info('request {0}'.format(request))
         query = request.content.getvalue()
         args = simplejson.loads(query)
         results = self._recommend(args)
