@@ -4,14 +4,17 @@ Created on Sat Apr 19 16:20:55 2014
 
 @author: pacif_000
 """
-from monk.roles.defferedResource import DefferedResource
+import os
 import simplejson
 import logging
-import monk.core.api as monkapi
-from monk.core.configuration import Configuration
-import monk.core.constants as cons
-import os
 from bson.objectid import ObjectId
+from twisted.web import server
+from twisted.internet import reactor
+
+from monk.roles.defferedResource import DefferedResource
+import monk.core.api as monkapi
+import monk.core.constants as cons
+from monk.core.configuration import Configuration
 
 config = Configuration("executor.yml")
 config.set_log_file('executorREST', str(os.getpid()))
@@ -22,6 +25,9 @@ class MONKAPI(DefferedResource):
     def __init__(self, delayTime=0.0):
         DefferedResource.__init__(self, delayTime)
     
+    def __del__(self):
+        monkapi.exits()
+        
     def _delayedRender_GET(self, request):
         simplejson.dump(
         {
@@ -83,7 +89,11 @@ class Recommend(DefferedResource):
             "results":[result[1] for result in results]
         }, request)
         request.finish()
-        
+
 root = MONKAPI()
 root.putChild("recommend", Recommend())
 root.putChild("recommendTags", Recommend("5338c7562524830c64a2d599"))
+
+site = server.Site(root)
+reactor.listenTCP(80, site)
+reactor.run()
