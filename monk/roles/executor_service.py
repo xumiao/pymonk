@@ -15,6 +15,7 @@ from deffered_resource import DefferedResource
 import monk.core.api as monkapi
 import monk.core.constants as cons
 import monk.core.configuration as Config
+from monk.utils.utils import TimeEncoder
 
 config = Config.Configuration("executor.yml", "executorREST", str(os.getpid()))
 monkapi.initialize(config)
@@ -61,7 +62,7 @@ class Recommend(DefferedResource):
         simplejson.dump(
         {
             "results":[result[1] for result in results]
-        }, request, skipkeys =True)
+        }, request, cls=TimeEncoder)
         request.finish()
         
     def _delayedRender_POST(self, request):
@@ -70,7 +71,7 @@ class Recommend(DefferedResource):
         simplejson.dump(
         {
             "results":[result[1] for result in results]
-        }, request, skipkeys =True)
+        }, request, cls=TimeEncoder)
         request.finish()
 
 root = DefferedResource()

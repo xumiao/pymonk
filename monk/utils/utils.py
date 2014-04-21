@@ -8,7 +8,15 @@ Created on Mon Oct 21 10:44:50 2013
 import pickle
 import StringIO
 
-
+import simplejson
+from time import mktime
+import datetime
+class TimeEncoder(simplejson.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return int(mktime(obj.timetuple()))
+        return simplejson.JSONEncoder.default(self, obj)
+        
 def Serialize(a):
     try:
         outfile = StringIO.StringIO()
