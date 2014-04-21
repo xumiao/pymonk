@@ -94,5 +94,5 @@ root.putChild("recommend", Recommend())
 root.putChild("recommendTags", Recommend("5338c7562524830c64a2d599"))
 
 site = server.Site(root)
-reactor.listenTCP(80, site)
+reactor.listenTCP(8080, site)
 reactor.run()
