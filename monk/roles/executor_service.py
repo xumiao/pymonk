@@ -16,8 +16,7 @@ import monk.core.api as monkapi
 import monk.core.constants as cons
 from monk.core.configuration import Configuration
 
-config = Configuration("executor.yml")
-config.set_log_file('executorREST', str(os.getpid()))
+config = Configuration("executor.yml", "executorREST", str(os.getpid()))
 monkapi.initialize(config)
 logger = logging.getLogger("monk.executor")
 

@@ -10,7 +10,7 @@ import constants
 
 class Configuration(object):
 
-    def __init__(self, configurationFileName=None):
+    def __init__(self, configurationFileName=None, logFileMidName='', pid=''):
         self.uidConnectionString = 'localhost'
         self.uidDataBaseName = 'uidDB'
         self.modelConnectionString = 'localhost'
@@ -54,7 +54,7 @@ class Configuration(object):
         self.entityFields[constants.MONK_TYPE] = True
         self.entityFields[constants.FEATURES] = True
         self.entityFields[constants.RAWS] = True
-        
-    def set_log_file(self, name, pid):
-        self.loggingConfig['handlers']['files']['filename'] = '.'.join([self.logFileNameStub, name, pid, 'log'])
-        
+        if logFileMidName:
+            self.loggingConfig['handlers']['files']['filename'] = \
+            '.'.join([self.logFileNameStub, logFileMidName, pid, 'log'])
+                
