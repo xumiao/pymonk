@@ -24,6 +24,7 @@ class MONKObject(object):
             self.__restore__()
         except Exception as e:
             logger.warning('restoration failed. {0}'.format(e.message))
+            logger.debug('generic {0}'.format(generic))
 
     def __restore__(self):
         self._default(cons.ID, ObjectId())
