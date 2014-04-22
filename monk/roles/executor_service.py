@@ -35,7 +35,7 @@ class Recommend(DefferedResource):
     
     def _filter(self, ent, fields):
         if fields:
-            return {field:ent.get(field, '') for field in fields}
+            return {field:getattr(ent, field, '') for field in fields}
         else:
             return ent.generic()
         
@@ -58,7 +58,10 @@ class Recommend(DefferedResource):
                 num = int(args.get('num')[0])
             else:
                 num = 10
-            fields = args.get('fields', None)
+            if 'fields' in args:
+                fields = args['fields'][0].split(',')
+            else:
+                fields = None
             if not monkapi.has_one(turtleId, userId):
                 if not monkapi.has_one_in_store(turtleId, userId):
                     monkapi.add_one(turtleId, userId)
