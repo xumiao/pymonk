@@ -75,6 +75,7 @@ class Recommend(DefferedResource):
             results.sort(reverse=True)
         except Exception as e:
             logger.error(e.message)
+            logger.error(e.args)
             logger.error('can not parse request {0}'.format(args))
             results = []
         return [self._filter(res[1], fields) for res in results]
