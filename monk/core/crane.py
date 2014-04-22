@@ -205,9 +205,14 @@ class Crane(object):
             logger.warning('can not load document by query'.format(query))
             return None
 
-    def load_all_in_ids(self, query, num):
+    def load_all_in_ids(self, query, skip, num):
         try:
-            return list(self._coll.find(query, {'_id': 1}).limit(num))
+            logger.debug('begin retrieval')
+            cursor = self._coll.find(query, {'_id': 1}, skip=0, limit=num)
+            results = list(cursor)
+            logger.debug('closing cursor')
+            cursor.close()
+            return results
         except Exception as e:
             logger.warning(e.message)
             logger.warning('can not load documents by query'.format(query))
@@ -221,9 +226,9 @@ class Crane(object):
             logger.warning('query {0} can not be executed'.format(query))
             return None
 
-    def load_all(self, query, fields, num):
+    def load_all(self, query, fields, skip, num):
         try:
-            return list(self._coll.find(query, fields).limit(num))
+            return list(self._coll.find(query, fields, skip=skip, limit=num))
         except Exception as e:
             logger.warning(e.message)
             logger.warning('query {0} can not be executed'.format(query))
