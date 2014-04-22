@@ -22,9 +22,10 @@ config = Config.Configuration("executor.yml", "executorREST", str(os.getpid()))
 monkapi.initialize(config)
 logger = logging.getLogger("monk.executor")
 
-class MonkAPI(DefferedResource):
-    def __del__(self):
+class MonkAPI(server.Site):
+    def stopFactory(self):
         monkapi.exits()
+        server.Site.stopFactory(self)
         
 class Recommend(DefferedResource):
     isLeaf = True
@@ -90,10 +91,10 @@ class Recommend(DefferedResource):
         simplejson.dump(results, request, cls=DateTimeEncoder)
         request.finish()
 
-root = MonkAPI()
+root = DefferedResource()
 root.putChild("recommend", Recommend())
 root.putChild("recommendTags", Recommend("5338c7562524830c64a2d599"))
 
-site = server.Site(root, "web.log")
+site = MonkAPI(root, "web.log")
 reactor.listenTCP(8080, site)
 reactor.run()
