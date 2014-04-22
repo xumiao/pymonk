@@ -9,14 +9,19 @@ import pickle
 import StringIO
 
 import simplejson
-from time import mktime
 import datetime
-class TimeEncoder(simplejson.JSONEncoder):
+
+class DateTimeEncoder(simplejson.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
-            return int(mktime(obj.timetuple()))
-        return simplejson.JSONEncoder.default(self, obj)
-        
+            return obj.isoformat()
+        elif isinstance(obj, datetime.date):
+            return obj.isoformat()
+        elif isinstance(obj, datetime.timedelta):
+            return (datetime.datetime.min + obj).time().isoformat()
+        else:
+            return super(DateTimeEncoder, self).default(obj)
+            
 def Serialize(a):
     try:
         outfile = StringIO.StringIO()

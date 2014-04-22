@@ -16,6 +16,8 @@ import monk.core.api as monkapi
 import monk.core.constants as cons
 import monk.core.configuration as Config
 
+from monk.utils.utils import DateTimeEncoder
+
 config = Config.Configuration("executor.yml", "executorREST", str(os.getpid()))
 monkapi.initialize(config)
 logger = logging.getLogger("monk.executor")
@@ -32,7 +34,10 @@ class Recommend(DefferedResource):
         self.defaultUserContext = {'userId' : cons.DEFAULT_USER}
     
     def _filter(self, ent, fields):
-        return {field:ent.get(field,'') for field in fields}
+        if fields:
+            return {field:ent.get(field, '') for field in fields}
+        else:
+            return ent.generic()
         
     def _recommend(self, args):
         try:
@@ -73,13 +78,13 @@ class Recommend(DefferedResource):
     def _delayedRender_GET(self, request):
         logger.info('request {0}'.format(request.args))
         results = self._recommend(request.args)
-        simplejson.dump(results, request)
+        simplejson.dump(results, request, cls=DateTimeEncoder)
         request.finish()
         
     def _delayedRender_POST(self, request):
         logger.info('request {0}'.format(request.args))
         results = self._recommend(request.args)
-        simplejson.dump(results, request)
+        simplejson.dump(results, request, cls=DateTimeEncoder)
         request.finish()
 
 root = MonkAPI()
