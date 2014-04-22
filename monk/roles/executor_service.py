@@ -59,7 +59,7 @@ class Recommend(DefferedResource):
             else:
                 num = 10
             if 'fields' in args:
-                fields = args['fields'][0].split(',')
+                fields = simplejson.loads(args['fields'][0])
             else:
                 fields = None
             if not monkapi.has_one(turtleId, userId):
