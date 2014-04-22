@@ -205,9 +205,9 @@ class Crane(object):
             logger.warning('can not load document by query'.format(query))
             return None
 
-    def load_all_in_ids(self, query):
+    def load_all_in_ids(self, query, num):
         try:
-            return self._coll.find(query, {'_id': 1})
+            return list(self._coll.find(query, {'_id': 1}).limit(num))
         except Exception as e:
             logger.warning(e.message)
             logger.warning('can not load documents by query'.format(query))
@@ -223,7 +223,7 @@ class Crane(object):
 
     def load_all(self, query, fields, num):
         try:
-            return self._coll.find(query, fields).limit(num)
+            return list(self._coll.find(query, fields).limit(num))
         except Exception as e:
             logger.warning(e.message)
             logger.warning('query {0} can not be executed'.format(query))
@@ -250,7 +250,7 @@ tigressStore = Crane()
 
 def create_db(connectionString, databaseName):
     try:
-        client = MongoClient(connectionString, connectTimeoutMS=None)
+        client = MongoClient(connectionString)
         database = client[databaseName]
     except Exception as e:
         logger.warning(e.message)
