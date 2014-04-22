@@ -221,9 +221,9 @@ class Crane(object):
             logger.warning('query {0} can not be executed'.format(query))
             return None
 
-    def load_all(self, query, fields):
+    def load_all(self, query, fields, num):
         try:
-            return self._coll.find(query, fields)
+            return self._coll.find(query, fields).limit(num)
         except Exception as e:
             logger.warning(e.message)
             logger.warning('query {0} can not be executed'.format(query))

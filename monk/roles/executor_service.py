@@ -30,6 +30,9 @@ class Recommend(DefferedResource):
         DefferedResource.__init__(self, delayTime)
         self.defaultTurtleId = turtleId
         self.defaultUserContext = {'userId' : cons.DEFAULT_USER}
+    
+    def _filter(self, ent, fields):
+        return {field:ent.get(field,'') for field in fields}
         
     def _recommend(self, args):
         try:
@@ -41,40 +44,42 @@ class Recommend(DefferedResource):
                 userContext = simplejson.loads(args.get('userContext')[0])
             else:
                 userContext = self.defaultUserContext
-            entityIds = args.get('entityIds')
             userId = userContext['userId']
+            if 'query' in args:
+                query = simplejson.loads(args.get('query')[0])
+            else:
+                query = {}
+            if 'num' in args:
+                num = int(args.get('num')[0])
+            else:
+                num = 10
+            fields = args.get('fields', None)
             if not monkapi.has_one(turtleId, userId):
                 if not monkapi.has_one_in_store(turtleId, userId):
                     monkapi.add_one(turtleId, userId)
                 else:
                     monkapi.load_one(turtleId, userId)
             entityCollectionName = monkapi.entity_collection(turtleId)
-            ents = monkapi.load_entities(entityIds, entityCollectionName)
+            ents = monkapi.load_entities(None, query, num * 10, entityCollectionName)
             # @todo: add user_context features
-            results = [(monkapi.predict(turtleId, userId, ent), str(ent._id)) for ent in ents]
+            results = [(monkapi.predict(turtleId, userId, ent), ent) for ent in ents]
             results.sort(reverse=True)
         except Exception as e:
             logger.error(e.message)
             logger.error('can not parse request {0}'.format(args))
             results = []
-        return results
+        return [self._filter(res[1], fields) for res in results]
         
     def _delayedRender_GET(self, request):
         logger.info('request {0}'.format(request.args))
         results = self._recommend(request.args)
-        simplejson.dump(
-        {
-            "results":results
-        }, request)
+        simplejson.dump(results, request)
         request.finish()
         
     def _delayedRender_POST(self, request):
         logger.info('request {0}'.format(request.args))
         results = self._recommend(request.args)
-        simplejson.dump(
-        {
-            "results":results
-        }, request)
+        simplejson.dump(results, request)
         request.finish()
 
 root = MonkAPI()

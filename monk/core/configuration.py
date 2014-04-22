@@ -49,12 +49,6 @@ class Configuration(object):
         if self.mantisFields is None:
             self.mantisFields = {}
         self.mantisFields[constants.DATA] = False
-        if self.entityFields is None:
-            self.entityFields = {}
-        self.entityFields['_id'] = True
-        self.entityFields[constants.MONK_TYPE] = True
-        self.entityFields[constants.FEATURES] = True
-        self.entityFields[constants.RAWS] = True
         if logFileMidName:
             self.loggingConfig['handlers']['files']['filename'] = \
             '.'.join([self.logFileNameStub, logFileMidName, pid, 'log'])
