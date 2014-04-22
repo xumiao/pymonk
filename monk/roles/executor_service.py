@@ -55,6 +55,10 @@ class Recommend(DefferedResource):
                 query = simplejson.loads(args.get('query')[0])
             else:
                 query = {}
+            if 'skip' in args:
+                skip = int(args.get('skip')[0])
+            else:
+                skip = 0
             if 'num' in args:
                 num = int(args.get('num')[0])
             else:
@@ -69,7 +73,7 @@ class Recommend(DefferedResource):
                 else:
                     monkapi.load_one(turtleId, userId)
             entityCollectionName = monkapi.entity_collection(turtleId)
-            ents = monkapi.load_entities(None, query, num * 10, entityCollectionName)
+            ents = monkapi.load_entities(None, query, skip, num * 10, entityCollectionName)
             # @todo: add user_context features
             results = [(monkapi.predict(turtleId, userId, ent), ent) for ent in ents]
             results.sort(reverse=True)

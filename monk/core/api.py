@@ -63,14 +63,14 @@ def reloads():
     initialize()
     
 # entity APIs
-def get_entities(query=None, fields=None, collectionName=None, num=100):
+def get_entities(query=None, fields=None, collectionName=None, skip=0, num=100):
     crane.entityStore.set_collection_name(collectionName)
-    return crane.entityStore.load_all(query, fields, num)
+    return crane.entityStore.load_all(query, fields, skip, num)
 
-def load_entities(entities, query={}, num=100, collectionName=None):
+def load_entities(entities, query={}, skip=0, num=100, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)
     if not entities:
-        entities = [ent['_id'] for ent in crane.entityStore.load_all_in_ids(query, num)]
+        entities = [ent['_id'] for ent in crane.entityStore.load_all_in_ids(query, skip, num)]
     return crane.entityStore.load_or_create_all(entities)
 
 def load_entity(entity, collectionName=None):
