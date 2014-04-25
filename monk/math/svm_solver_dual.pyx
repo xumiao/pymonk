@@ -13,6 +13,8 @@ from __future__ import division
 cimport cython
 from libc.stdlib cimport malloc, free, calloc, rand
 from monk.math.flexible_vector import FlexibleVector
+import logging
+logger = logging.getLogger('monk.svm_solver_dual')
 
 cdef inline _MEM_CHECK(void* p):
     if p == NULL:
@@ -164,7 +166,7 @@ cdef class SVMDual(object):
         while iteration < self.max_num_iters:
             PGmax_new = -1e10
             PGmin_new = 1e10
-            
+            #logger.debug(str(active_size))
             for j in xrange(active_size):
                 k = j + rand() % (active_size - j)
                 self.swap(index, j, k)
@@ -218,4 +220,4 @@ cdef class SVMDual(object):
                 PGmax_old = 1e10
             if PGmin_old >= 0:
                 PGmin_old = -1e10
-    
+        #logger.debug(str(iteration))

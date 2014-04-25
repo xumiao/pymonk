@@ -31,7 +31,7 @@ def add_data():
         coll = mcl.DataSet['PMLExpression']
         ii = 0      # max is 151413 (number of doc in PMLExpression)
         for ent in coll.find(None, {'_id':True, 'userId':True}, timeout=False):
-            if ii == 10:
+            if ii == 30:
                 break
             ii += 1
             entity = str(ent['_id'])
@@ -66,23 +66,18 @@ def train(numIters):
         producer = UserProducer(kafka, kafkaTopic, users, async=False,
                           req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                           ack_timeout=200)
-        for i in range(numIters):
-            num = 0
-            for userId, partitionId in users.iteritems():
-                if userId.find('.') >= 0:
-                    continue
-                num += 1
-                if num == 10:
-                    break
-                encodedMessage = simplejson.dumps({'turtleId':turtleId,
+        for userId, partitionId in users.iteritems():   
+            #if userId == "Steve_70f97adb-2860-4b96-aff3-b538a1781581":    
+                for i in range(numIters):                                 
+                    encodedMessage = simplejson.dumps({'turtleId':turtleId,
                                                    'userId':userId,
                                                    'operation':'train_one'})
-                print i, producer.send(userId, encodedMessage)
+                    print i, producer.send(userId, encodedMessage)
     finally:
         producer.stop()
         kafka.close()
 
     
 if __name__=='__main__':
-    add_data()
-    #train(10)
+    #add_data()
+    train(10)
