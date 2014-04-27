@@ -43,7 +43,10 @@ class Mantis(base.MONKObject):
 
     def save(self, **kwargs):
         crane.mantisStore.update_one_in_fields(self, self.generic())
-                
+    
+    def delete(self):
+        return crane.mantisStore.delete_by_id(self._id)
+        
     def get_solver(self, userId):
         try:
             return self.solvers[userId]

@@ -64,7 +64,7 @@ def main(argv):
                 monkapi.aggregate(turtleId, userId)
             elif op == 'create':
                 turtleScript = decodedMessage['turtleScript']
-                turtleId = monkapi.find_turtle(turtleScript)
+                turtleId = monkapi.create_turtle(turtleScript)
                 monkapi.save_turtle(turtleId)
             else:
                 logger.error('Operation unrecognizable {0}'.format(op))

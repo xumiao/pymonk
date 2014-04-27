@@ -61,6 +61,15 @@ class Crane(object):
     def reset_collection_name(self, collectionName):
         self._coll = self._database[self._defaultCollectionName]
         self._currentCollectionName = self._defaultCollectionName
+    
+    def delete_by_id(self, obj):
+        if not obj:
+            return False
+        
+        if not isinstance(obj, ObjectId):
+            return False
+        
+        return self._coll.remove(obj)
         
     def load_or_create(self, obj):
         if not obj:
@@ -132,7 +141,25 @@ class Crane(object):
             logger.warning('can not remove fields [{0}] for obj {1}'.format(' , '.join(fields), obj._id))
             return False
         return True
-        
+     
+    def push_one_in_fields(self, obj, fields):
+        try:
+            self._coll.update({'_id':obj._id}, {'$push':fields})
+        except Exception as e:
+            logger.warning(e.message)
+            logger.warning('can not push document {0} in fields {1}'.format(obj._id, fields))
+            return False
+        return True
+    
+    def pull_one_in_fields(self, obj, fields):
+        try:
+            self._coll.update({'_id':obj._id}, {'$pull':fields})
+        except Exception as e:
+            logger.warning(e.message)
+            logger.warning('can not pull fields {0} from document {1}'.format(fields, obj._id))
+            return False
+        return True
+            
     def update_one_in_fields(self, obj, fields):
         # fields are in flat form
         # 'f1.f2':'v' is ok, 'f1.f3' won't be erased
@@ -170,7 +197,21 @@ class Crane(object):
         objs = map(decode, objs)
         self.__put_all(objs)
         return objs
-        
+    
+    def load_create_by_name(self, obj, tosave=False):
+        if 'name' not in obj:
+            return None
+            
+        objId = self.load_one_in_id({'name':obj['name']})
+        if objId:
+            return self.load_one_by_id(objId['_id'])
+        else:
+            logger.debug('new panda {0}'.format(obj['name']))
+            o = self.create_one(obj)
+            if tosave:
+                o.save()
+            return o
+            
     def load_one_by_id(self, objId):
         obj = self.__get_one(objId)
         if not obj:

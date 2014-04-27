@@ -9,6 +9,7 @@ from ..math.flexible_vector import FlexibleVector
 from ..math.cmath import sigmoid
 import base, crane
 from mantis import Mantis
+import re
 import logging
 logger = logging.getLogger('monk.panda')
 
@@ -16,14 +17,14 @@ class Panda(base.MONKObject):
 
     def __restore__(self):
         super(Panda, self).__restore__()
-        if "uid" not in self.__dict__:
-            self.uid = crane.uidStore.nextUID()
-        if "name" not in self.__dict__:
-            logger.warning('no name is specified, using default')
-            self.name = 'Var' + str(self.uid)
+        self._default("uid", crane.uidStore.nextUID())
+        self._default("name", 'Var' + str(self.uid))
 
     def save(self, **kwargs):
         crane.pandaStore.update_one_in_fields(self, self.generic())
+    
+    def delete(self):
+        return crane.pandaStore.delete_by_id(self._id)
         
     def has_mantis():
         return False
@@ -53,20 +54,27 @@ class Panda(base.MONKObject):
 class ExistPanda(Panda):
 
     def predict(self, userId, entity):
-        def extract(x, y):
-            try:
-                if entity[y].find(self.name) >= 0:
-                    return x + 1
-                else:
-                    return x
-            except:
-                return x
-        return reduce(extract, entity.iterkeys(), 0)
+        if self.name in entity._raws:
+            return 1
+        else:
+            return 0
 
 class RegexPanda(Panda):
 
+    def __restore__(self):
+        super(RegexPanda, self).__restore__()
+        self.p = re.compile(self.name)
+    
+    def generic(self):
+        result = super(RegexPanda, self).generic()
+        del result['p']
+        return result
+        
     def predict(self, userId, entity):
-        pass
+        if [v for k,v in entity._raws.iteritems() if self.p.match(k)]:
+            return 1
+        else:
+            return 0
 
 class LinearPanda(Panda):
 
@@ -95,7 +103,12 @@ class LinearPanda(Panda):
     def save(self, **kwargs):
         crane.pandaStore.update_one_in_fields(self, self.generic())
         self.mantis.save()
-            
+    
+    def delete(self):
+        result = crane.pandaStore.delete_by_id(self._id)
+        result = result & self.mantis.delete()
+        return result
+        
     def has_mantis(self):
         return True
     

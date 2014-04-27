@@ -142,7 +142,7 @@ cdef class SVMDual(object):
         cdef float ya
         self.w.copyUpdate(z)
         for j in xrange(self.num_instances):
-            self.w.add(self.x[j], self.y[j] * self.alpha[j])
+            self.w.addFast(self.x[j], self.y[j] * self.alpha[j])
         
     def trainModel(self):
         cdef int j, k, s, iteration
@@ -196,7 +196,7 @@ cdef class SVMDual(object):
                     alpha_old = alpha[j]
                     alpha[j] = max(alpha[j] - G / QD[j], 0)
                     d = (alpha[j] - alpha_old) * yj
-                    self.w.add(xj, d)
+                    self.w.addFast(xj, d)
                         
             iteration += 1
 #            if iteration % 10 == 0:
