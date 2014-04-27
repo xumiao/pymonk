@@ -43,14 +43,20 @@ def initialize(config=None):
     return crane.initialize_storage(_config)
 
 def exits():
+    if _config is None:
+        return False
     logger.info('------end-----------')
     crane.exit_storage()
     return True
 
-def reloads():
-    global _config
-    if _config is None:
-        return
+def reloads(config=None):
+    if config is None:
+        if _config is None:
+            print 'configuration is not set'
+            return
+        else:
+            config = _config
+    
     exits()
     reload(base)
     reload(crane)
@@ -60,13 +66,9 @@ def reloads():
     reload(turtle)
     reload(mantis)
     reload(panda)
-    initialize()
+    initialize(config)
     
 # entity APIs
-def get_entities(query=None, fields=None, collectionName=None, skip=0, num=100):
-    crane.entityStore.set_collection_name(collectionName)
-    return crane.entityStore.load_all(query, fields, skip, num)
-
 def load_entities(entities, query={}, skip=0, num=100, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)
     if not entities:
@@ -76,9 +78,16 @@ def load_entities(entities, query={}, skip=0, num=100, collectionName=None):
 def load_entity(entity, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)
     return crane.entityStore.load_or_create(entity)
+
+def save_entities(entities, collectionName=None):
+    crane.entityStore.set_collection_name(collectionName)
+    [crane.entityStore.update_one_in_fields(ent, ent.generic()) for ent in entities]
     
 # project(turtle) management APIs
-def find_turtle(turtleScript):
+def find_turtles(query, fields=None):
+    return crane.turtleStore.load_all(query, fields)
+    
+def create_turtle(turtleScript):
     _turtle = crane.turtleStore.load_or_create(turtleScript)
     if _turtle is None:
         logger.error('failed to load or create the turtle {0}'.format(turtleScript))
@@ -94,8 +103,13 @@ def save_turtle(turtleId):
         logger.error('failed to save turtle {0}'.format(turtleId))
         return False
 
-def remove_turtle(turtleId):
-    pass
+def delete_turtle(turtleId, deep=False):
+    _turtle = crane.turtleStore.load_one_by_id(turtleId)
+    if _turtle:
+        return _turtle.delete(deep)
+    else:
+        logger.error('failed to delete turtle {0}'.format(turtleId))
+        return False        
 
 def entity_collection(turtleId):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
@@ -104,7 +118,32 @@ def entity_collection(turtleId):
     else:
         logger.warning('can not find turtle {0} to get entity collection'.format(turtleId))
         return None
-        
+
+def get_turtle(turtleId):
+    return crane.turtleStore.load_one_by_id(turtleId)
+    
+def create_panda(pandaScript):
+    return crane.pandaStore.load_or_create(pandaScript)
+
+def find_pandas(query, fields=None):
+    return crane.pandaStore.load_all(query, fields)
+
+def add_panda(turtleId, panda):
+    _turtle = crane.turtleStore.load_one_by_id(turtleId)
+    if _turtle:
+        return _turtle.add_panda(panda)
+    else:
+        logger.warning('can not find turtle {0} to add panda {1}'.format(turtleId, panda.name))
+        return None
+
+def delete_panda(turtleId, panda):
+    _turtle = crane.turtleStore.load_one_by_id(turtleId)
+    if _turtle:
+        return _turtle.delete_panda(panda)
+    else:
+        logger.warning('can not find turtle {0} to delete panda {1}'.format(turtleId, panda.name))
+        return None
+    
 # training APIs
 def add_data(turtleId, userId, ent):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
@@ -147,10 +186,10 @@ def aggregate(turtleId, userId):
         return False
     
 # testing APIs
-def predict(turtleId, userId, entity):
+def predict(turtleId, userId, entity, fields=None):
     _turtle = crane.turtleStore.load_one_by_id(turtleId)
     if _turtle:
-        return _turtle.predict(userId, entity)
+        return _turtle.predict(userId, entity, fields)
     else:
         logger.warning('can not find turtle by {0} to predict'.format(turtleId))
         return 0

@@ -69,6 +69,9 @@ class Tigress(base.MONKObject):
         else:
             cm['__total__'] += 1
     
+    def delete(self):
+        return crane.tigressStore.delete_by_id(self._id)
+        
     def add_one(self, userId):
         if not self.has_user_in_store(userId):
             self.confusionMatrix[userId] = {}
@@ -174,7 +177,23 @@ class PatternTigress(Tigress):
             [panda.mantis.add_data(userId, entity, -1, self.defaultCost) for panda in pandas]
         
         return True
-        
+
+class MultiLabelTigress(PatternTigress):
+    """
+    Find independent patterns for the targets. 
+    Fields:
+        patterns : regular expression based patterns for each target defined
+        fields   : fields for searching targets
+    """
+
+    def supervise(self, turtle, userId, entity):
+        targets = set(self.retrieve_target(entity))
+        [panda.mantis.add_date(userId, entity, 1, self.costs.get(panda.name, self.defaultCost))
+         for panda in turtle.pandas if panda.name in targets]
+        [panda.mantis.add_date(userId, entity, -1, self.costs.get(panda.name, self.defaultCost))
+         for panda in turtle.pandas if panda.name not in targets]
+        return True
+    
 class SelfTigress(Tigress):
     pass
 class SPNTigress(Tigress):
@@ -188,6 +207,7 @@ class CoTigress(Tigress):
 
 base.register(Tigress)
 base.register(PatternTigress)
+base.register(MultiLabelTigress)
 base.register(SelfTigress)
 base.register(SPNTigress)
 base.register(LexiconTigress)

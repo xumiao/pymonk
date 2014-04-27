@@ -7,11 +7,19 @@ The complex problem solver that manage a team of pandas.
 import base
 import constants
 import crane
+from bson.objectid import ObjectId
 from ..math.cmath import sigmoid, sign0
 import tigress as ti
 #from itertools import izip
 import logging
+import nltk
+from nltk.stem import PorterStemmer
+from nltk.corpus import stopwords
+
 logger = logging.getLogger("monk.turtle")
+
+stopwords_english = set(stopwords.words('english'))
+symbols = {'\'', '\"', '[', ']','{','}','(',')','.','$', '#'}
 
 class Turtle(base.MONKObject):
 
@@ -21,7 +29,7 @@ class Turtle(base.MONKObject):
             self.pandas = crane.pandaStore.load_or_create_all(self.pandas)
         else:
             self.pandas = []
-        #self.ids = {p._id : i for i, p in izip(range(len(self.pandas)), self.pandas)}
+        self.pandaUids = set((p.uid for p in self.pandas))
         if 'tigress' in self.__dict__:
             self.tigress = crane.tigressStore.load_or_create(self.tigress)
         else:
@@ -43,8 +51,6 @@ class Turtle(base.MONKObject):
             self.pMaxInferenceSteps = 1
         if "entityCollectionName" not in self.__dict__:
             self.entityCollectionName = constants.DEFAULT_EMPTY
-        if "maxNumUsers" not in self.__dict__:
-            self.maxNumUsers = 100
         if "requires" not in self.__dict__:
             logger.info('turtle {0} will use all features seen'.format(self.name))
         elif 'uids' in self.requires:
@@ -53,11 +59,10 @@ class Turtle(base.MONKObject):
                 uids = eval(uids)
             [panda.add_features(uids) for panda in self.pandas]
         elif 'turtle_ids' in self.requires:
-            turtles = crane.turtleStore.load_all_by_ids(self.requires['turtle_ids'])
+            turtles = crane.turtleStore.load_all_by_ids([ObjectId(tid) for tid in self.requires['turtle_ids']])
             [panda.add_features(turtle.get_panda_uids()) for turtle in turtles for panda in self.pandas]
         else:
-            logger.error('dependent features are either in uids or turtle_ids, but not in {0}'.format(self.require))
-            
+            logger.error('dependent features are either in uids or turtle_ids, but not in {0}'.format(self.requires))
 
     def generic(self):
         result = super(Turtle, self).generic()
@@ -65,7 +70,7 @@ class Turtle(base.MONKObject):
         result['pandas'] = [panda._id for panda in self.pandas]
         # inverted_mapping is created from mapping
         del result['inverted_mapping']
-        #del result['ids']
+        del result['pandaUids']
         return result
     
     def save(self, **kwargs):
@@ -73,16 +78,47 @@ class Turtle(base.MONKObject):
         self.tigress.save()
         [pa.save() for pa in self.pandas]
 
+    def delete(self, deep=False):
+        result = crane.turtleStore.delete_by_id(self._id)
+        result = result and self.tigress.delete()
+        if deep:
+            result = result and [pa.delete() for pa in self.pandas].all()
+        return result
+    
+    def require(self, turtleId):
+        if self._id is turtleId:
+            logger.error('turle can not depend on itself {0}'.format(turtleId))
+            return
+        turtle = crane.turtleStore.load_all_by_id(turtleId)
+        [panda.add_features(turtle.get_panda_uids()) for panda in self.pandas]
+        
     def get_panda_uids(self):
         return [pa.uid for pa in self.pandas]
+    
+    def has_panda(self, panda):
+        return panda.uid in self.pandaUids
         
     def add_panda(self, panda):
-        pass
+        if not self.has_panda(panda):
+            self.pandas.append(panda)
+            self.pandaUids.add(panda.uid)
+            crane.pandaStore.push_one_in_fields(self, {'pandas':panda._id})
+            return True
+        else:
+            logger.info('panda {0} is already in the turtle {1}'.format(panda.name, self.name))
+            return False
     
     def delete_panda(self, panda):
-        pass
-            
-    def predict(self, userId, entity):
+        if self.has_panda(panda):
+            self.pandas.remove(panda)
+            self.pandaUids.remove(panda.uid)
+            crane.pandaStore.pull_one_in_fields(self, {'pandas':panda._id})
+            return True
+        else:
+            logger.info('panda {0} is not in the turtle {1}'.format(panda.name, self.name))
+            return False
+        
+    def predict(self, userId, entity, fields=None):
         def _predict(panda):
             entity[panda.uid] = sigmoid(panda.predict(userId, entity))
             return sign0(entity[panda.uid])
@@ -125,10 +161,6 @@ class Turtle(base.MONKObject):
         return True
         
     def add_one(self, userId):
-        if self.tigress.num_user() >= self.maxNumUsers:
-            logger.warning('maximun number ({0}) of users has been reached'.format(self.maxNumUsers))
-            return False
-        
         if not self.tigress.add_one(userId):
             return False
         
@@ -147,10 +179,6 @@ class Turtle(base.MONKObject):
         return True
         
     def load_one(self, userId):
-        if self.tigress.num_user() >= self.maxNumUsers:
-            logger.warning('maximun number ({0}) of users has been reached'.format(self.maxNumUsers))
-            return False
-        
         if not self.tigress.load_one(userId):
             return False
             
@@ -179,7 +207,7 @@ class Turtle(base.MONKObject):
 
 class SingleTurtle(Turtle):
     
-    def predict(self, userId, entity):
+    def predict(self, userId, entity, fields=None):
         panda = self.pandas[0]
         entity[panda.uid] = sigmoid(panda.predict(userId, entity))
         if sign0(entity[panda.uid]) > 0:
@@ -193,7 +221,16 @@ class SingleTurtle(Turtle):
         panda = self.pandas[0]
         if panda.has_mantis():
             panda.mantis.train_one(userId)
+
+class MultiLabelTurtle(Turtle):
     
+    def predict(self, userId, entity, fields=None):
+        def _predict(panda):
+            entity[panda.uid] = sigmoid(panda.predict(userId, entity))
+            return sign0(entity[panda.uid])
+        predicted = [panda.name for panda in self.pandas if _predict(panda) > 0]
+        self.tigress.measure(userId, entity, predicted)
+        
 class RankingTurtle(Turtle):
         
     def predict(self, userId, entity):
@@ -213,8 +250,113 @@ class RankingTurtle(Turtle):
     
 class SPNTurtle(Turtle):
     pass
+
+class DictionaryTurtle(Turtle):
+
+    def __restore__(self):
+        super(DictionaryTurtle, self).__restore__()
+        self.dictionary = {p.name:p.uid for p in self.pandas}
+        
+    def generic(self):
+        result = super(DictionaryTurtle, self).generic()
+        del result['tigress']
+        del result['dictionary']
+        return result
     
+    def _process(self, field):
+        return {}
+    
+    def _get_or_new_panda(self, userId, name):
+        if name not in self.dictionary:
+            panda = {'monkType':'ExistPanda',
+                     'name':name,
+                     'creator':userId}
+            panda = crane.pandaStore.load_create_by_name(panda, True)
+            self.add_panda(panda)
+            self.dictionary[name] = panda.uid
+            uid = panda.uid
+        else:
+            uid = self.dictionary[name]
+        return (uid, 1.0)
+    
+    def translate(self, obj):
+        if isinstance(obj, basestring):
+            return obj
+            
+        try:
+            return ' '.join(obj)
+        except:
+            return str(obj)
+    
+    def is_stop(self, w):
+        if w in stopwords_english:
+            return True
+        else:
+            return False
+            
+    def is_symbol(self, w):
+        if w in symbols:
+            return True
+        elif w.find('.') >= 0:
+            return True
+        else:
+            return False
+            
+    def predict(self, userId, entity, fields):
+        if fields:
+            field = '. '.join(self.translate(getattr(entity, field, '')) for field in fields)
+            allTokens = self._process(field)
+            entity._raws.update(allTokens)
+            entity._features.update([self._get_or_new_panda(userId, t) for t in allTokens])
+            return len(allTokens)
+        else:
+            return None
+    
+    def aggregate(self, userId):
+        # should be taking care of dedups in models and data
+        pass
+    
+class UniGramTurtle(DictionaryTurtle):
+
+    def _process(self, field):
+        allTokens = {}
+        sents = nltk.tokenize.sent_tokenize(field)
+        for sent in sents:
+            tokens = nltk.tokenize.word_tokenize(sent.lower())
+            allTokens.update(((t,1) for t in tokens if not self.is_stop(t) and not self.is_symbol(t)))
+        return allTokens
+    
+class POSTurtle(DictionaryTurtle):
+    
+    def _process(self, field):
+        allTokens = {}
+        sents = nltk.tokenize.sent_tokenize(field)
+        for sent in sents:
+            tokens = nltk.tokenize.word_tokenize(sent.lower())
+            tagged = nltk.pos_tag((t for t in tokens if not self.is_stop(t) and not self.is_symbol(t)))
+            allTokens.update((('_'.join(t),1) for t in tagged))
+        return allTokens
+
+class StemTurtle(DictionaryTurtle):
+
+    def _process(self, field):
+        allTokens = {}
+        sents = nltk.tokenize.sent_tokenize(field)
+        logger.debug(sents)
+        port = PorterStemmer()
+        for sent in sents:
+            tokens = nltk.tokenize.word_tokenize(sent.lower())
+            stems = [port.stem(t) for t in tokens if not self.is_stop(t) and not self.is_symbol(t)]
+            allTokens.update(((t,1) for t in stems))
+        logger.debug(' '.join(allTokens))
+        return allTokens
+        
 base.register(Turtle)
 base.register(SingleTurtle)
+base.register(MultiLabelTurtle)
 base.register(RankingTurtle)
+base.register(DictionaryTurtle)
 base.register(SPNTurtle)
+base.register(UniGramTurtle)
+base.register(POSTurtle)
+base.register(StemTurtle)

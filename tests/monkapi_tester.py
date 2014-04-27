@@ -28,7 +28,7 @@ class TestMONKAPI:
     def get_turtle(self):
         if self.turtleId is None:
             turtlep = monkapi.yaml2json(self.TEST_TURTLE_SCRIPT)
-            self.turtleId = monkapi.find_turtle(turtlep)
+            self.turtleId = monkapi.create_turtle(turtlep)
             monkapi.save_turtle(self.turtleId)
         assert self.turtleId is not None
         return self.turtleId
