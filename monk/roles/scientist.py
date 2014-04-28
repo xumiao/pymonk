@@ -8,6 +8,8 @@ import monk.core.api as monkapi
 import monk.core.configuration as Config
 import logging
 import os
+import simplejson
+from monk.utils.utils import DateTimeEncoder
 
 config = Config.Configuration("scientist.yml", "scientist", str(os.getpid()))
 logger = logging.getLogger("monk.scientist")
@@ -29,6 +31,15 @@ def starts():
 def exits():
     monkapi.exits()
 
+def load_entities(query={}, skip=0, num=100, collectionName=None):
+    return monkapi.load_entities(None, query, skip, num, collectionName)
+
+def save_entities(ents, collectionName=None):
+    monkapi.save_entities(ents, collectionName)
+    
+def show_entity(ent):
+    print simplejson.dumps(ent.generic(), indent=4, cls=DateTimeEncoder)
+    
 def active_learn(turtleId, num=1):
     pass
 
