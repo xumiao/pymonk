@@ -37,9 +37,20 @@ def load_entities(query={}, skip=0, num=100, collectionName=None):
 def save_entities(ents, collectionName=None):
     monkapi.save_entities(ents, collectionName)
     
-def show_entity(ent):
-    print simplejson.dumps(ent.generic(), indent=4, cls=DateTimeEncoder)
-    
+def show(ent, fields=None):
+    ret = ent.generic()
+    if not fields:
+        print simplejson.dumps(ret, indent=4, cls=DateTimeEncoder)
+    else:
+        print simplejson.dumps({ret.get(field, "") for field in fields}, indent=4, cls=DateTimeEncoder)
+
+def get_turtle(name):
+    tuts = monkapi.find_turtles({'name':name}, {'_id':True})
+    if tuts:
+        return tuts[0]['_id']
+    else:
+        return None
+        
 def active_learn(turtleId, num=1):
     pass
 
@@ -55,7 +66,7 @@ def add_panda(turtleId, pandaScript, run=True):
     pass
 
 def add_turtle(turtleScript):
-    if userId:
+    if userId and 'creator' not in turtleScript:
         turtleScript['creator'] = userId
     turtleId = monkapi.create_turtle(turtleScript)
     monkapi.save_turtle(turtleId)
