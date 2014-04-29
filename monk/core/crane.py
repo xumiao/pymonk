@@ -58,7 +58,7 @@ class Crane(object):
             self._coll = self._database[collectionName]
             self._currentCollectionName = collectionName
     
-    def reset_collection_name(self, collectionName):
+    def reset_collection_name(self):
         self._coll = self._database[self._defaultCollectionName]
         self._currentCollectionName = self._defaultCollectionName
     

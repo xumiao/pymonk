@@ -117,18 +117,25 @@ class Turtle(base.MONKObject):
         else:
             logger.info('panda {0} is not in the turtle {1}'.format(panda.name, self.name))
             return False
+
+    def _predict(self, userId, panda, entity):
+        entity[panda.uid] = sigmoid(panda.predict(userId, entity))
+        return sign0(entity[panda.uid])
         
     def predict(self, userId, entity, fields=None):
-        def _predict(panda):
-            entity[panda.uid] = sigmoid(panda.predict(userId, entity))
-            return sign0(entity[panda.uid])
-        predicted = self.inverted_mapping[tuple([_predict(panda) for panda in self.pandas])]
+        predicted = self.inverted_mapping[tuple([self._predict(userId, panda, entity) for panda in self.pandas])]
         self.tigress.measure(userId, entity, predicted)
         return predicted
 
     def add_data(self, userId, entity):
         return self.tigress.supervise(self, userId, entity)
-        
+    
+    def active_train_one(self, userId):
+        try:
+            self.tigress.supervise(self, userId)
+        except:
+            logger.info("turtle {0} does not have active superviser".format(self.name))
+    
     def train_one(self, userId):
         [panda.mantis.train_one(userId) for panda in self.pandas if panda.has_mantis()]
         [panda.save_one(userId) for panda in self.pandas]
@@ -204,7 +211,7 @@ class Turtle(base.MONKObject):
             return False
         
         return True
-
+    
 class SingleTurtle(Turtle):
     
     def predict(self, userId, entity, fields=None):
@@ -223,12 +230,9 @@ class SingleTurtle(Turtle):
             panda.mantis.train_one(userId)
 
 class MultiLabelTurtle(Turtle):
-    
+
     def predict(self, userId, entity, fields=None):
-        def _predict(panda):
-            entity[panda.uid] = sigmoid(panda.predict(userId, entity))
-            return sign0(entity[panda.uid])
-        predicted = [panda.name for panda in self.pandas if _predict(panda) > 0]
+        predicted = [panda.name for panda in self.pandas if self._predict(userId, panda, entity) > 0]
         self.tigress.measure(userId, entity, predicted)
         
 class RankingTurtle(Turtle):

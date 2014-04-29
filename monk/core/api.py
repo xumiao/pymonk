@@ -85,7 +85,7 @@ def save_entities(entities, collectionName=None):
     
 # project(turtle) management APIs
 def find_turtles(query):
-    return crane.turtleStore.load_all(query, {'_id':True}, 0, -1)
+    return crane.turtleStore.load_all(query, {'_id':True})
     
 def create_turtle(turtleScript):
     _turtle = crane.turtleStore.load_or_create(turtleScript)

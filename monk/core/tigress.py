@@ -8,6 +8,7 @@ A supervisor looks for signals and decides the training strategy
 import base,crane
 import re
 from itertools import izip
+import monk.utils.utils as utils
 import logging
 logger = logging.getLogger('monk.tigress')
 
@@ -28,6 +29,12 @@ class Tigress(base.MONKObject):
             self.confusionMatrix = {}
         if "costs" not in self.__dict__:
             self.costs = {}
+        if "displayTextFields" not in self.__dict__:
+            self.displayTextFields = []
+        if "displayImageFields" not in self.__dict__:
+            self.displayImageField = None
+        if "activeBatchSize" not in self.__dict__:
+            self.activeBatchSize = 10
         if "defaultCost" not in self.__dict__:
             if len(self.costs) > 0:
                 self.defaultCost = min(self.costs.values())
@@ -162,20 +169,59 @@ class PatternTigress(Tigress):
     def retrieve_target(self, entity):
         combinedField = ' . '.join(self.fields)
         return (t for r, t in self.p.iteritems() if r.search(combinedField))
-        
-    def supervise(self, turtle, userId, entity):
-        pandas = turtle.pandas
-        for t in self.retrieve_target(entity):
+    
+    def _supervise(self, turtle, userId, entity, tags):
+        for t in tags:
             cost = self.costs[t]
             ys = turtle.mapping[t]
-            [panda.mantis.add_data(userId, entity, y, cost) for panda, y in izip(pandas, ys)]
+            [panda.mantis.add_data(userId, entity, y, cost) for panda, y in izip(turtle.pandas, ys)]
             if self.mutualExclusive:
                 return True
 
         if self.defaulting:
             # no pattern found, add all negative
-            [panda.mantis.add_data(userId, entity, -1, self.defaultCost) for panda in pandas]
+            [panda.mantis.add_data(userId, entity, -1, self.defaultCost) for panda in turtle.pandas]
         
+    def supervise(self, turtle, userId, entity=None):
+        if entity:
+            self._supervise(turtle, userId, entity, self.retrieve_target(entity))
+        else:
+            if not self.fields:
+                logger.error('no target fields have been given for the turtle')
+                return False
+            #TODO: make the rendering and querying as web-services instead of console   
+            toExit = False
+            rawTags = self.patterns.values()
+            rawTags = dict(zip(range(len(rawTags)), rawTags))
+            tags = ' '.join(('.'.join(it) for it in rawTags.iteritems()))
+            if self.mutualExclusive:
+                display = 'choose ONE tag from [{0}]\n'.format(tags)
+            else:
+                display = 'choose Multiple tags from [{0}]\n'.format(tags)
+            crane.entityStore.set_collection_name(turtle.entityCollectionName)
+            while not toExit:
+                # load unseen entities
+                ents = crane.entityStore.load_all({field : {'$exists' : False} for field in self.fields}, num=self.activeBatchSize)
+                if ents:
+                    for ent in ents:
+                        utils.show(ent, fields=self.displayTextFields, imgField=self.displayImageField)
+                        tags = raw_input(display)
+                        if tags == "bye":
+                            toExit = True
+                            break
+                        else:
+                            tags = tags.split(' ')
+                            try:
+                                tags = [rawTags[int(t)] for t in tags]
+                            except:
+                                pass
+                            setattr(ent, self.fields[0], tags)
+                            self._supervise(self, turtle, userId, entity, tags)
+                    crane.entityStore.save_all(ents)
+                    turtle.train_one(userId)
+                else:
+                    #TODO: load uncertain entities
+                    toExit = True
         return True
 
 class MultiLabelTigress(PatternTigress):
@@ -186,21 +232,18 @@ class MultiLabelTigress(PatternTigress):
         fields   : fields for searching targets
     """
 
-    def supervise(self, turtle, userId, entity):
-        targets = set(self.retrieve_target(entity))
-        [panda.mantis.add_date(userId, entity, 1, self.costs.get(panda.name, self.defaultCost))
+    def _supervise(self, turtle, userId, entity, tags):
+        targets = set(tags)
+        [panda.mantis.add_data(userId, entity, 1, self.costs.get(panda.name, self.defaultCost))
          for panda in turtle.pandas if panda.name in targets]
-        [panda.mantis.add_date(userId, entity, -1, self.costs.get(panda.name, self.defaultCost))
+        [panda.mantis.add_data(userId, entity, -1, self.costs.get(panda.name, self.defaultCost))
          for panda in turtle.pandas if panda.name not in targets]
-        return True
     
 class SelfTigress(Tigress):
     pass
 class SPNTigress(Tigress):
     pass        
 class LexiconTigress(Tigress):
-    pass        
-class ActiveTigress(Tigress):
     pass        
 class CoTigress(Tigress):
     pass
@@ -211,5 +254,4 @@ base.register(MultiLabelTigress)
 base.register(SelfTigress)
 base.register(SPNTigress)
 base.register(LexiconTigress)
-base.register(ActiveTigress)
 base.register(CoTigress)
