@@ -84,8 +84,8 @@ def save_entities(entities, collectionName=None):
     [crane.entityStore.update_one_in_fields(ent, ent.generic()) for ent in entities]
     
 # project(turtle) management APIs
-def find_turtles(query, fields=None):
-    return crane.turtleStore.load_all(query, fields)
+def find_turtles(query):
+    return crane.turtleStore.load_all(query, {'_id':True}, 0, -1)
     
 def create_turtle(turtleScript):
     _turtle = crane.turtleStore.load_or_create(turtleScript)
