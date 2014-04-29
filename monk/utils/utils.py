@@ -21,7 +21,21 @@ class DateTimeEncoder(simplejson.JSONEncoder):
             return (datetime.datetime.min + obj).time().isoformat()
         else:
             return super(DateTimeEncoder, self).default(obj)
-            
+
+def show(ent, fields=[], imgField=None):
+    ret = ent.generic()
+    if not fields:
+        print simplejson.dumps(ret, indent=4, cls=DateTimeEncoder)
+    else:
+        print simplejson.dumps({field: ret.get(field, "") for field in fields}, indent=4, cls=DateTimeEncoder)
+    
+    if imgField:
+        try:
+            from IPython.core.display import Image
+            Image(url=imgField)
+        except:
+            pass
+
 def Serialize(a):
     try:
         outfile = StringIO.StringIO()

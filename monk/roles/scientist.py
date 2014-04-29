@@ -8,8 +8,7 @@ import monk.core.api as monkapi
 import monk.core.configuration as Config
 import logging
 import os
-import simplejson
-from monk.utils.utils import DateTimeEncoder
+import monk.utils.utils as utils
 
 config = Config.Configuration("scientist.yml", "scientist", str(os.getpid()))
 logger = logging.getLogger("monk.scientist")
@@ -38,21 +37,21 @@ def save_entities(ents, collectionName=None):
     monkapi.save_entities(ents, collectionName)
     
 def show(ent, fields=None):
-    ret = ent.generic()
-    if not fields:
-        print simplejson.dumps(ret, indent=4, cls=DateTimeEncoder)
-    else:
-        print simplejson.dumps({field: ret.get(field, "") for field in fields}, indent=4, cls=DateTimeEncoder)
+    utils.show(ent, fields)
 
 def get_turtle(name):
-    tuts = monkapi.find_turtles({'name':name}, {'_id':True})
+    tuts = monkapi.find_turtles({'name':name})
     if tuts:
         return tuts[0]['_id']
     else:
         return None
         
-def active_learn(turtleId, num=1):
-    pass
+def active_train(turtleId):
+    if not userId:
+        logger.info('please log in first')
+        return
+    turtle = monkapi.get_turtle(turtleId)
+    turtle.active_train_one(userId)
 
 def execute(turtleId, entities=None, fields=None, entityCollectionName=None):
     monkapi.crane.entityStore.set_collection_name(entityCollectionName)
