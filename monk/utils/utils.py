@@ -32,7 +32,7 @@ def show(ent, fields=[], imgField=None):
     if imgField:
         try:
             from IPython.core.display import Image
-            Image(url=imgField)
+            Image(url=ret.get(imgField, ""))
         except:
             pass
 
