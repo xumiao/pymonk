@@ -36,7 +36,7 @@ def load_entities(query={}, skip=0, num=100, collectionName=None):
 def save_entities(ents, collectionName=None):
     monkapi.save_entities(ents, collectionName)
     
-def show(ent, fields=None):
+def show(ent, fields=[], imgField=None):
     utils.show(ent, fields)
 
 def get_turtle(name):
