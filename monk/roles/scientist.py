@@ -42,7 +42,7 @@ def show(ent, fields=None):
     if not fields:
         print simplejson.dumps(ret, indent=4, cls=DateTimeEncoder)
     else:
-        print simplejson.dumps({ret.get(field, "") for field in fields}, indent=4, cls=DateTimeEncoder)
+        print simplejson.dumps({field: ret.get(field, "") for field in fields}, indent=4, cls=DateTimeEncoder)
 
 def get_turtle(name):
     tuts = monkapi.find_turtles({'name':name}, {'_id':True})
