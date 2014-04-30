@@ -352,9 +352,9 @@ class POSTurtle(DictionaryTurtle):
         sents = nltk.tokenize.sent_tokenize(field)
         for sent in sents:
             tokens = nltk.tokenize.word_tokenize(sent.lower())
-            tagged = nltk.pos_tag((t for t in tokens if not self.is_stop(t) and
+            tagged = nltk.pos_tag([t for t in tokens if not self.is_stop(t) and
                                                         not self.is_symbol(t) and
-                                                        not self.is_single(t)))
+                                                        not self.is_single(t)])
             allTokens.update((('_'.join(t),1) for t in tagged))
         return allTokens
 
