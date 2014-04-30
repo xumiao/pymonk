@@ -165,6 +165,7 @@ class PatternTigress(Tigress):
     def supervise(self, turtle, userId, entity):
         pandas = turtle.pandas
         for t in self.retrieve_target(entity):
+            logger.debug('for t in self.retrieve_target(entity):')            
             cost = self.costs[t]
             ys = turtle.mapping[t]
             [panda.mantis.add_data(userId, entity, y, cost) for panda, y in izip(pandas, ys)]
@@ -172,6 +173,7 @@ class PatternTigress(Tigress):
                 return True
 
         if self.defaulting:
+            logger.debug('if self.defaulting:') 
             # no pattern found, add all negative
             [panda.mantis.add_data(userId, entity, -1, self.defaultCost) for panda in pandas]
         

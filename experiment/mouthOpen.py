@@ -19,7 +19,8 @@ turtleId = '53403a19e7f10034b8c89cea'
 kafkaTopic = 'expression'
 parts = range(1, 33)
 users = {}
-
+UoI = ['Steve_70f97adb-2860-4b96-aff3-b538a1781581']#, 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5', 'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f']
+        
 def add_data():
     global users
     try:
@@ -30,8 +31,8 @@ def add_data():
                           ack_timeout=200)
         coll = mcl.DataSet['PMLExpression']
         ii = 0      # max is 151413 (number of doc in PMLExpression)
-        for ent in coll.find(None, {'_id':True, 'userId':True}, timeout=False):
-            if ii == 30:
+        for ent in coll.find({'userId': {'$in': UoI}}, {'_id':True, 'userId':True}, timeout=False):
+            if ii == 1:
                 break
             ii += 1
             entity = str(ent['_id'])
@@ -67,7 +68,7 @@ def train(numIters):
                           req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                           ack_timeout=200)
         for userId, partitionId in users.iteritems():   
-            #if userId == "Steve_70f97adb-2860-4b96-aff3-b538a1781581":    
+            if userId in UoI:    
                 for i in range(numIters):                                 
                     encodedMessage = simplejson.dumps({'turtleId':turtleId,
                                                    'userId':userId,
@@ -79,5 +80,5 @@ def train(numIters):
 
     
 if __name__=='__main__':
-    #add_data()
-    train(10)
+    add_data()
+    #train(1)

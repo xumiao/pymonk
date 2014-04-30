@@ -143,8 +143,13 @@ cdef class SVMDual(object):
         cdef int j
         cdef float ya
         self.w.copyUpdate(z)
+        #logger.debug('z is {0}'.format(z))
+        #logger.debug('w is {0}'.format(self.w))
+        #logger.debug('self.num_instances is {0}'.format(self.num_instances))
         for j in xrange(self.num_instances):
             self.w.add(self.x[j], self.y[j] * self.alpha[j])
+            #logger.debug('y of sample {0} is {1}'.format(j, self.y[j]))
+        #logger.debug('after w is {0}'.format(self.w))
         
     def trainModel(self):
         cdef int j, k, s, iteration
