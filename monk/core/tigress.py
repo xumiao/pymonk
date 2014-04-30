@@ -158,8 +158,21 @@ class PatternTigress(Tigress):
         del result['p']
         return result
 
+    def _translate(self, obj, sep=' . '):
+        try:
+            ret = ''
+            if isinstance(obj, basestring):
+                ret = obj
+            else:
+                ret = sep.join(obj)
+            return ret.decode('utf-8')
+        except Exception as e:
+            logger.error('{0}'.format(e.message))
+            logger.error('unknow value formats')
+            return ''
+
     def retrieve_target(self, entity):
-        combinedField = ' . '.join(self.fields)
+        combinedField = ' . '.join([self._translate(entity.get_attr(field)) for field in self.fields])
         return (t for r, t in self.p.iteritems() if r.search(combinedField))
         
     def supervise(self, turtle, userId, entity):
