@@ -10,6 +10,7 @@ import StringIO
 
 import simplejson
 import datetime
+from IPython.core.display import Image
 
 class DateTimeEncoder(simplejson.JSONEncoder):
     def default(self, obj):
@@ -31,10 +32,10 @@ def show(ent, fields=[], imgField=None):
     
     if imgField:
         try:
-            from IPython.core.display import Image
-            Image(url=ret.get(imgField, ""))
-        except:
-            pass
+            return Image(url=ret.get(imgField, ""))
+        except Exception as e:
+            print e
+    return None
 
 def Serialize(a):
     try:

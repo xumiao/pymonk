@@ -37,7 +37,7 @@ def save_entities(ents, collectionName=None):
     monkapi.save_entities(ents, collectionName)
     
 def show(ent, fields=[], imgField=None):
-    utils.show(ent, fields)
+    return utils.show(ent, fields, imgField)
 
 def get_turtle(name):
     tuts = monkapi.find_turtles({'name':name})
@@ -56,7 +56,7 @@ def active_train(turtleId):
 def execute(turtleId, entities=None, fields=None, entityCollectionName=None):
     monkapi.crane.entityStore.set_collection_name(entityCollectionName)
     if entities is None:
-        entities = monkapi.load_entities()
+        entities = monkapi.load_entities(None, num=0)
     [monkapi.predict(turtleId, userId, ent, fields) for ent in entities]
     monkapi.save_entities(entities, entityCollectionName)
     return entities
