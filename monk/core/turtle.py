@@ -284,13 +284,16 @@ class DictionaryTurtle(Turtle):
         return (uid, 1.0)
     
     def translate(self, obj):
-        if isinstance(obj, basestring):
-            return obj
-            
         try:
-            return ' '.join(obj)
+            ret = ""
+            if isinstance(obj, basestring):
+                ret = obj
+            else:
+                ret = ' '.join(obj)
+            return ret.decode('utf-8')
         except:
-            return str(obj)
+            logger.error('unknow value formats')
+            return None
     
     def is_stop(self, w):
         if w in stopwords_english:
@@ -305,16 +308,26 @@ class DictionaryTurtle(Turtle):
             return True
         else:
             return False
+    
+    def is_single(self, w):
+        if len(w) <= 1:
+            return True
+        else:
+            return False
             
     def predict(self, userId, entity, fields):
-        if fields:
-            field = '. '.join(self.translate(getattr(entity, field, '')) for field in fields)
-            allTokens = self._process(field)
+        total = 0
+        for field in fields:
+            value = self.translate(getattr(entity, field, ''))
+            if not value:
+                continue
+            
+            allTokens = self._process(value)
             entity._raws.update(allTokens)
             entity._features.update([self._get_or_new_panda(userId, t) for t in allTokens])
-            return len(allTokens)
-        else:
-            return None
+            total += len(allTokens)
+
+        return total
     
     def aggregate(self, userId):
         # should be taking care of dedups in models and data
@@ -327,7 +340,9 @@ class UniGramTurtle(DictionaryTurtle):
         sents = nltk.tokenize.sent_tokenize(field)
         for sent in sents:
             tokens = nltk.tokenize.word_tokenize(sent.lower())
-            allTokens.update(((t,1) for t in tokens if not self.is_stop(t) and not self.is_symbol(t)))
+            allTokens.update(((t,1) for t in tokens if not self.is_stop(t) and
+                                                       not self.is_symbol(t) and
+                                                       not self.is_single(t)))
         return allTokens
     
 class POSTurtle(DictionaryTurtle):
@@ -337,7 +352,9 @@ class POSTurtle(DictionaryTurtle):
         sents = nltk.tokenize.sent_tokenize(field)
         for sent in sents:
             tokens = nltk.tokenize.word_tokenize(sent.lower())
-            tagged = nltk.pos_tag((t for t in tokens if not self.is_stop(t) and not self.is_symbol(t)))
+            tagged = nltk.pos_tag((t for t in tokens if not self.is_stop(t) and
+                                                        not self.is_symbol(t) and
+                                                        not self.is_single(t)))
             allTokens.update((('_'.join(t),1) for t in tagged))
         return allTokens
 
