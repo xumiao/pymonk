@@ -15,6 +15,7 @@ import logging
 import nltk
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
+from monk.utils.utils import translate
 
 logger = logging.getLogger("monk.turtle")
 
@@ -283,18 +284,6 @@ class DictionaryTurtle(Turtle):
             uid = self.dictionary[name]
         return (uid, 1.0)
     
-    def translate(self, obj):
-        try:
-            ret = ""
-            if isinstance(obj, basestring):
-                ret = obj
-            else:
-                ret = ' '.join(obj)
-            return ret.decode('utf-8')
-        except:
-            logger.error('unknow value formats')
-            return None
-    
     def is_stop(self, w):
         if w in stopwords_english:
             return True
@@ -318,7 +307,7 @@ class DictionaryTurtle(Turtle):
     def predict(self, userId, entity, fields):
         total = 0
         for field in fields:
-            value = self.translate(getattr(entity, field, ''))
+            value = translate(getattr(entity, field, ''))
             if not value:
                 continue
             
