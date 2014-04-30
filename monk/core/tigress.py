@@ -167,7 +167,7 @@ class PatternTigress(Tigress):
         return result
 
     def retrieve_target(self, entity):
-        combinedField = ' . '.join(self.fields)
+        combinedField = ' . '.join([utils.translate(getattr(entity, field, ""), ' . ') for field in self.fields])
         return (t for r, t in self.p.iteritems() if r.search(combinedField))
     
     def _supervise(self, turtle, userId, entity, tags):

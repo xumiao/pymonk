@@ -11,6 +11,9 @@ import StringIO
 import simplejson
 import datetime
 from IPython.core.display import Image
+import logging
+
+logger = logging.getLogger('monk.utils')
 
 class DateTimeEncoder(simplejson.JSONEncoder):
     def default(self, obj):
@@ -34,8 +37,22 @@ def show(ent, fields=[], imgField=None):
         try:
             return Image(url=ret.get(imgField, ""))
         except Exception as e:
-            print e
+            logger.info('can not display image {0}'.format(e.message))
     return None
+
+def translate(self, obj, sep=' '):
+    try:
+        ret = ""
+        if isinstance(obj, basestring):
+            ret = obj
+        else:
+            ret = sep.join(obj)
+        return ret.decode('utf-8')
+    except Exception as e:
+        logger.info('{0}'.format(e.message))
+        logger.info('error in tranlating {0}'.format(obj))
+        logger.info('unknow value formats')
+        return None
 
 def Serialize(a):
     try:

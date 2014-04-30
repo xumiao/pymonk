@@ -15,6 +15,7 @@ import logging
 import nltk
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
+from monk.utils.utils import translate
 
 logger = logging.getLogger("monk.turtle")
 
@@ -36,7 +37,7 @@ class Turtle(base.MONKObject):
             self.tigress = ti.Tigress()
         if "mapping" not in self.__dict__:
             self.mapping = {}
-        self.inverted_mapping = {v: k for k, v in self.mapping.iteritems()}
+        self.invertedMapping = {v: k for k, v in self.mapping.iteritems()}
         if 'name' not in self.__dict__:
             self.name = constants.DEFAULT_NONE
         if 'description' not in self.__dict__:
@@ -58,8 +59,8 @@ class Turtle(base.MONKObject):
             if isinstance(uids, basestring):
                 uids = eval(uids)
             [panda.add_features(uids) for panda in self.pandas]
-        elif 'turtle_ids' in self.requires:
-            turtles = crane.turtleStore.load_all_by_ids([ObjectId(tid) for tid in self.requires['turtle_ids']])
+        elif 'turtleIds' in self.requires:
+            turtles = crane.turtleStore.load_all_by_ids([ObjectId(tid) for tid in self.requires['turtleIds']])
             [panda.add_features(turtle.get_panda_uids()) for turtle in turtles for panda in self.pandas]
         else:
             logger.error('dependent features are either in uids or turtle_ids, but not in {0}'.format(self.requires))
@@ -68,8 +69,8 @@ class Turtle(base.MONKObject):
         result = super(Turtle, self).generic()
         result['tigress'] = self.tigress._id
         result['pandas'] = [panda._id for panda in self.pandas]
-        # inverted_mapping is created from mapping
-        del result['inverted_mapping']
+        # invertedMapping is created from mapping
+        del result['invertedMapping']
         del result['pandaUids']
         return result
     
@@ -123,7 +124,7 @@ class Turtle(base.MONKObject):
         return sign0(entity[panda.uid])
         
     def predict(self, userId, entity, fields=None):
-        predicted = self.inverted_mapping[tuple([self._predict(userId, panda, entity) for panda in self.pandas])]
+        predicted = self.invertedMapping[tuple([self._predict(userId, panda, entity) for panda in self.pandas])]
         self.tigress.measure(userId, entity, predicted)
         return predicted
 
@@ -283,18 +284,6 @@ class DictionaryTurtle(Turtle):
             uid = self.dictionary[name]
         return (uid, 1.0)
     
-    def translate(self, obj):
-        try:
-            ret = ""
-            if isinstance(obj, basestring):
-                ret = obj
-            else:
-                ret = ' '.join(obj)
-            return ret.decode('utf-8')
-        except:
-            logger.error('unknow value formats')
-            return None
-    
     def is_stop(self, w):
         if w in stopwords_english:
             return True
@@ -318,7 +307,7 @@ class DictionaryTurtle(Turtle):
     def predict(self, userId, entity, fields):
         total = 0
         for field in fields:
-            value = self.translate(getattr(entity, field, ''))
+            value = translate(getattr(entity, field, ''))
             if not value:
                 continue
             
