@@ -177,16 +177,17 @@ class PatternTigress(Tigress):
         
     def supervise(self, turtle, userId, entity):
         pandas = turtle.pandas
-        for t in self.retrieve_target(entity):
-            logger.debug('for t in self.retrieve_target(entity):')            
+        useDefault = True
+        for t in self.retrieve_target(entity):           
+            useDefault = False
             cost = self.costs[t]
             ys = turtle.mapping[t]
-            [panda.mantis.add_data(userId, entity, y, cost) for panda, y in izip(pandas, ys)]
+            [panda.mantis.add_data(userId, entity, int(y), cost) for panda, y in izip(pandas, str(ys))]
             if self.mutualExclusive:
                 return True
-
+        if not useDefault:
+            return True
         if self.defaulting:
-            logger.debug('if self.defaulting:') 
             # no pattern found, add all negative
             [panda.mantis.add_data(userId, entity, -1, self.defaultCost) for panda in pandas]
         

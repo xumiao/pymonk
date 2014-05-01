@@ -32,7 +32,7 @@ def add_data():
         coll = mcl.DataSet['PMLExpression']
         ii = 0      # max is 151413 (number of doc in PMLExpression)
         for ent in coll.find({'userId': {'$in': UoI}}, {'_id':True, 'userId':True}, timeout=False):
-            if ii == 1:
+            if ii == 50:
                 break
             ii += 1
             entity = str(ent['_id'])
@@ -81,4 +81,4 @@ def train(numIters):
     
 if __name__=='__main__':
     add_data()
-    #train(1)
+    train(10)

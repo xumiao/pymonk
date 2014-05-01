@@ -56,7 +56,7 @@ class Entity(base.MONKObject):
             self._raws[
                 rawKey.replace('.', '\uff0e').replace('$', '\uff04')] = rawValue
 
-    def get_attr(self, key, value):
+    def get_attr(self, key):
         try:
             return self.__dict__[key]
         except:
