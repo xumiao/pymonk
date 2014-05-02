@@ -46,11 +46,13 @@ def get_turtle(name):
     else:
         return None
         
-def active_train(turtleId, activeBatchSize):
+def active_train(turtleId, activeBatchSize=10):
     if not userId:
         logger.info('please log in first')
         return
     turtle = monkapi.get_turtle(turtleId)
+    if not turtle.has_one(userId):
+        turtle.load_one(userId)
     turtle.tigress.activeBatchSize = activeBatchSize
     turtle.active_train_one(userId)
 
@@ -62,16 +64,19 @@ def execute(turtleId, entities=None, fields=None, entityCollectionName=None):
     monkapi.save_entities(entities, entityCollectionName)
     return entities
 
-def add_panda(turtleId, pandaScript, run=True): 
-    pass
-
+def add_panda(turtleId, pandaScript, toTurtles=[], run=True, entityCollectionName=None):
+    panda = monkapi.create_panda(pandaScript)
+    if panda:
+        monkapi.add_panda(turtleId, panda)
+        [t.require_panda(panda) for t in toTurtles]
+        if run:
+            entities = monkapi.load_entities(None, {}, 0, 0, entityCollectionName)
+            [ent.set_value(panda.uid, panda.predict(userId, ent)) for ent in entities]
+    return panda
+    
 def add_turtle(turtleScript):
     if userId and 'creator' not in turtleScript:
         turtleScript['creator'] = userId
     turtleId = monkapi.create_turtle(turtleScript)
     monkapi.save_turtle(turtleId)
     return turtleId
-    
-def train(turtleId, nIter=10):
-    pass
-

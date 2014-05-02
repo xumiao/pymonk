@@ -86,6 +86,12 @@ class Turtle(base.MONKObject):
             result = result and [pa.delete() for pa in self.pandas].all()
         return result
     
+    def require_panda(self, panda):
+        if self.has_panda(panda):
+            logger.error('turtle can not depends on itself {0}'.format(panda._id))
+            return
+        [pa.add_features(panda.uid) for pa in self.pandas]
+        
     def require(self, turtleId):
         if self._id is turtleId:
             logger.error('turle can not depend on itself {0}'.format(turtleId))

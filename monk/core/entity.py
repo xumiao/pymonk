@@ -48,4 +48,10 @@ class Entity(base.MONKObject):
         if isinstance(rawKey, basestring):
             self._raws[rawKey.replace('.', '\uff0e').replace('$', '\uff04')] = rawValue
 
+    def set_value(self, key, value):
+        if value != 0 and key not in self._features:
+            self._features[key] = value
+            crane.entityStore.push_one_in_fields(self, {cons.FEATURES:(key,value)})
+        return value
+        
 base.register(Entity)

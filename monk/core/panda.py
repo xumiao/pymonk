@@ -166,14 +166,15 @@ class LinearPanda(Panda):
         crane.pandaStore.update_one_in_fields(self, {'consensus':self.consensus.generic()})
         
     def load_one(self, userId):
-        self.load_one_weight(userId)
-        self.mantis.load_one(userId)
+        result = self.load_one_weight(userId)
+        return result and self.mantis.load_one(userId)
 
     def unload_one(self, userId):
         if self.has_user(userId):
             field = 'weights.{0}'.format(userId)
             result = crane.pandaStore.update_one_in_fields(self, {field:self.weights[userId].generic()})
-            del self.weights[userId]
+            if userId in self.weights:
+                del self.weights[userId]
             return result and self.mantis.unload_one(userId)
         else:
             logger.error('panda {0} does not have user {1}'.format(self._id, userId))
