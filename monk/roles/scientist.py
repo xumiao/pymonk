@@ -46,11 +46,12 @@ def get_turtle(name):
     else:
         return None
         
-def active_train(turtleId):
+def active_train(turtleId, activeBatchSize):
     if not userId:
         logger.info('please log in first')
         return
     turtle = monkapi.get_turtle(turtleId)
+    turtle.tigress.activeBatchSize = activeBatchSize
     turtle.active_train_one(userId)
 
 def execute(turtleId, entities=None, fields=None, entityCollectionName=None):

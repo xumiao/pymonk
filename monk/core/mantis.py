@@ -121,8 +121,10 @@ class Mantis(base.MONKObject):
         if self.has_user_in_store(userId):
             field = 'data.{0}'.format(userId)
             result = crane.mantisStore.remove_field(self, field)
-            del self.solvers[userId]
-            del self.data[userId]
+            if userId in self.solvers:
+                del self.solvers[userId]
+            if userId in self.data:
+                del self.data[userId]
             return result
         else:
             logger.warning('mantis {0} does not store user {1}'.format(self._id, userId))
@@ -145,8 +147,7 @@ class Mantis(base.MONKObject):
             ents = crane.entityStore.load_all_by_ids(da.keys())
             for ent in ents:
                 index, y, c = da[ent._id]
-                ent._features.setIndex(index)
-                solver.setData(ent._features, y, c)
+                solver.setData(ent._features, y, c, index)
             return True
         else:
             logger.warning('mantis {0} does not store user {1}'.format(self._id, userId))

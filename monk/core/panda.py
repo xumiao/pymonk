@@ -136,7 +136,8 @@ class LinearPanda(Panda):
         if self.has_user_in_store(userId):
             field = 'weights.{0}'.format(userId)
             result = crane.pandaStore.remove_field(self, field)
-            del self.weights[userId]
+            if userId in self.weights:
+                del self.weights[userId]
             return result and self.mantis.remove_one(userId)
         else:
             logger.error('panda {0} does not store user {1}'.format(self._id, userId))

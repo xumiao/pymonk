@@ -196,13 +196,13 @@ class PatternTigress(Tigress):
             rawTags = dict(zip(range(len(rawTags)), rawTags))
             tags = ' '.join(('.'.join([str(it[0]),str(it[1])]) for it in rawTags.iteritems()))
             if self.mutualExclusive:
-                display = 'choose ONE tag from [{0}]\n'.format(tags)
+                display = 'Choose ONE tag from [{0}]\n'.format(tags)
             else:
-                display = 'choose Multiple tags from [{0}]\n'.format(tags)
+                display = 'Choose Multiple tags from [{0}]\n'.format(tags)
             crane.entityStore.set_collection_name(turtle.entityCollectionName)
             while not toExit:
                 # load unseen entities
-                ents = crane.entityStore.load_all_in_ids({field : {'$exists' : False} for field in self.fields}, skip=0, num=1)#self.activeBatchSize)
+                ents = crane.entityStore.load_all_in_ids({field : {'$exists' : False} for field in self.fields}, skip=0, num=self.activeBatchSize)
                 ents = crane.entityStore.load_all_by_ids([ent['_id'] for ent in ents])
                 if ents:
                     for ent in ents:
@@ -219,13 +219,13 @@ class PatternTigress(Tigress):
                                 pass
                             setattr(ent, self.fields[0], tags)
                             ent.save(fields={self.fields[0]:tags})
-                            utils.show(ent, fields=self.fields)
                             self._supervise(turtle, userId, ent, tags)
                     logger.info('training')
                     turtle.train_one(userId)
                 else:
                     #TODO: load uncertain entities
                     toExit = True
+            logger.info('active training stopped')
         return True
 
 class MultiLabelTigress(PatternTigress):

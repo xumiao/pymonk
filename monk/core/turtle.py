@@ -179,11 +179,9 @@ class Turtle(base.MONKObject):
         return True
     
     def remove_one(self, userId):
-        if not self.tigress.remove_one(userId):
-            return False
+        self.tigress.remove_one(userId)
             
-        if [False for panda in self.pandas if not panda.remove_one(userId)]:
-            return False
+        [False for panda in self.pandas if not panda.remove_one(userId)]
             
         return True
         
