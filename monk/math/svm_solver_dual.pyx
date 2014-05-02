@@ -110,32 +110,26 @@ cdef class SVMDual(object):
             self.index[j] = j
             self.QD[j] = 0.5 * self.rho / self.c[j] + self.x[j].norm2()
     
-    def setData(self, x, y, c):
+    def setData(self, x, y, c, ind):
         cdef int j
-        j = x.getIndex()
-        if j >= 0 and j < self.max_num_instances:
-            # x is set, use its index, and modify label
-            if y == self.y[j]:
-                return j
-            # TODO: rewind the alpha and weight to remove the old data
-            # for now, assume it is just forgotten
-        elif self.num_instances < self.max_num_instances:
-            # add the data to the end of the arrays
-            j = self.num_instances
-            self.num_instances += 1
-            x.setIndex(j)
-        else:
-            # pick the last one in the index
-            # it is possibly the one far away from the decision boundary
-            j = self.index[self.max_num_instances - 1]
-            x.setIndex(j)
+        j = ind
+        if j < 0:
+            if self.num_instances < self.max_num_instances:
+                # add the data to the end of the arrays
+                j = self.num_instances
+                self.num_instances += 1
+            else:
+                # pick the last one in the index
+                # it is possibly the one far away from the decision boundary
+                # TODO should rotate the index after that
+                j = self.index[self.max_num_instances - 1]
             
         self.x[j] = x
         self.y[j] = y
         self.c[j] = c
         self.alpha[j] = 0
         self.QD[j] = 0.5 * self.rho / c + x.norm2()
-        return x.getIndex()
+        return j
         
     def setModel(self, z):
         cdef int j

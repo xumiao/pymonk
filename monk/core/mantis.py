@@ -64,8 +64,14 @@ class Mantis(base.MONKObject):
     def add_data(self, userId, entity, y, c):
         solver = self.get_solver(userId)
         if solver:
-            index = solver.setData(entity._features,y,c)
-            self.data[userId][entity._id] = (index, y, c)
+            da = self.data[userId]
+            uuid = entity._id
+            if uuid in da:
+                ind = da[uuid][0]
+            else:
+                ind = -1
+            ind = solver.setData(entity._features, y, c, ind)
+            da[uuid] = (ind, y, c)
     
     def aggregate(self, userId):
         # TODO: incremental aggregation
