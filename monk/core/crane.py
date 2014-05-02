@@ -185,7 +185,7 @@ class Crane(object):
         obj.save()
     
     def save_all(self, objs):
-        [obj.save for obj in objs]
+        [obj.save() for obj in objs]
         
     def create_one(self, obj):
         obj = base.monkFactory.decode(obj)

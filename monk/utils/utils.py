@@ -40,7 +40,7 @@ def show(ent, fields=[], imgField=None):
             logger.info('can not display image {0}'.format(e.message))
     return None
 
-def translate(self, obj, sep=' '):
+def translate(obj, sep=' '):
     try:
         ret = ""
         if isinstance(obj, basestring):

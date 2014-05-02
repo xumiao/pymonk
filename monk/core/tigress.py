@@ -72,7 +72,7 @@ class Tigress(base.MONKObject):
             else:
                 cm[target][predicted] += 1
         if '__total__' not in cm:
-            cm['__total__'] = 0
+            cm['__total__'] = 1
         else:
             cm['__total__'] += 1
     
@@ -168,6 +168,7 @@ class PatternTigress(Tigress):
 
     def retrieve_target(self, entity):
         combinedField = ' . '.join([utils.translate(getattr(entity, field, ""), ' . ') for field in self.fields])
+        logger.debug('combinedField {0}'.format(combinedField))
         return (t for r, t in self.p.iteritems() if r.search(combinedField))
     
     def _supervise(self, turtle, userId, entity, tags):
@@ -193,7 +194,7 @@ class PatternTigress(Tigress):
             toExit = False
             rawTags = self.patterns.values()
             rawTags = dict(zip(range(len(rawTags)), rawTags))
-            tags = ' '.join(('.'.join(it) for it in rawTags.iteritems()))
+            tags = ' '.join(('.'.join([str(it[0]),str(it[1])]) for it in rawTags.iteritems()))
             if self.mutualExclusive:
                 display = 'choose ONE tag from [{0}]\n'.format(tags)
             else:
@@ -201,7 +202,8 @@ class PatternTigress(Tigress):
             crane.entityStore.set_collection_name(turtle.entityCollectionName)
             while not toExit:
                 # load unseen entities
-                ents = crane.entityStore.load_all({field : {'$exists' : False} for field in self.fields}, num=self.activeBatchSize)
+                ents = crane.entityStore.load_all_in_ids({field : {'$exists' : False} for field in self.fields}, skip=0, num=1)#self.activeBatchSize)
+                ents = crane.entityStore.load_all_by_ids([ent['_id'] for ent in ents])
                 if ents:
                     for ent in ents:
                         utils.show(ent, fields=self.displayTextFields, imgField=self.displayImageField)
@@ -216,8 +218,10 @@ class PatternTigress(Tigress):
                             except:
                                 pass
                             setattr(ent, self.fields[0], tags)
-                            self._supervise(self, turtle, userId, entity, tags)
-                    crane.entityStore.save_all(ents)
+                            ent.save(fields={self.fields[0]:tags})
+                            utils.show(ent, fields=self.fields)
+                            self._supervise(turtle, userId, ent, tags)
+                    logger.info('training')
                     turtle.train_one(userId)
                 else:
                     #TODO: load uncertain entities
@@ -231,6 +235,27 @@ class MultiLabelTigress(PatternTigress):
         patterns : regular expression based patterns for each target defined
         fields   : fields for searching targets
     """
+    def measure(self, userId, entity, predicted):
+        cm = self.confusionMatrix[userId]
+        target = tuple(self.retrieve_target(entity))
+        predicted = tuple(predicted)
+        if target not in cm:
+            cm[target] = {predicted:1}
+        elif predicted not in cm[target]:
+            cm[target][predicted] = 1
+        else:
+            cm[target][predicted] += 1
+        if '__total__' not in cm:
+            cm['__total__'] = 1
+        else:
+            cm['__total__'] += 1
+
+    def accuracy(self, userId, target):
+        try:
+            return self.confusionMatrix[userId][target]
+        except:
+            logger.warning('target {0} not found in confusion matrix'.format(target))
+            return {}
 
     def _supervise(self, turtle, userId, entity, tags):
         targets = set(tags)

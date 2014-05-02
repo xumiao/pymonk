@@ -134,7 +134,8 @@ class Turtle(base.MONKObject):
     def active_train_one(self, userId):
         try:
             self.tigress.supervise(self, userId)
-        except:
+        except Exception as e:
+            logger.info(e.message)
             logger.info("turtle {0} does not have active superviser".format(self.name))
     
     def train_one(self, userId):
@@ -235,6 +236,7 @@ class MultiLabelTurtle(Turtle):
     def predict(self, userId, entity, fields=None):
         predicted = [panda.name for panda in self.pandas if self._predict(userId, panda, entity) > 0]
         self.tigress.measure(userId, entity, predicted)
+        return predicted
         
 class RankingTurtle(Turtle):
         

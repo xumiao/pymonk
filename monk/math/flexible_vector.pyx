@@ -236,6 +236,23 @@ cdef class FlexibleVector(object):
     def __repr__(self):
         return str(self)
 
+    def all_str(self):
+        a = []
+        cdef SkipNodeA* currA = self.head.nextA[0]
+        cdef int height
+        cdef long i
+        while currA != NULL:
+            b = []
+            for height in xrange(currA.height):
+                b.append('*')
+            for height in xrange(currA.height, self.height):
+                b.append('|')
+            for i in xrange(currA.length):
+                b.append('{0}:{1:.4}'.format(currA.index + i, currA.values[i]))
+            a.append(' '.join(b))
+            currA = currA.nextA[0]
+        return '\n'.join(a)
+
     cpdef setIndex(self, int index):
         self.__index = index
     
@@ -304,7 +321,13 @@ cdef class FlexibleVector(object):
     
     def clone(self):
         cdef FlexibleVector c = FlexibleVector()
-        c.add(self,  1)
+        cdef SkipNodeA* currA = self.head.nextA[0]
+        cdef int height
+        cdef long i
+        while currA != NULL:
+            for i in xrange(currA.length):
+                c[currA.index + i] = currA.values[i]
+            currA = currA.nextA[0]
         return c
     
     cdef foreach(self, funcA func):
