@@ -68,9 +68,14 @@ class Mantis(base.MONKObject):
             uuid = entity._id
             if uuid in da:
                 ind = da[uuid][0]
+            elif solver.num_instances < self.maxNumInstances:
+                ind = solver.num_instances
+                solver.num_instances = ind + 1
             else:
-                ind = -1
-            ind = solver.setData(entity._features, y, c, ind)
+                # random replacement policy
+                # TODO: should replace the most confident data
+                olduuid, (ind, oldy, oldc)  = da.popitem()
+            solver.setData(entity._features, y, c, ind)
             da[uuid] = (ind, y, c)
     
     def aggregate(self, userId):
