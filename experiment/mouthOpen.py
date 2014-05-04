@@ -70,7 +70,8 @@ def train(numIters):
                           ack_timeout=200)
         for userId, partitionId in users.iteritems():   
             if userId in UoI:    
-                for i in range(numIters):                                 
+                for i in range(numIters):                         
+                    #print "iteration " + str(i)
                     encodedMessage = simplejson.dumps({'turtleId':turtleId,
                                                    'userId':userId,
                                                    'operation':'train_one'})
@@ -88,7 +89,7 @@ def remove_data_for_experiment_only():
     turtle = MONKModelTurtleStore.find_one({'_id':ObjectId(turtleId)})
     for pandas_id in turtle['pandas']:              # clean up pandas and mantis
         panda = MONKModelPandaStore.find_one({'_id':pandas_id})
-        MONKModelPandaStore.update({'_id':pandas_id},{'$unset':{'consensus':1}})        
+        MONKModelPandaStore.update({'_id':pandas_id},{'$set':{'consensus':[]}})        
         MONKModelPandaStore.update({'_id':pandas_id},{'$set':{'weights':{}}})  
         mantis_id = panda['mantis']
         MONKModelMantisStore.update({'_id':mantis_id},{'$set':{'data':{}}})     
@@ -100,4 +101,4 @@ def remove_data_for_experiment_only():
 if __name__=='__main__':
     remove_data_for_experiment_only()
     add_data()
-    train(1)
+    train(10)

@@ -67,7 +67,7 @@ class Mantis(base.MONKObject):
     def aggregate(self, userId):
         # TODO: incremental aggregation
         # TODO: ADMM aggregation
-        logger.debug("self.panda.consensus = {0}".format(self.panda.consensus))        
+        #logger.debug("self.panda.consensus = {0}".format(self.panda.consensus))        
         consensus = self.panda.consensus
         t = len(self.panda.weights) + 1/self.rho
         if userId in self.panda.weights:
@@ -75,13 +75,13 @@ class Mantis(base.MONKObject):
         else:
             w = consensus
             t += 1
-        consensus.add(w, -1/t)
+        consensus.add(w, -1.0/t)
         self.panda.load_one_weight(userId)
         if userId in self.panda.weights:
             w = self.panda.weights[userId]
         else:
             w = consensus
-        consensus.add(w, 1/t)
+        consensus.add(w, 1.0/t)
         self.panda.save_consensus()
     
     def has_user(self, userId):
