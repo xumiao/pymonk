@@ -145,9 +145,7 @@ class LinearPanda(Panda):
     def update_consensus(self):
         pa = crane.pandaStore.load_one_in_fields(self,['consensus'])
         if 'consensus' in pa:
-            logger.debug('if consensus is in pa')
             self.consensus.update(pa['consensus'])
-        logger.debug('consensus is {0}'.format(self.consensus))
         return self.consensus
     
     def save_consensus(self):

@@ -180,7 +180,7 @@ class PatternTigress(Tigress):
         useDefault = True
         for t in self.retrieve_target(entity):           
             useDefault = False
-            cost = self.costs[t]
+            cost = self.costs.get(t, self.defaultCost)
             ys = turtle.mapping[t]
             [panda.mantis.add_data(userId, entity, int(y), cost) for panda, y in izip(pandas, str(ys))]
             if self.mutualExclusive:

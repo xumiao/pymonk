@@ -142,14 +142,9 @@ cdef class SVMDual(object):
     def setModel(self, z):
         cdef int j
         cdef float ya
-        self.w.copyUpdate(z)
-        #logger.debug('z is {0}'.format(z))
-        #logger.debug('w is {0}'.format(self.w))
-        #logger.debug('self.num_instances is {0}'.format(self.num_instances))
+        self.w.copyUpdate(z)        
         for j in xrange(self.num_instances):
-            self.w.add(self.x[j], self.y[j] * self.alpha[j])
-            #logger.debug('y of sample {0} is {1}'.format(j, self.y[j]))
-        #logger.debug('after w is {0}'.format(self.w))
+            self.w.add(self.x[j], self.y[j] * self.alpha[j])            
         
     def trainModel(self):
         cdef int j, k, s, iteration
@@ -171,7 +166,6 @@ cdef class SVMDual(object):
         while iteration < self.max_num_iters:
             PGmax_new = -1e10
             PGmin_new = 1e10
-            #logger.debug(str(active_size))
             for j in xrange(active_size):
                 k = j + rand() % (active_size - j)
                 self.swap(index, j, k)

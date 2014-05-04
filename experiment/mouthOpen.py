@@ -10,6 +10,7 @@ from kafka.client import KafkaClient
 from kafka.producer import UserProducer
 import simplejson
 import logging
+from bson.objectid import ObjectId
 
 logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -32,7 +33,7 @@ def add_data():
         coll = mcl.DataSet['PMLExpression']
         ii = 0      # max is 151413 (number of doc in PMLExpression)
         for ent in coll.find({'userId': {'$in': UoI}}, {'_id':True, 'userId':True}, timeout=False):
-            if ii == 50:
+            if ii == 100:
                 break
             ii += 1
             entity = str(ent['_id'])
@@ -78,7 +79,25 @@ def train(numIters):
         producer.stop()
         kafka.close()
 
+def remove_data_for_experiment_only():
+    mcl = pm.MongoClient('10.137.168.196:27017')
+    MONKModelTurtleStore = mcl.MONKModel['TurtleStore']
+    MONKModelPandaStore = mcl.MONKModel['PandaStore']
+    MONKModelMantisStore = mcl.MONKModel['MantisStore']
+    MONKModelTigressStore = mcl.MONKModel['TigressStore']
+    turtle = MONKModelTurtleStore.find_one({'_id':ObjectId(turtleId)})
+    for pandas_id in turtle['pandas']:              # clean up pandas and mantis
+        panda = MONKModelPandaStore.find_one({'_id':pandas_id})
+        MONKModelPandaStore.update({'_id':pandas_id},{'$unset':{'consensus':1}})        
+        MONKModelPandaStore.update({'_id':pandas_id},{'$set':{'weights':{}}})  
+        mantis_id = panda['mantis']
+        MONKModelMantisStore.update({'_id':mantis_id},{'$set':{'data':{}}})     
     
+    tigress_id = turtle['tigress']              # clean up tigress
+    MONKModelTigressStore.update({'_id':tigress_id},{'$set':{'confusionMatrix':{}}})
+        
+        
 if __name__=='__main__':
+    remove_data_for_experiment_only()
     add_data()
-    train(10)
+    train(1)
