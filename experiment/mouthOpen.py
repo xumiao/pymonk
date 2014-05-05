@@ -20,7 +20,14 @@ turtleId = '53403a19e7f10034b8c89cea'
 kafkaTopic = 'expression'
 parts = range(1, 33)
 users = {}
-UoI = ['Steve_70f97adb-2860-4b96-aff3-b538a1781581']#, 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5', 'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f']
+#UoI = {'Steve_70f97adb-2860-4b96-aff3-b538a1781581':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0), 'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0)}
+UoI = {'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0)}
+
+def stop_add_data(userId):
+    if UoI[userId] > 10:
+        return True
+    else:
+        return False
         
 def add_data():
     global users
@@ -32,12 +39,14 @@ def add_data():
                           ack_timeout=200)
         coll = mcl.DataSet['PMLExpression']
         ii = 0      # max is 151413 (number of doc in PMLExpression)
-        for ent in coll.find({'userId': {'$in': UoI}}, {'_id':True, 'userId':True}, timeout=False):
-            if ii == 100:
-                break
+        for ent in coll.find({'userId': {'$in': UoI.keys()}}, {'_id':True, 'userId':True}, timeout=False):
+            
             ii += 1
             entity = str(ent['_id'])
             userId = ent['userId']
+            if (stop_add_data(userId)):
+                continue
+            UoI[userId] += 1
             encodedMessage = simplejson.dumps({'turtleId':turtleId,
                                                'userId':userId,
                                                'entity':entity,
@@ -69,7 +78,7 @@ def train(numIters):
                           req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                           ack_timeout=200)
         for userId, partitionId in users.iteritems():   
-            if userId in UoI:    
+            if userId in UoI.keys():    
                 for i in range(numIters):                         
                     #print "iteration " + str(i)
                     encodedMessage = simplejson.dumps({'turtleId':turtleId,
@@ -101,4 +110,4 @@ def remove_data_for_experiment_only():
 if __name__=='__main__':
     remove_data_for_experiment_only()
     add_data()
-    train(10)
+    #train(10)
