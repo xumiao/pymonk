@@ -4,7 +4,6 @@ Created on Tue Apr 01 17:47:38 2014
 
 @author: xumiao
 """
-
 import pymongo as pm
 from kafka.client import KafkaClient
 from kafka.producer import UserProducer
