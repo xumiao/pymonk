@@ -173,13 +173,13 @@ class PatternTigress(Tigress):
     
     def _supervise(self, turtle, userId, entity, tags):
         for t in tags:
-            cost = self.costs[t]
+            cost = self.costs.get(t, self.defaultCost)
             ys = turtle.mapping[t]
             [panda.mantis.add_data(userId, entity, y, cost) for panda, y in izip(turtle.pandas, ys)]
             if self.mutualExclusive:
                 return True
 
-        if self.defaulting:
+        if self.defaulting and not tags:
             # no pattern found, add all negative
             [panda.mantis.add_data(userId, entity, -1, self.defaultCost) for panda in turtle.pandas]
         
