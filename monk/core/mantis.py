@@ -21,6 +21,8 @@ class Mantis(base.MONKObject):
             self.lam = 1
         if "rho" not in self.__dict__:
             self.rho = 1
+        if "gamma" not in self.__dict__:
+            self.gamma = 1
         if "maxNumIters" not in self.__dict__:
             self.maxNumIters = 1000
         if "maxNumInstances" not in self.__dict__:
@@ -56,7 +58,7 @@ class Mantis(base.MONKObject):
         if solver:
             consensus = self.panda.update_consensus()
             solver.setModel(consensus)
-            solver.trainModel()
+            solver.trainModel(consensus)
     
     def add_data(self, userId, entity, y, c):
         solver = self.get_solver(userId)
@@ -67,21 +69,23 @@ class Mantis(base.MONKObject):
     def aggregate(self, userId):
         # TODO: incremental aggregation
         # TODO: ADMM aggregation
-        #logger.debug("self.panda.consensus = {0}".format(self.panda.consensus))        
+        #logger.debug("self.panda.consensus = {0}".format(self.panda.consensus))     
+    
+        solver = self.get_solver(userId)            
         consensus = self.panda.consensus
         t = len(self.panda.weights) + 1/self.rho
         if userId in self.panda.weights:
-            w = self.panda.weights[userId]
+            q = solver.old_q
         else:
-            w = consensus
+            q = consensus
             t += 1
-        consensus.add(w, -1.0/t)
-        self.panda.load_one_weight(userId)
+        consensus.add(q, -1.0/t)
+        #self.panda.load_one_weight(userId)
         if userId in self.panda.weights:
-            w = self.panda.weights[userId]
+            q = solver.q
         else:
-            w = consensus
-        consensus.add(w, 1.0/t)
+            q = consensus
+        consensus.add(q, 1.0/t)
         self.panda.save_consensus()
     
     def has_user(self, userId):
@@ -96,7 +100,7 @@ class Mantis(base.MONKObject):
             try:
                 w = self.panda.get_model(userId)
                 self.solvers[userId] = SVMDual(w, self.eps, self.lam,
-                                                     self.rho, self.maxNumIters,
+                                                     self.rho, self.gamma, self.maxNumIters,
                                                      self.maxNumInstances)
                 self.data[userId] = {}
                 fields = {'data.{0}'.format(userId):{}}
@@ -126,7 +130,7 @@ class Mantis(base.MONKObject):
             s = crane.mantisStore.load_one_in_fields(self, fields)
             w = self.panda.get_model(userId)
             solver = SVMDual(w, self.eps, self.lam,
-                             self.rho, self.maxNumIters,
+                             self.rho, self.gamma, self.maxNumIters,
                              self.maxNumInstances)
             self.solvers[userId] = solver
     

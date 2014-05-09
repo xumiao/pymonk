@@ -51,6 +51,7 @@ cdef class SVMDual(object):
     cpdef public int max_num_instances
     cpdef public int num_instances
     cpdef public float rho
+    cpdef public float gamma
     cdef int active_size
     cdef list x # features
     cdef int* y # target array
@@ -61,14 +62,18 @@ cdef class SVMDual(object):
     cdef float highest_score
     cdef object w
     
-    def __init__(self, w, eps, lam, rho, max_num_iters, max_num_instances):
+    def __init__(self, w, eps, lam, rho, gamma, max_num_iters, max_num_instances):
         # @todo: check x, y, w not None
         # @todo: validate the parameters
         cdef int j
         self.eps = eps
         self.lam = lam
         self.rho = rho
+        self.gamma = gamma
         self.w = w
+        self.q = FlexibleVector()
+        self.old_q = FlexibleVector()
+        self.u = FlexibleVector()
         self.max_num_iters = max_num_iters
         self.max_num_instances = max_num_instances
         self.num_instances = 0
@@ -110,7 +115,7 @@ cdef class SVMDual(object):
         for j in xrange(self.num_instances):
             self.alpha[j] = 0
             self.index[j] = j
-            self.QD[j] = 0.5 * self.rho / self.c[j] + self.x[j].norm2()
+            self.QD[j] = self.gamma * self.rho / ((self.gamma + self.rho) * self.c[j]) + self.x[j].norm2()
     
     def setData(self, x, y, c):
         cdef int j
@@ -136,7 +141,7 @@ cdef class SVMDual(object):
         self.y[j] = y
         self.c[j] = c
         self.alpha[j] = 0
-        self.QD[j] = 0.5 * self.rho / c + x.norm2()
+        self.QD[j] = self.gamma * self.rho / ((self.gamma + self.rho) * c) + x.norm2()
         return x.getIndex()
         
     def setModel(self, z):
@@ -145,8 +150,9 @@ cdef class SVMDual(object):
         self.w.copyUpdate(z)        
         for j in xrange(self.num_instances):
             self.w.add(self.x[j], self.y[j] * self.alpha[j])            
+        self.w.add(self.u, -1)
         
-    def trainModel(self):
+    def trainModel(self, z):
         cdef int j, k, s, iteration
         cdef float ya, d, G, alpha_old
         cdef int active_size = self.num_instances
@@ -161,7 +167,11 @@ cdef class SVMDual(object):
         cdef float PGmin_old = -1e10
         cdef float PGmax_new
         cdef float PGmin_new
-                 
+
+
+        self.u.add(self.q, 1)           # update u            
+        self.u.add(z, -1)      
+        
         iteration = 0
         while iteration < self.max_num_iters:
             PGmax_new = -1e10
@@ -176,7 +186,7 @@ cdef class SVMDual(object):
                 xj = self.x[j]
                 
                 G = self.w.dot(xj) * yj - 1
-                G += alpha[j] * 0.5 * self.rho / self.c[j]
+                G += alpha[j] * self.gamma * self.rho / ((self.gamma + self.rho) * self.c[j])
                 
                 PG = 0
                 if alpha[j] <= 0:
@@ -219,4 +229,10 @@ cdef class SVMDual(object):
                 PGmax_old = 1e10
             if PGmin_old >= 0:
                 PGmin_old = -1e10
+        self.old_q.copyUpdate(self.q)    
+        self.q.copyUpdate(w)
+        self.q.scale(self.gamma)
+        self.q.add(z, self.rho)
+        self.q.add(self.u, -self.rho)
+        self.q.scale(1 / (self.gamma + self.rho))
         #logger.debug(str(iteration))
