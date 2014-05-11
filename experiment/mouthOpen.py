@@ -22,9 +22,9 @@ users = {}
 UoI = {'Steve_70f97adb-2860-4b96-aff3-b538a1781581':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0), 'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0)}
 #UoI = {'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0)}
 #UoI = {'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0)}
-
+UoI = {'Steve_70f97adb-2860-4b96-aff3-b538a1781581':int(0)}
 def stop_add_data(userId):
-    if UoI[userId] >= 500:
+    if UoI[userId] >= 1:
         return True
     else:
         return False
@@ -100,6 +100,8 @@ def remove_data_for_experiment_only():
         panda = MONKModelPandaStore.find_one({'_id':pandas_id})
         MONKModelPandaStore.update({'_id':pandas_id},{'$set':{'consensus':[]}})        
         MONKModelPandaStore.update({'_id':pandas_id},{'$set':{'weights':{}}})  
+        MONKModelPandaStore.update({'_id':pandas_id},{'$set':{'local_consensus':{}}})  
+        MONKModelPandaStore.update({'_id':pandas_id},{'$set':{'dual':{}}})  
         mantis_id = panda['mantis']
         MONKModelMantisStore.update({'_id':mantis_id},{'$set':{'data':{}}})     
     

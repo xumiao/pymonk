@@ -147,7 +147,7 @@ cdef class SVMDual(object):
         self.w.copyUpdate(z)        
         for j in xrange(self.num_instances):
             self.w.add(self.x[j], self.y[j] * self.alpha[j])    
-        self.w.add(self.u, -1)    
+        self.w.add(u, -1)    
         
     def trainModel(self):
         cdef int j, k, s, iteration
