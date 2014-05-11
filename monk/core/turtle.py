@@ -5,11 +5,9 @@ The complex problem solver that manage a team of pandas.
 @author: xm
 """
 import base
-import constants
+import constants as cons
 import crane
-from bson.objectid import ObjectId
-from ..math.cmath import sigmoid, sign0
-import tigress as ti
+from ..math.cmath import sign0
 #from itertools import izip
 import logging
 import nltk
@@ -23,66 +21,88 @@ stopwords_english = set(stopwords.words('english'))
 symbols = {'\'', '\"', '[', ']','{','}','(',')','.','$', '#'}
 
 class Turtle(base.MONKObject):
-
+    FPANDAS               = 'pandas'
+    FTIGRESS              = 'tigress'
+    FMAPPING              = 'mapping'
+    FNAME                 = 'name'
+    FDESCRIPTION          = 'description'
+    FPENALTY              = 'pPenalty'
+    FEPS                  = 'pEPS'
+    FMAXPATHLENGTH        = 'pMaxPathLength'
+    FMAXINFERENCESTEPS    = 'pMaxInferenceSteps'
+    FENTITYCOLLECTIONNAME = 'entityCollectionName'
+    FREQUIRES             = 'requires'
+    FREQUIRES_UIDS        = 'uids'
+    FREQUIRES_TURTLES     = 'turtles'
+    FFOLLOWERS            = 'followers'
+    FLEADER               = 'leader'
+    store = crane.turtleStore
+    
+    def __default__(self):
+        super(Turtle, self).__default__()
+        self.pandas = []
+        self.tigress = None
+        self.mapping = {}
+        self.name = cons.DEFAULT_EMPTY
+        self.description = cons.DEFAULT_EMPTY
+        self.pPenalty = 1.0
+        self.pEPS = 1e-6
+        self.pMaxPathLength = 1
+        self.pMaxInferenceSteps = 1000
+        self.entityCollectionName = cons.DEFAULT_EMPTY
+        self.requires = dict()
+        self.followers = set()
+        self.leader = None
+        
     def __restore__(self):
         super(Turtle, self).__restore__()
-        if 'pandas' in self.__dict__:
-            self.pandas = crane.pandaStore.load_or_create_all(self.pandas)
-        else:
-            self.pandas = []
+        self.pandas = crane.pandaStore.load_or_create_all(self.pandas)
+        self.tigress = crane.tigressStore.load_or_create(self.tigress)
         self.pandaUids = set((p.uid for p in self.pandas))
-        if 'tigress' in self.__dict__:
-            self.tigress = crane.tigressStore.load_or_create(self.tigress)
-        else:
-            self.tigress = ti.Tigress()
-        if "mapping" not in self.__dict__:
-            self.mapping = {}
         self.invertedMapping = {v: k for k, v in self.mapping.iteritems()}
-        if 'name' not in self.__dict__:
-            self.name = constants.DEFAULT_NONE
-        if 'description' not in self.__dict__:
-            self.description = constants.DEFAULT_NONE
-        if 'pPenalty' not in self.__dict__:
-            self.pPenalty = 1.0
-        if 'pEPS' not in self.__dict__:
-            self.pEPS = 1e-8
-        if 'pMaxPathLength' not in self.__dict__:
-            self.pMaxPathLength = 1
-        if 'pMaxInferenceSteps' not in self.__dict__:
-            self.pMaxInferenceSteps = 1
-        if "entityCollectionName" not in self.__dict__:
-            self.entityCollectionName = constants.DEFAULT_EMPTY
-        if "requires" not in self.__dict__:
-            logger.info('turtle {0} will use all features seen'.format(self.name))
-        elif 'uids' in self.requires:
-            uids = self.requires['uids']
+        
+        if self.FREQUIRES_UIDS in self.requires:
+            uids = self.requires[self.FREQUIRES_UIDS]
             if isinstance(uids, basestring):
                 uids = eval(uids)
             [panda.add_features(uids) for panda in self.pandas]
-        elif 'turtleIds' in self.requires:
-            turtles = crane.turtleStore.load_all_by_ids([ObjectId(tid) for tid in self.requires['turtleIds']])
+        elif self.FREQUIRES_TURTLEIDS in self.requires:
+            turtles = self.store.load_all_by_name_user(
+                      [(t, self.creator) for t in self.requires[self.FREQUIRES_TURTLES]])
             [panda.add_features(turtle.get_panda_uids()) for turtle in turtles for panda in self.pandas]
         else:
-            logger.error('dependent features are either in uids or turtle_ids, but not in {0}'.format(self.requires))
+            logger.error('dependent features are either in {0} or {1}, but not in {2}'.format(
+                         self.FREQUIRES_UIDS,
+                         self.FREQUIRES_TURTLES,
+                         self.requires))
 
     def generic(self):
         result = super(Turtle, self).generic()
-        result['tigress'] = self.tigress._id
-        result['pandas'] = [panda._id for panda in self.pandas]
+        result[self.FTIGRESS] = {'name':self.tigress.name, 'creator':self.tigress.creator}
+        result[self.FPANDAS] = [{'name':panda.name, 'creator':panda.creator} for panda in self.pandas]
         # invertedMapping is created from mapping
         del result['invertedMapping']
         del result['pandaUids']
         return result
     
+    def clone(self, user):
+        obj = super(Turtle, self).clone(user)
+        obj.pandaUids = set(self.pandaUids)
+        obj.tigress = self.tigress.clone(user)
+        obj.pandas = [p.clone(user) for p in self.pandas]
+        return obj
+        
     def save(self, **kwargs):
-        crane.turtleStore.update_one_in_fields(self, self.generic())
-        self.tigress.save()
-        [pa.save() for pa in self.pandas]
-
-    def delete(self, deep=False):
-        result = crane.turtleStore.delete_by_id(self._id)
-        result = result and self.tigress.delete()
-        if deep:
+        super(Turtle, self).save(kwargs)
+        if self.tigress:
+            self.tigress.save(kwargs)
+        [pa.save(kwargs) for pa in self.pandas]
+        
+    def delete(self):
+        result = super(Turtle, self).delete()
+        if self.tigress:
+            result = result and self.tigress.delete()
+        if self.pandas:
             result = result and [pa.delete() for pa in self.pandas].all()
         return result
     
@@ -92,11 +112,11 @@ class Turtle(base.MONKObject):
             return
         [pa.add_features(panda.uid) for pa in self.pandas]
         
-    def require(self, turtleId):
-        if self._id is turtleId:
-            logger.error('turle can not depend on itself {0}'.format(turtleId))
+    def require(self, turtleName):
+        if self.name == turtleName:
+            logger.error('turle can not depend on itself {0}'.format(turtleName))
             return
-        turtle = crane.turtleStore.load_all_by_id(turtleId)
+        turtle = self.store.load_all_by_name_user(turtleName, self.creator)
         [panda.add_features(turtle.get_panda_uids()) for panda in self.pandas]
         
     def get_panda_uids(self):
@@ -125,138 +145,99 @@ class Turtle(base.MONKObject):
             logger.info('panda {0} is not in the turtle {1}'.format(panda.name, self.name))
             return False
 
-    def _predict(self, userId, panda, entity):
-        entity[panda.uid] = sigmoid(panda.predict(userId, entity))
-        return sign0(entity[panda.uid])
-        
-    def predict(self, userId, entity, fields=None):
-        predicted = self.invertedMapping[tuple([self._predict(userId, panda, entity) for panda in self.pandas])]
-        self.tigress.measure(userId, entity, predicted)
+    def predict(self, entity, fields=None):
+        predicted = self.invertedMapping[tuple([sign0(panda.predict(entity)) for panda in self.pandas])]
+        self.tigress.measure(entity, predicted)
         return predicted
 
-    def add_data(self, userId, entity):
-        return self.tigress.supervise(self, userId, entity)
+    def add_data(self, entity):
+        return self.tigress.supervise(self, entity)
     
-    def active_train_one(self, userId):
+    def active_train(self):
         try:
-            self.tigress.supervise(self, userId)
+            self.tigress.supervise(self)
         except Exception as e:
             logger.info(e.message)
             logger.info("turtle {0} does not have active superviser".format(self.name))
     
-    def train_one(self, userId):
-        [panda.mantis.train_one(userId) for panda in self.pandas if panda.has_mantis()]
-        [panda.save_one(userId) for panda in self.pandas]
+    def train(self):
+        [panda.mantis.train(self.leader) for panda in self.pandas if panda.has_mantis()]
+        [panda.save() for panda in self.pandas]
     
-    def aggregate(self, userId):
-        [panda.mantis.aggregate(userId) for panda in self.pandas if panda.has_mantis()]
-    
-    def has_user(self, userId):
-        if not self.tigress.has_user(userId) or \
-            [False for panda in self.pandas if not panda.has_user(userId)]:
-            return False
-        return True
-    
-    def has_user_in_store(self, userId):
-        if not self.tigress.has_user_in_store(userId) or \
-            [False for panda in self.pandas if not panda.has_user_in_store(userId)]:
-            return False
-        return True
+    def merge(self, user):
+        if user not in self.followers:
+            logger.error('user {0} is not a follower of {1}@{2}'.format(user, self.creator, self.name))
+            return False  
+        return [panda.mantis.merge(user) for panda in self.pandas if panda.has_mantis()].all()
 
-    def not_has_user(self, userId):
-        if self.tigress.has_user(userId) or \
-            [True for panda in self.pandas if panda.has_user(userId)]:
-            return False
-        return True
+    def has_user(self, user):
+        return self.store.has_user(self.name, user)
     
-    def not_has_user_in_store(self, userId):
-        if self.tigress.has_user_in_store(userId) or \
-            [True for panda in self.pandas if panda.has_user_in_store(userId)]:
-            return False
-        return True
+    def has_user_in_store(self, user):
+        return self.store.has_user_in_store(self.name, user)
         
-    def add_one(self, userId):
-        if not self.tigress.add_one(userId):
-            return False
+    def add_user(self, user):
+        if not self.has_user_in_store(user):
+            newTurtle = self.clone(user)
+            self.followers.add(user)
+            newTurtle.leader = self.creator
+            newTurtle.save()
+            return newTurtle
+        else:
+            logger.error('user {0} already has cloned this turtle'.format(user))
+            return None
         
-        if [False for panda in self.pandas if not panda.add_one(userId)]:
+    def remove_user(self, user):
+        if user is self.creator or user in self.followers:
+            return self.delete()
+        else:
+            # only self or one of the followers can be removed
+            logger.error('you {0} dont have the permission to delete user {1} for turtle {2}'.format(
+                         self.user, user, self.name))
             return False
-            
-        return True
     
-    def remove_one(self, userId):
-        self.tigress.remove_one(userId)
-            
-        [False for panda in self.pandas if not panda.remove_one(userId)]
-            
+    def transfer_user(self, user, leader):
+        if user not in self.followers:
+            logger.error('user {0} is not a follower of {1}@{2}'.format(user, self.creator, self.name))
+            return False
+        
+        leaderTurtle = self.store.load_one_by_name_user(self.name, leader)
+        if not leaderTurtle:
+            logger.error('leader {0} does not has turtle {1}'.format(leader, self.name))
+            return False
+
+        leaderTurtle.followers.add(user)
+        user.leader = leader
+        self.followers.remove(user)
         return True
-        
-    def load_one(self, userId):
-        if not self.tigress.load_one(userId):
-            return False
             
-        if [False for panda in self.pandas if not panda.load_one(userId)]:
-            return False
-            
-        return True
-    
-    def unload_one(self, userId):
-        if not self.tigress.unload_one(userId):
-            return False
-        
-        if [False for panda in self.pandas if not panda.unload_one(userId)]:
-            return False
-        
-        return True
-        
-    def save_one(self, userId):
-        if not self.tigress.save_one(userId):
-            return False
-            
-        if [False for panda in self.pandas if not panda.save_one(userId)]:
-            return False
-        
-        return True
-    
 class SingleTurtle(Turtle):
     
-    def predict(self, userId, entity, fields=None):
+    def predict(self, entity, fields=None):
         panda = self.pandas[0]
-        entity[panda.uid] = sigmoid(panda.predict(userId, entity))
-        if sign0(entity[panda.uid]) > 0:
-            self.tigress.measure(userId, entity, panda.name)
+        if sign0(panda.predict(entity)) > 0:
+            self.tigress.measure(entity, panda.name)
             return panda.name
         else:
-            self.tigress.measure(userId, entity, constants.DEFAULT_NONE)
-            return constants.DEFAULT_NONE
+            self.tigress.measure(entity, cons.DEFAULT_NONE)
+            return cons.DEFAULT_NONE
         
-    def train_one(self, userId):
-        panda = self.pandas[0]
-        if panda.has_mantis():
-            panda.mantis.train_one(userId)
-
 class MultiLabelTurtle(Turtle):
 
-    def predict(self, userId, entity, fields=None):
-        predicted = [panda.name for panda in self.pandas if self._predict(userId, panda, entity) > 0]
-        self.tigress.measure(userId, entity, predicted)
+    def predict(self, entity, fields=None):
+        predicted = [panda.name for panda in self.pandas if panda.predict(entity) > 0]
+        self.tigress.measure(entity, predicted)
         return predicted
         
 class RankingTurtle(Turtle):
         
-    def predict(self, userId, entity):
+    def predict(self, entity, fields=None):
         pass
     
-    def add_data(self, userId, entity):
+    def add_data(self, entity):
         pass
     
-    def train_one(self, userId):
-        pass
-    
-    def load_one(self, userId):
-        pass
-    
-    def save_one(self, userId):
+    def train(self):
         pass
     
 class SPNTurtle(Turtle):
@@ -264,6 +245,10 @@ class SPNTurtle(Turtle):
 
 class DictionaryTurtle(Turtle):
 
+    def __default__(self):
+        super(DictionaryTurtle, self).__default__()
+        self.dictionary = dict()
+        
     def __restore__(self):
         super(DictionaryTurtle, self).__restore__()
         self.dictionary = {p.name:p.uid for p in self.pandas}
@@ -274,15 +259,20 @@ class DictionaryTurtle(Turtle):
         del result['dictionary']
         return result
     
+    def clone(self, user):
+        obj = super(DictionaryTurtle, self).clone(user)
+        obj.dictionary = dict(self.dictionary)
+        return obj
+        
     def _process(self, field):
         return {}
     
-    def _get_or_new_panda(self, userId, name):
+    def _get_or_new_panda(self, name):
         if name not in self.dictionary:
-            panda = {'monkType':'ExistPanda',
-                     'name':name,
-                     'creator':userId}
-            panda = crane.pandaStore.load_create_by_name(panda, True)
+            panda = {self.MONK_TYPE: 'ExistPanda',
+                     self.FNAME: name,
+                     self.CREATOR: self.creator}
+            panda = crane.pandaStore.load_create_by_name_user(panda, True)
             self.add_panda(panda)
             self.dictionary[name] = panda.uid
             uid = panda.uid
@@ -310,7 +300,7 @@ class DictionaryTurtle(Turtle):
         else:
             return False
             
-    def predict(self, userId, entity, fields):
+    def predict(self, entity, fields):
         total = 0
         for field in fields:
             value = translate(getattr(entity, field, ''))
@@ -319,13 +309,13 @@ class DictionaryTurtle(Turtle):
             
             allTokens = self._process(value)
             entity._raws.update(allTokens)
-            entity._features.update([self._get_or_new_panda(userId, t) for t in allTokens])
+            entity._features.update([self._get_or_new_panda(t) for t in allTokens])
             total += len(allTokens)
 
         return total
     
-    def aggregate(self, userId):
-        # should be taking care of dedups in models and data
+    def merge(self):
+        # TODO should be taking care of dedups in models and data
         pass
     
 class UniGramTurtle(DictionaryTurtle):

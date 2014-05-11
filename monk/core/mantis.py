@@ -7,81 +7,91 @@ solving machine learning problems
 """
 import base, crane
 from ..math.svm_solver_dual import SVMDual
+from ..math.flexible_vector import FlexibleVector
 from bson.objectid import ObjectId
 import logging
 logger = logging.getLogger("monk.mantis")
 
 class Mantis(base.MONKObject):
-
+    FEPS = 'eps'
+    FLAM = 'lam'
+    FRHO = 'rho'
+    FPANDA = 'panda'
+    FDATA = 'data'
+    FSOLVER = 'solver'
+    FZ = 'z'
+    FMAX_NUM_ITERS = 'maxNumIters'
+    FMAX_NUM_INSTANCES = 'maxNumInstances'
+    store = crane.mantisStore
+    
+    def __default__(self):
+        self.eps = 1e-4
+        self.lam = 1
+        self.rho = 1
+        self.maxNumIters = 1000
+        self.maxNumInstances = 1000
+        self.panda = None
+        self.data = {}
+        
     def __restore__(self):
         super(Mantis, self).__restore__()
-        if "eps" not in self.__dict__:
-            self.eps = 1e-4
-        if "lam" not in self.__dict__:
-            self.lam = 1
-        if "rho" not in self.__dict__:
-            self.rho = 1
-        if "maxNumIters" not in self.__dict__:
-            self.maxNumIters = 1000
-        if "maxNumInstances" not in self.__dict__:
-            self.maxNumInstances = 1000
-        if "panda" not in self.__dict__:
-            self.panda = None
-        if "data" not in self.__dict__:
-            self.data = {}
-        self.solvers = {}
+        self.panda = crane.pandaStore.load_one_by_id(self.panda)
+        self.solver = None
+        self.z = FlexibleVector()
+        try:
+                w = self.panda.weights
+                self.solver = SVMDual(w, self.eps, self.lam,
+                                      self.rho, self.maxNumIters,
+                                      self.maxNumInstances)
+        except Exception as e:
+            logger.error('can not create a solver for {0}'.format(self.panda.name))
+            logger.error('error {0}'.format(e.message))
+            return False
 
     def generic(self):
         result = super(Mantis, self).generic()
         # every mantis should have a panda
-        result['panda'] = self.panda._id
+        result[self.FPANDA] = self.panda._id
         try:
-            del result['solvers']
+            del result[self.FSOLVER]
+            del result[self.FZ]
         except Exception as e:
-            logger.warning('deleting solvers failed {0}'.format(e.message))
+            logger.warning('deleting solver failed {0}'.format(e.message))
         return result
-
-    def save(self, **kwargs):
-        crane.mantisStore.update_one_in_fields(self, self.generic())
     
-    def delete(self):
-        return crane.mantisStore.delete_by_id(self._id)
+    def sync_consensus(self, leader):
+        self.z.update(self.solver.update(crane.pandaStore.load_one(
+                                         {'name':self.panda.name,
+                                          'creator':leader},
+                                         {'weights':True})))
+        if self.solver:
+            self.solver.setModel(self.z)
+                                                     
         
-    def get_solver(self, userId):
-        try:
-            return self.solvers[userId]
-        except KeyError:
-            logger.info('no solver found for {0}'.format(userId))
-            return None
-
-    def train_one(self, userId):
-        solver = self.get_solver(userId)
-        if solver:
-            consensus = self.panda.update_consensus()
-            solver.setModel(consensus)
-            solver.trainModel()
+    def train(self, leader):
+        if self.solver:
+            self.solver.trainModel()
     
-    def add_data(self, userId, entity, y, c):
-        solver = self.get_solver(userId)
-        if solver:
-            da = self.data[userId]
+    def add_data(self, entity, y, c):
+        if self.solver:
+            da = self.data
             uuid = entity._id
             if uuid in da:
                 ind = da[uuid][0]
-            elif solver.num_instances < self.maxNumInstances:
-                ind = solver.num_instances
-                solver.num_instances = ind + 1
+            elif self.solver.num_instances < self.maxNumInstances:
+                ind = self.solver.num_instances
+                self.solver.num_instances = ind + 1
             else:
                 # random replacement policy
                 # TODO: should replace the most confident data
                 olduuid, (ind, oldy, oldc)  = da.popitem()
-            solver.setData(entity._features, y, c, ind)
+            self.solver.setData(entity._features, y, c, ind)
             da[uuid] = (ind, y, c)
     
-    def aggregate(self, userId):
+    def merge(self, user):
         # TODO: incremental aggregation
         # TODO: ADMM aggregation
-        consensus = self.panda.consensus
+        consensus = self.panda.weights
         t = len(self.panda.weights)
         if userId in self.panda.weights:
             w = self.panda.weights[userId]

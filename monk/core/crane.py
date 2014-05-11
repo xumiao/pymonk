@@ -193,8 +193,7 @@ class Crane(object):
         return obj
     
     def create_all(self, objs):
-        decode = base.monkFactory.decode
-        objs = map(decode, objs)
+        objs = map(base.monkFactory.decode, objs)
         self.__put_all(objs)
         return objs
     
