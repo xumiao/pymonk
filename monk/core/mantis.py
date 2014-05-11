@@ -21,6 +21,8 @@ class Mantis(base.MONKObject):
             self.lam = 1
         if "rho" not in self.__dict__:
             self.rho = 1
+        if "gamma" not in self.__dict__:
+            self.gamma = 1    
         if "maxNumIters" not in self.__dict__:
             self.maxNumIters = 1000
         if "maxNumInstances" not in self.__dict__:
@@ -55,8 +57,9 @@ class Mantis(base.MONKObject):
         solver = self.get_solver(userId)
         if solver:
             consensus = self.panda.update_consensus()
-            solver.setModel(consensus)
-            solver.trainModel()
+            local_consensus = self.panda.get_local_consensus(userId)
+            solver.setModel(consensus, local_consensus)
+            solver.trainModel()            
     
     def add_data(self, userId, entity, y, c):
         solver = self.get_solver(userId)
@@ -64,25 +67,42 @@ class Mantis(base.MONKObject):
             index = solver.setData(entity._features,y,c)
             self.data[userId][entity._id] = (index, y, c)
     
+    def update_local_consensus(self, userId, consensus):
+        updated_w = self.panda.weights[userId]            # [TODO]: self.panda.weights[userId] should already be updated w?  
+        q = self.panda.get_local_consensus(userId)    # [TODO]: equal to self.panda.local_consensus[userId] ?   
+        u = self.panda.get_dual(userId)    # [TODO]: equal to self.panda.dual[userId] ?               
+        q.copyUpdate(updated_w)
+        q.scale(self.gamma)
+        q.add(consensus, self.rho)
+        q.add(u, -self.rho)
+        q.scale(1 / (self.gamma + self.rho))
+            
     def aggregate(self, userId):
         # TODO: incremental aggregation
         # TODO: ADMM aggregation
-        #logger.debug("self.panda.consensus = {0}".format(self.panda.consensus))        
+        #logger.debug("self.panda.consensus = {0}".format(self.panda.consensus)) 
+        old_q = self.panda.get_local_consensus(userId).clone()    # [TODO]: equal to self.panda.local_consensus[userId] ?                        
         consensus = self.panda.consensus
+        self.update_local_consensus(userId, consensus)   
+        
         t = len(self.panda.weights) + 1/self.rho
         if userId in self.panda.weights:
-            w = self.panda.weights[userId]
+            q = old_q
         else:
-            w = consensus
+            q = consensus
             t += 1
-        consensus.add(w, -1.0/t)
-        self.panda.load_one_weight(userId)
+        consensus.add(q, -1.0/t)
+        #self.panda.load_one_weight(userId)
         if userId in self.panda.weights:
-            w = self.panda.weights[userId]
+            q = self.panda.get_local_consensus(userId)
         else:
-            w = consensus
-        consensus.add(w, 1.0/t)
+            q = consensus
+        consensus.add(q, 1.0/t)
         self.panda.save_consensus()
+        u = self.panda.get_dual(userId)    # [TODO]: equal to self.panda.dual[userId] ?    
+        u.add(q, 1)
+        u.add(consensus, -1)
+        self.panda.save_dual()
     
     def has_user(self, userId):
         return userId in self.data
@@ -96,7 +116,7 @@ class Mantis(base.MONKObject):
             try:
                 w = self.panda.get_model(userId)
                 self.solvers[userId] = SVMDual(w, self.eps, self.lam,
-                                                     self.rho, self.maxNumIters,
+                                                     self.rho, self.gamma, self.maxNumIters,
                                                      self.maxNumInstances)
                 self.data[userId] = {}
                 fields = {'data.{0}'.format(userId):{}}
@@ -126,7 +146,7 @@ class Mantis(base.MONKObject):
             s = crane.mantisStore.load_one_in_fields(self, fields)
             w = self.panda.get_model(userId)
             solver = SVMDual(w, self.eps, self.lam,
-                             self.rho, self.maxNumIters,
+                             self.rho, self.gamma, self.maxNumIters,
                              self.maxNumInstances)
             self.solvers[userId] = solver
     

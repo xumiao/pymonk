@@ -73,6 +73,8 @@ class LinearPanda(Panda):
     def __restore__(self):
         super(LinearPanda, self).__restore__()
         self.weights = {}
+        self.local_consensus = {}
+        self.dual = {}
         if "consensus" not in self.__dict__:
             self.consensus = FlexibleVector()
         else:
@@ -90,6 +92,8 @@ class LinearPanda(Panda):
         result['consensus'] = self.consensus.generic()
         result['mantis'] = self.mantis._id
         del result['weights']
+        del result['local_consensus']           # [TODO]: is it necessary?
+        del result['dual']                      # [TODO]: is it necessary?
         return result
     
     def save(self, **kwargs):
@@ -114,6 +118,12 @@ class LinearPanda(Panda):
             self.weights[userId] = self.consensus.clone()
             field = 'weights.{0}'.format(userId)
             result = crane.pandaStore.update_one_in_fields(self, {field:self.weights[userId].generic()})
+            self.local_consensus[userId] = FlexibleVector()
+            field = 'local_consensus.{0}'.format(userId)
+            result = crane.pandaStore.update_one_in_fields(self, {field:self.local_consensus[userId].generic()})
+            self.dual[userId] = FlexibleVector()
+            field = 'dual.{0}'.format(userId)
+            result = crane.pandaStore.update_one_in_fields(self, {field:self.dual[userId].generic()})            
             return result and self.mantis.add_one(userId)
         else:
             logger.error('panda {0} already stores user {1}'.format(self._id, userId))
@@ -124,6 +134,12 @@ class LinearPanda(Panda):
             field = 'weights.{0}'.format(userId)
             result = crane.pandaStore.remove_field(self, field)
             del self.weights[userId]
+            field = 'local_consensus.{0}'.format(userId)
+            result = crane.pandaStore.remove_field(self, field)
+            del self.local_consensus[userId]
+            field = 'dual.{0}'.format(userId)
+            result = crane.pandaStore.remove_field(self, field)
+            del self.dual[userId]
             return result and self.mantis.remove_one(userId)
         else:
             logger.error('panda {0} does not store user {1}'.format(self._id, userId))
@@ -140,7 +156,33 @@ class LinearPanda(Panda):
             return True
         else:
             logger.error('panda {0} does not store user {1}'.format(self._id, userId))
-            return False            
+            return False  
+            
+    def load_one_local_consensus(self, userId):
+        if self.has_user_in_store(userId):
+            field = 'local_consensus.{0}'.format(userId)
+            genericW = crane.pandaStore.load_one_in_fields(self, [field])['local_consensus'][userId]
+            if userId in self.local_consensus:
+                self.local_consensus[userId].update(genericW)
+            else:
+                self.local_consensus[userId] = FlexibleVector(generic=genericW)
+            return True
+        else:
+            logger.error('panda {0} does not store user {1}'.format(self._id, userId))
+            return False 
+            
+    def load_one_dual(self, userId):
+        if self.has_user_in_store(userId):
+            field = 'dual.{0}'.format(userId)
+            genericW = crane.pandaStore.load_one_in_fields(self, [field])['dual'][userId]
+            if userId in self.dual:
+                self.dual[userId].update(genericW)
+            else:
+                self.dual[userId] = FlexibleVector(generic=genericW)
+            return True
+        else:
+            logger.error('panda {0} does not store user {1}'.format(self._id, userId))
+            return False         
     
     def update_consensus(self):
         pa = crane.pandaStore.load_one_in_fields(self,['consensus'])
@@ -150,6 +192,10 @@ class LinearPanda(Panda):
     
     def save_consensus(self):
         crane.pandaStore.update_one_in_fields(self, {'consensus':self.consensus.generic()})
+
+    def save_dual(self, userId):
+        field = 'dual.{0}'.format(userId)
+        crane.pandaStore.update_one_in_fields(self, {field:self.dual[userId].generic()})      
         
     def load_one(self, userId):
         self.load_one_weight(userId)
@@ -160,6 +206,12 @@ class LinearPanda(Panda):
             field = 'weights.{0}'.format(userId)
             result = crane.pandaStore.update_one_in_fields(self, {field:self.weights[userId].generic()})
             del self.weights[userId]
+            field = 'local_consensus.{0}'.format(userId)
+            result = crane.pandaStore.update_one_in_fields(self, {field:self.local_consensus[userId].generic()})
+            del self.local_consensus[userId]
+            field = 'dual.{0}'.format(userId)
+            result = crane.pandaStore.update_one_in_fields(self, {field:self.dual[userId].generic()})
+            del self.dual[userId]
             return result and self.mantis.unload_one(userId)
         else:
             logger.error('panda {0} does not have user {1}'.format(self._id, userId))
@@ -169,6 +221,10 @@ class LinearPanda(Panda):
         if self.has_user(userId):
             field = 'weights.{0}'.format(userId)
             crane.pandaStore.update_one_in_fields(self, {field:self.weights[userId].generic()})
+            field = 'local_consensus.{0}'.format(userId)
+            crane.pandaStore.update_one_in_fields(self, {field:self.local_consensus[userId].generic()})
+            field = 'dual.{0}'.format(userId)
+            crane.pandaStore.update_one_in_fields(self, {field:self.dual[userId].generic()})
             return self.mantis.save_one(userId)
         else:
             logger.error('panda {0} does not have user {1}'.format(self._id, userId))
@@ -183,6 +239,20 @@ class LinearPanda(Panda):
         else:
             logger.warning('LinearPanda has no model for {0}'.format(userId))
             return None
+            
+    def get_local_consensus(self, userId):
+        if userId in self.local_consensus:
+            return self.local_consensus[userId]
+        else:
+            logger.warning('LinearPanda has no local_consensus for {0}'.format(userId))
+            return None
+            
+    def get_dual(self, userId):
+        if userId in self.dual:
+            return self.dual[userId]
+        else:
+            logger.warning('LinearPanda has no dual for {0}'.format(userId))
+            return None            
         
     def predict(self, userId, entity):
         model = self.get_model(userId)
