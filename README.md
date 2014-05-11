@@ -84,9 +84,9 @@ MONK builds on top of the `MongoDB` because of its scalability, full-text indexi
 Data Structures and Algorithms
 ======
 
-MONK features a FlexibleVector data structure that extends from SkipList based sparse vector representation to allow smooth transition between dense vector and sparse vector. It allows `O(log(n))` amortized time to perform all operations at any time. It takes advantages of both CPU pre-fetching for dense vector, and linked list for sparse vector. So, the users don't have to pay attention to when to switch from each other, and allow the data and the models mutable at any moments.
+MONK features a FlexibleVector data structure that extends from SkipList based sparse vector representation to allow smooth transition between dense vector and sparse vector. It allows `O(log(n))` amortized time to perform all operations at any time. It takes advantages of both CPU pre-fetching for dense vector, and linked list for sparse vector. So, the users don't have to pay attention to when to switch from each other, and allow the data and the models to modified at any moments.
 
-Inspired by vowpal wabbit, MONK adopts the **learning reduction** techniques to break any problem down into basic problems, e.g., binary classifications. It abstracts away the learning algorithms from the statistical programming, and allows the scientists to do their best inventing better models without worrying about the optimality of the learning algorithms.
+Inspired by vowpal wabbit, MONK adopts the **learning reduction** techniques to break any problem down into basic problems, e.g., binary classifications. It abstracts away the learning algorithms from the statistical programming, and allows scientists to do their best inventing better models without worrying about the optimality of the learning algorithms.
 
 
 Status
