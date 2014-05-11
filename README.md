@@ -44,16 +44,16 @@ monkapi.active_train(turtle, user)
 * MONK encourages model sharing to speed up *research* work. If adam has built *affective word tagger*, john can build a sentiment model for his project.
 
 ```python
-sentiment_turtle_by_john.requires(affective_turtle_by_adam)
+sentiment_predication_by_john.requires(affective_prediction_by_adam)
 ```
 
-* MONK allows easily controlled experimentation for feature engineering. After cloning new turtles, scientists either re-train on existing data, or evaluates on the forth-coming data to compare the models.
+* MONK allows easily controlled experimentation for feature engineering. After cloning new models, scientists either re-train on existing data, or evaluates on the forth-coming data to compare the models.
 
 ```python
 import monk.core.api as monkapi
-group1, group2 = monkapi.split_data(turtle, [0.5,0.5])
-turtle_dev = monkapi.clone(turtle, group1)
-turtle_dev.requires(affective_turtle_by_jefferson)
+group1, group2 = monkapi.split_data(some_project, [0.5,0.5])
+some_project_dev = monkapi.clone(some_project, group1)
+some_project_dev.requires(affective_prediction_by_jefferson)
 ```
 
 * MONK targets to support advanced supervisions including **self-training**, **co-training** and **weak-supervision**. It has been a perfect example of **transfer learning**.
