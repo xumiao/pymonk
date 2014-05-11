@@ -64,12 +64,12 @@ some_project_dev.requires(affective_prediction_by_jefferson)
 Architecture
 =======
 
-The major architecture issue is how to distribute computations, and MONK follows **Alternating Direction Method of Multipliers (ADMM)** framework. It has been proved that the convergence rate of ADMM is superior than most of other alogrithms, e.g., parallel SGDs or *shotgun* style updating rules. In addition, we divide the learning batch with respect to different users, updating models for each user is a real-time task, while merging models from all users is relatively slow-paced. MONK also supports a full batch-mode feature extractions layer which can be considered to be done once a while. Therefore, these three-layer achitecture provides MONK **speeds** and **volumes**.
+The major architecture issue is how to distribute computations, and MONK follows **Alternating Direction Method of Multipliers (ADMM)** framework. It has been proved that the convergence rate of ADMM is superior than most of other alogrithms, e.g., parallel SGDs or *shotgun* style updating rules. In addition, we divide the learning batch with respect to different users, updating models for each user is a real-time task, while merging models from all users is relatively slow-paced. MONK also supports a full batch-mode feature extractions layer which can be considered to be done once a while. Therefore, these three-layer achitecture provides MONK *speeds* and *volumes*.
 
 MONK adopts `Apache Kafka` as the bus to connect the layers with roles (users, scientists and admins). Any Monk fails, the restarter picks up from where it left, and due to the partitioning in Kafka, the messages are guaranteed to be delivered to the same Monk for the same user.
 
 
-MONK builds on top of the **MongoDB** because of its scalability, full-text indexing, Geo-indexing, and full featured SQL-like language. Its own **MapReduce** implementation can perform light-weighted batch jobs like feature extractions easily.
+MONK builds on top of the `MongoDB` because of its scalability, full-text indexing, Geo-indexing, and full featured SQL-like language. Its own map-reduce implementation can perform light-weighted batch jobs like feature extractions easily.
 
 
 Targeting Scenarios
