@@ -5,9 +5,9 @@ MONK is a distributed interactive machine learning framework for both **users** 
 
 Big Learning
 --------
-Big Analytics concerns about the scalability of discovering insights, but Big Learning concerns more about the scalability of discovering **actionable** insights. Purchasing a pregnancy-tester might imply a diaper demand for one woman, but this might fail on many others. At the end of the day, what people really need is the knowledge that can be executed to gain, and the only way to get it is to tie the inputs and the outputs together. *Apache MLlib*, *Oryx*, *H2O*, *Graph-Lab*, and *Vowpal-wabbit* are the major distributed machine learning projects specialized in different aspects, so what differences MONK makes?
+Big Analytics concerns about the scalability of discovering insights, but Big Learning concerns more about the scalability of discovering **actionable** insights. Purchasing a pregnancy-tester might imply a diaper demand for one woman, but this might fail on many others. At the end of the day, what people really need is the knowledge that can be executed to gain, and the only way to get that knowledge is tying the inputs and the outputs together to maximize the gains. *Apache MLlib*, *Oryx*, *H2O*, *Graph-Lab*, and *Vowpal-wabbit* are the major distributed machine learning projects specialized in different aspects, so what differences MONK brings?
 
-A Monk can be imagined as your intelligent delegate that automates the work for you. How the users interact with Monks and how Monks interact with each other makes it a unique framework. It acts like a **social network for the intelligent agents**.
+A Monk can be imagined as your intelligent delegate that automates the work for you. How the users interact with Monks and how Monks interact with each other makes it a unique framework with emphasis on efficiently and effectively transfering human intelligence to machines. Somehow, the system is more or less like a **social network for the intelligent agents**.
 
 By the Users and For the Users
 -----
