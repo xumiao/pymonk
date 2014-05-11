@@ -9,6 +9,12 @@ Big Analytics concerns about the scalability of discovering insights, but Big Le
 
 A Monk can be imagined as your intelligent delegate that automates the work for you. How the users interact with Monks and how Monks interact with each other makes it a unique framework with emphasis on efficiently and effectively transfering human intelligence to machines. Somehow, the system is more or less like a social network for the intelligent agents.
 
+**Targeting Scenarios**
+
+1. Device automation through cloud community that tackles the data sparsity and the data privacy problems simultaneously
+2. Social recommendation system that recommends items by following your trusted taste or creating your own taste
+3. Collaborative research that enables a community to conquer one problem at a time, e.g., gardening ontology building from literatures
+
 By the Users and For the Users
 -----
 
@@ -74,14 +80,6 @@ MONK adopts `Apache Kafka` as the high throughput bus to connect the layers and 
 
 
 MONK builds on top of the `MongoDB` because of its scalability, full-text indexing, Geo-indexing, and full featured SQL-like language. Its own map-reduce implementation can perform light-weighted batch jobs easily.
-
-
-Targeting Scenarios
-=======
-
-* Device automation through cloud community that tackles the data sparsity and the data privacy problems simultaneously
-* Social recommendation system that recommends items by following your trusted taste or creating your own taste
-* Collaborative research that enables a community to conquer one problem at a time, e.g., gardening ontology building from literatures
 
 
 Status
