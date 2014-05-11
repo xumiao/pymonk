@@ -64,12 +64,16 @@ some_project_dev.requires(affective_prediction_by_jefferson)
 Architecture
 =======
 
-The major architecture issue is how to distribute computations, and MONK follows **Alternating Direction Method of Multipliers (ADMM)** framework. It has been proved that the convergence rate of ADMM is superior than most of other alogrithms, e.g., parallel SGDs or *shotgun* style updating rules. In addition, we divide the learning batch with respect to different users, updating models for each user is a real-time task, while merging models from all users is relatively slow-paced. MONK also supports a full batch-mode feature extractions layer which can be considered to be done once a while. Therefore, these three-layer achitecture provides MONK *speeds* and *volumes*.
+The major architecture issue is how to distribute computations. Unlike map-reduce (spark), all-reduce (vowpal-wabbit), and message-passing (GraphLab), MONK follows **Alternating Direction Method of Multipliers (ADMM)** framework to distribute jobs and adopts an event-driven asynchronous approach to respond users' requests. 
 
-MONK adopts `Apache Kafka` as the bus to connect the layers with roles (users, scientists and admins). Any Monk fails, the restarter picks up from where it left, and due to the partitioning in Kafka, the messages are guaranteed to be delivered to the same Monk for the same user.
+MONK follows the user-locality assumption to divide the batch job with respect to end users, and updating models on users' commands. The leaders will merge the followers' models from time to time, and distribute back to the followers to allow community knowledge spread. It has been proved that the number of iterations between leaders and followers that is required to converge for ADMM is significantly smaller than most of other distributed alogrithms, e.g., parallel SGDs or *shotgun* style updating rules. Therefore, putting much less stress on the network infrastructure. 
+
+In addition, updating models for each user is a real-time task, while merging models from followers is not that time-critical, so we put it in a near-real-time layer. MONK also supports a full batch-mode feature extractions layer that only executes once a while. These three-layer achitecture provides MONK *speeds* and *volumes*.
+
+MONK adopts `Apache Kafka` as the high throughput bus to connect the layers and between layers and roles (users, scientists and admins). Kafka ensures the fault-tolerance and communication consistency for MONK. 
 
 
-MONK builds on top of the `MongoDB` because of its scalability, full-text indexing, Geo-indexing, and full featured SQL-like language. Its own map-reduce implementation can perform light-weighted batch jobs like feature extractions easily.
+MONK builds on top of the `MongoDB` because of its scalability, full-text indexing, Geo-indexing, and full featured SQL-like language. Its own map-reduce implementation can perform light-weighted batch jobs easily.
 
 
 Targeting Scenarios
