@@ -83,7 +83,7 @@ Targeting Scenarios
 Status
 =======
 
-**MONK** is under development. If anyone is interested in joining us, please let me know <pacificxumiao@gmail.com>. I am more than happy to share what I know and what I envisioned.
+**MONK** is under development. If anyone is interested in joining us, please let me know <pacificxumiao@gmail.com>. I am more than happy to share what I know and what I envision.
 
 
 
