@@ -9,7 +9,7 @@ Big Analytics concerns about the scalability of discovering insights, but Big Le
 
 By the Users and For the Users
 -----
-The end user is always the primary factor in **MONK**. MONK can be imagined as an intelligent delegate that automates the work for the end users. How the users interact with **MONK** makes it a unique framework.
+The end user is always the primary factor in **MONK**. MONK can be imagined as your intelligent delegate that automates the work for you. How the users interact with **MONK** and how **MONKs** interact with each other makes it a unique framework.
 
 * MONK accepts end users' actions and contexts directly, and learns in near-real-time to keep the "intelligence" up-to-date. 
 
@@ -61,7 +61,7 @@ some_project_dev.requires(affective_prediction_by_jefferson)
 * MONK targets to support advanced statistical programming, e.g., **BLOG**, **Markov Logic Networks**, and even deep models like **Sum-Product-Networks**.
 
 Architecture
------
+=======
 
 The major architecture issue is how to distribute computations, and MONK follows **Alternating Direction Method of Multipliers (ADMM)** framework. It has been proved that the convergence rate of ADMM is superior than most of other alogrithms, e.g., parallel SGDs or *shotgun* style updating rules. In addition, we divide the learning batch with respect to different users, updating models for each user is a real-time task, while merging models from all users is relatively slow-paced. MONK also supports a full batch-mode feature extractions layer which can be considered to be done once a while. Therefore, these three-layer achitecture provides MONK **speeds** and **volumes**.
 
@@ -72,7 +72,7 @@ The major architecture issue is how to distribute computations, and MONK follows
 
 
 Targeting Scenarios
-----
+=======
 
 * Device automation through community that can relieve the data sparsity and the data privacy problems
 * Social recommendation system that recommends items by following your trusted taste or creating your own taste
@@ -80,9 +80,11 @@ Targeting Scenarios
 
 
 Status and Roadmaps
------
+=======
 
 **MONK** is under development. If anyone is interested in joining us, please let me know <pacificxumiao@gmail.com>. I am more than happy to share what I know and what I envisioned.
+
+
 
 
 
