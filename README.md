@@ -32,7 +32,7 @@ adam_recipe_recommendation = monkapi.follow(john_recipe_recommendation, 'adam')
 john_home_temperature_controller.lambda = 1
 ```
 
-Assist Scientists
+Assisting Scientists
 ----
 
 * MONK integrates a tagging process, which employs *active learning* algorithms to reduce the tagging efforts to the minimum.
