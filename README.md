@@ -1,7 +1,7 @@
 **MONK** 
 ======
 
-MONK is a distributed interactive machine learning framework for both **users** and **scientists** with a focus on the agility and the sharing of the models. **pymonk** is a python implementation version.
+MONK is a distributed interactive machine learning framework for both **users** and **scientists** with a focus on the agility of building and sharing the models. **pymonk** is a python implementation version.
 
 Big Learning
 --------
