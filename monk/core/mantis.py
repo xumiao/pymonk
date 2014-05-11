@@ -56,8 +56,9 @@ class Mantis(base.MONKObject):
     def train_one(self, userId):
         solver = self.get_solver(userId)
         if solver:
-            consensus = self.panda.update_consensus()
-            local_consensus = self.panda.get_local_consensus(userId)
+            consensus = self.panda.load_consensus()
+            self.panda.load_one_local_consensus(userId)
+            local_consensus = self.panda.get_local_consensus(userId)        # [TODO]: equal to self.panda.local_consensus[userId] ?   
             solver.setModel(consensus, local_consensus)
             solver.trainModel()            
     
@@ -68,41 +69,49 @@ class Mantis(base.MONKObject):
             self.data[userId][entity._id] = (index, y, c)
     
     def update_local_consensus(self, userId, consensus):
+        self.panda.load_one_weight(userId)
         updated_w = self.panda.weights[userId]            # [TODO]: self.panda.weights[userId] should already be updated w?  
-        q = self.panda.get_local_consensus(userId)    # [TODO]: equal to self.panda.local_consensus[userId] ?   
+        self.panda.load_one_dual(userId)
         u = self.panda.get_dual(userId)    # [TODO]: equal to self.panda.dual[userId] ?               
+        
+        q = self.panda.get_local_consensus(userId)    # [TODO]: equal to self.panda.local_consensus[userId] ?           
         q.copyUpdate(updated_w)
         q.scale(self.gamma)
         q.add(consensus, self.rho)
         q.add(u, -self.rho)
-        q.scale(1 / (self.gamma + self.rho))
+        q.scale(1.0 / (self.gamma + self.rho))
             
     def aggregate(self, userId):
         # TODO: incremental aggregation
         # TODO: ADMM aggregation
         #logger.debug("self.panda.consensus = {0}".format(self.panda.consensus)) 
-        old_q = self.panda.get_local_consensus(userId).clone()    # [TODO]: equal to self.panda.local_consensus[userId] ?                        
-        consensus = self.panda.consensus
+        if(self.panda.get_local_consensus(userId) == None):
+            self.panda.local_consensus[userId] = self.panda.consensus.clone()
+            
+        old_q = self.panda.get_local_consensus(userId).clone()    # [TODO]: equal to self.panda.local_consensus[userId] ? 
+        consensus = self.panda.load_consensus()                 # [TODO]: shouldn't use consensus = self.panda.consensus ?
         self.update_local_consensus(userId, consensus)   
         
-        t = len(self.panda.weights) + 1/self.rho
+        t = len(self.panda.weights) + 1.0 / self.rho
         if userId in self.panda.weights:
             q = old_q
         else:
             q = consensus
             t += 1
         consensus.add(q, -1.0/t)
-        #self.panda.load_one_weight(userId)
+        self.panda.load_one_weight(userId)
         if userId in self.panda.weights:
             q = self.panda.get_local_consensus(userId)
         else:
             q = consensus
         consensus.add(q, 1.0/t)
         self.panda.save_consensus()
+        
+        self.panda.load_one_dual(userId)
         u = self.panda.get_dual(userId)    # [TODO]: equal to self.panda.dual[userId] ?    
         u.add(q, 1)
         u.add(consensus, -1)
-        self.panda.save_dual()
+        self.panda.save_dual(userId)
     
     def has_user(self, userId):
         return userId in self.data

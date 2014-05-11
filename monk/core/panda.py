@@ -184,7 +184,7 @@ class LinearPanda(Panda):
             logger.error('panda {0} does not store user {1}'.format(self._id, userId))
             return False         
     
-    def update_consensus(self):
+    def load_consensus(self):
         pa = crane.pandaStore.load_one_in_fields(self,['consensus'])
         if 'consensus' in pa:
             self.consensus.update(pa['consensus'])

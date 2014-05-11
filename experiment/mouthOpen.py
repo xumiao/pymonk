@@ -21,10 +21,10 @@ parts = range(1, 33)
 users = {}
 UoI = {'Steve_70f97adb-2860-4b96-aff3-b538a1781581':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0), 'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0)}
 #UoI = {'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0)}
-#UoI = {'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0)}
-UoI = {'Steve_70f97adb-2860-4b96-aff3-b538a1781581':int(0)}
+UoI = {'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0)}
+#UoI = {'Steve_70f97adb-2860-4b96-aff3-b538a1781581':int(0)}
 def stop_add_data(userId):
-    if UoI[userId] >= 1:
+    if UoI[userId] >= 10:
         return True
     else:
         return False
@@ -112,4 +112,4 @@ def remove_data_for_experiment_only():
 if __name__=='__main__':
     remove_data_for_experiment_only()
     add_data()
-    train(1)
+    train(5)
