@@ -72,7 +72,7 @@ Architecture
 
 The major architecture issue is how to distribute computations. Unlike map-reduce (spark), all-reduce (vowpal-wabbit), and message-passing (GraphLab), MONK follows **Alternating Direction Method of Multipliers (ADMM)** framework to distribute jobs and adopts an event-driven asynchronous approach to respond users' requests. 
 
-MONK follows the user-locality assumption to divide the batch job with respect to end users, and updating models on users' commands. The leaders will merge the followers' models from time to time, and distribute back to the followers to allow community knowledge spread. It has been proved that the number of iterations between leaders and followers that is required to converge for ADMM is significantly smaller than most of other distributed alogrithms, e.g., parallel SGDs or *shotgun* style updating rules. Therefore, putting much less stress on the network infrastructure. 
+MONK follows the user-locality assumption to divide the batch job with respect to end users, and updating models on users' commands. The leaders will merge the followers' models from time to time, and distribute back to the followers to allow community knowledge spread. It has been proved that the number of iterations between leaders and followers that is required to converge for ADMM is significantly smaller than most of other distributed alogrithms, e.g., parallel SGDs or *shotgun* style updating rules. Therefore, much less stress is put on the network infrastructure. 
 
 In addition, updating models for each user is a real-time task, while merging models from followers is not that time-critical, so we put it in a near-real-time layer. MONK also supports a full batch-mode feature extractions layer that only executes once a while. These three-layer achitecture provides MONK *speeds* and *volumes*.
 
@@ -80,6 +80,13 @@ MONK adopts `Apache Kafka` as the high throughput bus to connect the layers and 
 
 
 MONK builds on top of the `MongoDB` because of its scalability, full-text indexing, Geo-indexing, and full featured SQL-like language. Its own map-reduce implementation can perform light-weighted batch jobs easily.
+
+Data Structures and Algorithms
+======
+
+MONK features a FlexibleVector data structure that extends from SkipList based sparse vector representation to allow smooth transition between dense vector and sparse vector. It allows `O(log(n))` amortized time to perform all operations at any time. It takes advantages of both CPU pre-fetching for dense vector, and linked list for sparse vector. So, the users don't have to pay attention to when to switch from each other, and allow the data and the models mutable at any moments.
+
+Inspired by vowpal wabbit, MONK adopts the **learning reduction** techniques to break any problem down into basic problems, e.g., binary classifications. It abstracts away the learning algorithms from the statistical programming, and allows the scientists to do their best inventing better models without worrying about the optimality of the learning algorithms.
 
 
 Status
