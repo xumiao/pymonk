@@ -13,6 +13,8 @@ from __future__ import division
 cimport cython
 from libc.stdlib cimport malloc, free, calloc, rand
 from monk.math.flexible_vector import FlexibleVector
+import logging
+logger = logging.getLogger('monk.svm_solver_dual')
 
 cdef inline _MEM_CHECK(void* p):
     if p == NULL:
@@ -49,6 +51,7 @@ cdef class SVMDual(object):
     cpdef public int max_num_instances
     cpdef public int num_instances
     cpdef public float rho
+    cpdef public float gamma
     cdef int active_size
     cdef list x # features
     cdef int* y # target array
@@ -59,13 +62,14 @@ cdef class SVMDual(object):
     cdef float highest_score
     cdef object w
     
-    def __init__(self, w, eps, lam, rho, max_num_iters, max_num_instances):
+    def __init__(self, w, eps, lam, rho, gamma, max_num_iters, max_num_instances):
         # @todo: check x, y, w not None
         # @todo: validate the parameters
         cdef int j
         self.eps = eps
         self.lam = lam
         self.rho = rho
+        self.gamma = gamma
         self.w = w
         self.max_num_iters = max_num_iters
         self.max_num_instances = max_num_instances
@@ -108,7 +112,7 @@ cdef class SVMDual(object):
         for j in xrange(self.num_instances):
             self.alpha[j] = 0
             self.index[j] = j
-            self.QD[j] = 0.5 * self.rho / self.c[j] + self.x[j].norm2()
+            self.QD[j] = self.gamma * self.rho / ((self.gamma + self.rho) * self.c[j]) + self.x[j].norm2()
 
     def setData(self, x, y, c, ind):
         cdef int j = ind
@@ -116,14 +120,16 @@ cdef class SVMDual(object):
         self.y[j] = y
         self.c[j] = c
         self.alpha[j] = 0
-        self.QD[j] = 0.5 * self.rho / c + x.norm2()
+        self.QD[j] = self.gamma * self.rho / ((self.gamma + self.rho) * c) + x.norm2()
+        return x.getIndex()
         
-    def setModel(self, z):
+    def setModel(self, z, u):
         cdef int j
         cdef float ya
-        self.w.copyUpdate(z)
+        self.w.copyUpdate(z)        
         for j in xrange(self.num_instances):
             self.w.addFast(self.x[j], self.y[j] * self.alpha[j])
+        self.w.add(u, -1)    
         
     def trainModel(self):
         cdef int j, k, s, iteration
@@ -145,7 +151,6 @@ cdef class SVMDual(object):
         while iteration < self.max_num_iters:
             PGmax_new = -1e10
             PGmin_new = 1e10
-            
             for j in xrange(active_size):
                 k = j + rand() % (active_size - j)
                 self.swap(index, j, k)
@@ -156,7 +161,7 @@ cdef class SVMDual(object):
                 xj = self.x[j]
                 
                 G = self.w.dot(xj) * yj - 1
-                G += alpha[j] * 0.5 * self.rho / self.c[j]
+                G += alpha[j] * self.gamma * self.rho / ((self.gamma + self.rho) * self.c[j])
                 
                 PG = 0
                 if alpha[j] <= 0:
@@ -199,4 +204,4 @@ cdef class SVMDual(object):
                 PGmax_old = 1e10
             if PGmin_old >= 0:
                 PGmin_old = -1e10
-    
+        #logger.debug(str(iteration))

@@ -1,0 +1,40 @@
+modelConnectionString : 10.137.168.196:27017
+modelDataBaseName : MONKModel
+dataConnectionString : 10.137.168.196:27017
+dataDataBaseName : DataSet
+entityCollectionName : PMLExpression
+uidConnectionString : 10.137.168.196:27017
+uidDataBaseName : uidDB
+kafkaConnectionString : mozo.cloudapp.net:9092
+kafkaGroup : expression
+kafkaTopic : expression
+kafkaMasterPartition : 0
+loggingConfig:
+    version : 1
+    disable_existing_loggers : True
+    formatters : 
+        verbose : 
+            format : '[%(asctime)s][%(process)-5d][%(name)-12s][%(levelname)-8s][%(lineno)-4d] : %(message)s'
+        simple :
+            format : '[%(name)-12s][%(levelname)-8s] : %(message)s'
+    handlers :
+        console :
+            class : logging.StreamHandler
+            formatter : simple
+            stream : ext://sys.stdout
+        files :
+            formatter : verbose
+            class : logging.handlers.RotatingFileHandler
+            filename : logs/monk.log
+            maxBytes : 1000000
+            backupCount: 10
+    loggers :
+        monk :
+            level : DEBUG
+            propagate : True
+        kafka :
+            level : ERROR
+            propagate : True
+    root :
+        level : DEBUG
+        handlers : [console, files]

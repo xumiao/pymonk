@@ -38,6 +38,7 @@ def server(configFile, partitions):
         consumer = SimpleConsumer(kafka, config.kafkaGroup,
                                   config.kafkaTopic,
                                   partitions=partitions)
+        #consumer.seek(0, 2)                                       
         for message in consumer:
             logger.debug(message)
             try:
