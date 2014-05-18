@@ -247,7 +247,7 @@ class Crane(object):
 
     def load_all_in_ids(self, query, skip, num):
         try:
-            return list(self._coll.find(query, {'_id': 1}, skip=0, limit=num))
+            return list(self._coll.find(query, {'_id': 1}, skip=skip, limit=num))
         except Exception as e:
             logger.warning(e.message)
             logger.warning('can not load documents by query'.format(query))

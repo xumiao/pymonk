@@ -13,6 +13,7 @@ logger = logging.getLogger("monk.base")
 class MONKObject(object):
     ID              = '_id' # for mongodb
     MONK_TYPE       = 'monkType'
+    NAME            = 'name'
     CREATOR         = 'creator'
     CREATED_TIME    = 'createdTime'
     LAST_MODIFIED   = 'lastModified'
@@ -40,6 +41,7 @@ class MONKObject(object):
     def __default__(self):
         self._id = ObjectId()
         self.monkType = self.get_type_name()
+        self.name = cons.DEFAULT_EMPTY
         self.creator = cons.DEFAULT_CREATOR
         self.createdTime = datetime.now()
         self.lastModified = datetime.now()
@@ -73,7 +75,10 @@ class MONKObject(object):
         else:
             logger.warning('no store for abstract MONKObject')
     
-    def delete(self):
+    def signature(self):
+        return {self.NAME:self.name, self.CREATOR:self.creator}
+        
+    def delete(self, deep=False):
         if self.store:
             return self.store.delete_one_by_id(self._id)
         else:

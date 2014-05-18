@@ -112,7 +112,7 @@ cdef class SVMDual(object):
         for j in xrange(self.num_instances):
             self.alpha[j] = 0
             self.index[j] = j
-            self.QD[j] = self.gamma * self.rho / ((self.gamma + self.rho) * self.c[j]) + self.x[j].norm2()
+            self.QD[j] = (self.gamma + self.rho) / (self.gamma * self.rho) * self.c[j] + self.x[j].norm2()
 
     def setData(self, x, y, c, ind):
         cdef int j = ind
@@ -120,20 +120,21 @@ cdef class SVMDual(object):
         self.y[j] = y
         self.c[j] = c
         self.alpha[j] = 0
-        self.QD[j] = self.gamma * self.rho / ((self.gamma + self.rho) * c) + x.norm2()
+        self.QD[j] = (self.gamma + self.rho) / (self.gamma * self.rho) * c + x.norm2()
         return x.getIndex()
         
-    def setModel(self, z, u):
+    def setModel(self, FlexibleVecotr q, FlexibleVector mu):
         cdef int j
-        cdef float ya
-        self.w.copyUpdate(z)        
+        self.w.clear()
+        self.w.copyUpdate(q)
         for j in xrange(self.num_instances):
             self.w.addFast(self.x[j], self.y[j] * self.alpha[j])
-        self.w.add(u, -1)    
+        self.w.addFast(mu, -2)
+        self.initialization()
         
     def trainModel(self):
         cdef int j, k, s, iteration
-        cdef float ya, d, G, alpha_old
+        cdef float d, G, alpha_old
         cdef int active_size = self.num_instances
         cdef int* index = self.index
         cdef float* alpha = self.alpha

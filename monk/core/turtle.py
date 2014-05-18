@@ -24,7 +24,6 @@ class Turtle(base.MONKObject):
     FPANDAS               = 'pandas'
     FTIGRESS              = 'tigress'
     FMAPPING              = 'mapping'
-    FNAME                 = 'name'
     FDESCRIPTION          = 'description'
     FPENALTY              = 'pPenalty'
     FEPS                  = 'pEPS'
@@ -43,7 +42,6 @@ class Turtle(base.MONKObject):
         self.pandas = []
         self.tigress = None
         self.mapping = {}
-        self.name = cons.DEFAULT_EMPTY
         self.description = cons.DEFAULT_EMPTY
         self.pPenalty = 1.0
         self.pEPS = 1e-6
@@ -56,17 +54,26 @@ class Turtle(base.MONKObject):
         
     def __restore__(self):
         super(Turtle, self).__restore__()
+        try:
+            [panda.setdefault(self.CREATOR, self.creator) for panda in self.pandas]
+            self.tigress.setdefault(self.CREATOR, self.creator)
+        except:
+            pass
         self.pandas = crane.pandaStore.load_or_create_all(self.pandas)
         self.tigress = crane.tigressStore.load_or_create(self.tigress)
+        
         self.pandaUids = set((p.uid for p in self.pandas))
         self.invertedMapping = {v: k for k, v in self.mapping.iteritems()}
         
+        if not isinstance(self.followers, set):
+            self.followers = set(self.followers)
+            
         if self.FREQUIRES_UIDS in self.requires:
             uids = self.requires[self.FREQUIRES_UIDS]
             if isinstance(uids, basestring):
                 uids = eval(uids)
             [panda.add_features(uids) for panda in self.pandas]
-        elif self.FREQUIRES_TURTLEIDS in self.requires:
+        elif self.FREQUIRES_TURTLES in self.requires:
             turtles = self.store.load_all_by_name_user(
                       [(t, self.creator) for t in self.requires[self.FREQUIRES_TURTLES]])
             [panda.add_features(turtle.get_panda_uids()) for turtle in turtles for panda in self.pandas]
@@ -78,8 +85,8 @@ class Turtle(base.MONKObject):
 
     def generic(self):
         result = super(Turtle, self).generic()
-        result[self.FTIGRESS] = {'name':self.tigress.name, 'creator':self.tigress.creator}
-        result[self.FPANDAS] = [{'name':panda.name, 'creator':panda.creator} for panda in self.pandas]
+        result[self.FTIGRESS] = self.tigress.signature()
+        result[self.FPANDAS] = [panda.signature() for panda in self.pandas]
         # invertedMapping is created from mapping
         del result['invertedMapping']
         del result['pandaUids']
@@ -98,11 +105,11 @@ class Turtle(base.MONKObject):
             self.tigress.save(kwargs)
         [pa.save(kwargs) for pa in self.pandas]
         
-    def delete(self):
+    def delete(self, deep=False):
         result = super(Turtle, self).delete()
         if self.tigress:
             result = result and self.tigress.delete()
-        if self.pandas:
+        if deep:
             result = result and [pa.delete() for pa in self.pandas].all()
         return result
     
@@ -161,56 +168,21 @@ class Turtle(base.MONKObject):
             logger.info("turtle {0} does not have active superviser".format(self.name))
     
     def train(self):
-        [panda.mantis.train(self.leader) for panda in self.pandas if panda.has_mantis()]
-        [panda.save() for panda in self.pandas]
+        [panda.train(self.leader) for panda in self.pandas]
     
-    def merge(self, user):
-        if user not in self.followers:
-            logger.error('user {0} is not a follower of {1}@{2}'.format(user, self.creator, self.name))
-            return False  
-        return [panda.mantis.merge(user) for panda in self.pandas if panda.has_mantis()].all()
+    def checkout(self):
+        [panda.checkout(self.leader) for panda in self.pandas]
 
-    def has_user(self, user):
-        return self.store.has_user(self.name, user)
+    def commit(self):
+        [panda.commit() for panda in self.pandas]
+        
+    def merge(self, follower):
+        if follower not in self.followers:
+            logger.error('user {0} is not a follower of {1}@{2}'.format(follower, self.creator, self.name))
+            return False
+        [panda.merge(follower) for panda in self.pandas]
     
-    def has_user_in_store(self, user):
-        return self.store.has_user_in_store(self.name, user)
-        
-    def add_user(self, user):
-        if not self.has_user_in_store(user):
-            newTurtle = self.clone(user)
-            self.followers.add(user)
-            newTurtle.leader = self.creator
-            newTurtle.save()
-            return newTurtle
-        else:
-            logger.error('user {0} already has cloned this turtle'.format(user))
-            return None
-        
-    def remove_user(self, user):
-        if user is self.creator or user in self.followers:
-            return self.delete()
-        else:
-            # only self or one of the followers can be removed
-            logger.error('you {0} dont have the permission to delete user {1} for turtle {2}'.format(
-                         self.user, user, self.name))
-            return False
-    
-    def transfer_user(self, user, leader):
-        if user not in self.followers:
-            logger.error('user {0} is not a follower of {1}@{2}'.format(user, self.creator, self.name))
-            return False
-        
-        leaderTurtle = self.store.load_one_by_name_user(self.name, leader)
-        if not leaderTurtle:
-            logger.error('leader {0} does not has turtle {1}'.format(leader, self.name))
-            return False
-
-        leaderTurtle.followers.add(user)
-        user.leader = leader
-        self.followers.remove(user)
-        return True
-            
+       
 class SingleTurtle(Turtle):
     
     def predict(self, entity, fields=None):

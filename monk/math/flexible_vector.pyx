@@ -26,6 +26,7 @@ from __future__ import division
 
 cimport cython
 from libc.stdlib cimport malloc, free, rand, calloc, realloc, RAND_MAX
+from libc.string cimport memset
 
 cdef int MAX_HEIGHT = 32
 cdef long MAX_CAPACITY = 2 << 16
@@ -293,7 +294,15 @@ cdef class FlexibleVector(object):
                     a.append((i + currA.index, currA.values[i]))
             currA = currA.nextA[0]
         return a
-
+    
+    cpdef clear(self):
+        cdef SkipNodeA* currA = self.head.nextA[0]
+        cdef long i
+        while currA != NULL:
+            for i in xrange(currA.length):
+                currA.values[i] = 0
+            currA = currA.nextA[0]
+        
     cpdef copyUpdate(self, FlexibleVector other):
         cdef SkipNodeA* currA = other.head.nextA[0]
         cdef long i
