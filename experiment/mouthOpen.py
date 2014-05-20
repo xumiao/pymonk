@@ -107,7 +107,12 @@ def remove_data_for_experiment_only():
     
     tigress_id = turtle['tigress']              # clean up tigress
     MONKModelTigressStore.update({'_id':tigress_id},{'$set':{'confusionMatrix':{}}})
-        
+
+def test():
+    pass
+
+def evaluate():
+    pass        
         
 if __name__=='__main__':
     remove_data_for_experiment_only()
