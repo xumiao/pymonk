@@ -10,6 +10,7 @@ from kafka.producer import UserProducer
 import simplejson
 import logging
 from bson.objectid import ObjectId
+from random import sample
 
 logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -117,10 +118,65 @@ def test():
     for pandas_id in turtle['pandas']:
         panda = MONKModelPandaStore.find_one({'_id':pandas_id})
                 
+def retrieveData():
+    mcl = pm.MongoClient('10.137.168.196:27017')        
+    coll = mcl.DataSet['PMLExpression']
+    originalData = {}
+    for user in UoI.keys():
+        originalData[user] = {'0':[], '1':[]}
+    
+    for ent in coll.find({'userId': {'$in': UoI.keys()}}, {'_id':True, 'userId':True, 'labels':True}, timeout=False):
+        userId = ent['userId']     
+        if not len(ent['labels']) == 0:
+            originalData[userId]['1'].append(ent['_id']) 
+        else:
+            originalData[userId]['0'].append(ent['_id'])             
         
+    return originalData           
         
-        
+def splitData(originalData, trainData, testData):
+    fracTrain = 0.5
+    for user in originalData.keys():
+        trainData[user] = []
+        testData[user] = []
+        numOfPosData = len(originalData[user]['1'])
+        numOfNegData = len(originalData[user]['0'])
+        pos = range(numOfPosData)
+        neg = range(numOfNegData)
+        selectedPos = stratifiedSelection(pos, fracTrain)
+        selectedNeg = stratifiedSelection(neg, fracTrain)
+        #selected = selectForTraining(numOfData, fracTrain)
+        for i in range(numOfPosData):
+            if i in selectedPos:
+                trainData[user].append(originalData[user]['1'][i])                
+            else:
+                testData[user].append(originalData[user]['1'][i])
+        for i in range(numOfNegData):
+            if i in selectedNeg:
+                trainData[user].append(originalData[user]['0'][i])                
+            else:
+                testData[user].append(originalData[user]['0'][i])          
 
+def stratifiedSelection(index, fracTrain): 
+    
+    num = int(len(index)*fracTrain)
+
+###============= method 1 =============    
+#    indexPos = sample(range(len(pos)), numOfPos)
+#    indexNeg = sample(range(len(neg)), numOfNeg)
+#    
+#    index = []
+#    for i in indexPos:
+#        index.append(pos[i])
+#    for i in indexNeg:
+#        index.append(neg[i])
+
+###============= method 2 ============= 
+    selectIndex = sample(index, num)    
+    
+    return selectIndex
+    
+    
 def evaluate():
     pass        
         
