@@ -63,7 +63,7 @@ def reloads(config=None):
     reload(relation)
     reload(tigress)
     reload(turtle)
-    reload(mantis)
+    reload(mantis) 
     reload(panda)
     initialize(config)
     
@@ -122,11 +122,20 @@ def create_turtle(turtleScript):
     if _turtle is None:
         logger.error('failed to load or create the turtle {0}'.format(turtleScript))
         return None
+    _turtle.save()
     return _turtle
     
 def load_turtle(turtleName, user):
     return crane.turtleStore.load_or_create({'name':turtleName, 'creator':user})
-        
+
+def save_turtle(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
+    if not _turtle:
+        logger.error('turtle {0} has no user {1}'.format(turtleName, user))
+        return False
+    _turtle.save()
+    return True
+    
 def remove_turtle(turtleName, user, deep=False):
     _turtle = load_turtle(turtleName, user)
     if not _turtle:
