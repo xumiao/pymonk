@@ -109,7 +109,17 @@ def remove_data_for_experiment_only():
     MONKModelTigressStore.update({'_id':tigress_id},{'$set':{'confusionMatrix':{}}})
 
 def test():
-    pass
+    mcl = pm.MongoClient('10.137.168.196:27017')
+    MONKModelTurtleStore = mcl.MONKModel['TurtleStore']
+    MONKModelPandaStore = mcl.MONKModel['PandaStore']
+    MONKModelMantisStore = mcl.MONKModel['MantisStore']
+    turtle = MONKModelTurtleStore.find_one({'_id':ObjectId(turtleId)})
+    for pandas_id in turtle['pandas']:
+        panda = MONKModelPandaStore.find_one({'_id':pandas_id})
+                
+        
+        
+        
 
 def evaluate():
     pass        
