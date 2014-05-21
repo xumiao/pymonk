@@ -62,12 +62,11 @@ cdef class SVMDual(object):
     cdef float highest_score
     cdef object w
     
-    def __init__(self, w, eps, lam, rho, gamma, max_num_iters, max_num_instances):
+    def __init__(self, w, eps, rho, gamma, max_num_iters, max_num_instances):
         # @todo: check x, y, w not None
         # @todo: validate the parameters
         cdef int j
         self.eps = eps
-        self.lam = lam
         self.rho = rho
         self.gamma = gamma
         self.w = w
@@ -125,7 +124,6 @@ cdef class SVMDual(object):
         
     def setModel(self, FlexibleVecotr q, FlexibleVector mu):
         cdef int j
-        self.w.clear()
         self.w.copyUpdate(q)
         for j in xrange(self.num_instances):
             self.w.addFast(self.x[j], self.y[j] * self.alpha[j])

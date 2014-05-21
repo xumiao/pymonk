@@ -7,26 +7,37 @@ The general object used in MONK
 from ..math.flexible_vector import FlexibleVector
 import base, crane
 import constants as cons
+import logging
+logger = logging.getLogger('monk.entity')
 
 class Entity(base.MONKObject):
-
+    FEATURES = '_features'
+    RAWS     = '_raws'
+    
+    def __default__(self):
+        super(Entity, self).__default__()
+        self._features = []
+        self._raws = dict()
+        
     def __restore__(self):
         super(Entity, self).__restore__()
-        self._default(cons.FEATURES, [])
-        self._default(cons.RAWS, {})
         self._features = FlexibleVector(generic=self._features)
         
     def generic(self):
         result = super(Entity, self).generic()
-        result[cons.FEATURES] = self._features.generic()
+        result[self.FEATURES] = self._features.generic()
         return result
     
+    def clone(self, user):
+        logger.error('entity can not be cloned')
+        return None
+        
     def save(self,**kwargs):
         if kwargs and 'fields' in kwargs:
             fields = kwargs['fields']
         else:
-            fields = {cons.FEATURES:self._features.generic(),
-                      cons.RAWS:self._raws}
+            fields = {self.FEATURES:self._features.generic(),
+                      self.RAWS:self._raws}
         crane.entityStore.update_one_in_fields(self, fields)
         
     def __contains__(self, key):
@@ -38,20 +49,20 @@ class Entity(base.MONKObject):
     def __getitem__(self, key):
         return self._features[key]
 
-    def getRaw(self, rawKey):
+    def get_raw(self, rawKey):
         if rawKey in self._raws:
             return self._raws[rawKey]
         else:
             return cons.DEFAULT_EMPTY
 
-    def setRaw(self, rawKey, rawValue):
+    def set_raw(self, rawKey, rawValue):
         if isinstance(rawKey, basestring):
             self._raws[rawKey.replace('.', '\uff0e').replace('$', '\uff04')] = rawValue
 
     def set_value(self, key, value):
         if value != 0 and key not in self._features:
             self._features[key] = value
-            crane.entityStore.push_one_in_fields(self, {cons.FEATURES:(key,value)})
+            crane.entityStore.push_one_in_fields(self, {self.FEATURES:(key,value)})
         return value
         
 base.register(Entity)

@@ -11,7 +11,6 @@ from bson.objectid import ObjectId
 import base, crane, entity, relation, tigress, turtle, mantis, panda
 import configuration
 import yaml
-from constants import *
 
 logger = logging.getLogger("monk.api")
 _config = None
@@ -64,31 +63,28 @@ def reloads(config=None):
     reload(relation)
     reload(tigress)
     reload(turtle)
-    reload(mantis)
+    reload(mantis) 
     reload(panda)
     initialize(config)
     
 # entity APIs
-def load_entities(entities, query={}, skip=0, num=100, collectionName=None):
+def load_entities(entities=[], query={}, skip=0, num=100, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)
     if not entities:
         entities = [ent['_id'] for ent in crane.entityStore.load_all_in_ids(query, skip, num)]
     return crane.entityStore.load_or_create_all(entities)
 
-def load_entity(entity, collectionName=None):
-    crane.entityStore.set_collection_name(collectionName)
-    return crane.entityStore.load_or_create(entity)
-
 def save_entities(entities, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)
     [crane.entityStore.update_one_in_fields(ent, ent.generic()) for ent in entities]
+
+def load_entity(entity, collectionName=None):
+    crane.entityStore.set_collection_name(collectionName)
+    return crane.entityStore.load_or_create(entity)
     
 # project(turtle) management APIs
-def has_turtle(turtleName, user):
-    return crane.turtleStore.has_user(turtleName, user)
-
 def has_turtle_in_store(turtleName, user):
-    return crane.turtleStore.has_user_in_store(turtleName, user)
+    return crane.turtleStore.has_name_user(turtleName, user)
 
 def follow_turtle(turtleName, user, leader):
     if not has_turtle_in_store(turtleName, user):
@@ -100,7 +96,7 @@ def follow_turtle(turtleName, user, leader):
         turtle.followers.add(user)
         newTurtle.leader = leader
         newTurtle.save()
-        crane.turtleStore.update_one_in_fields(turtle, {'followers':turtle.followers})
+        crane.turtleStore.push_one_in_fields(turtle, {'followers':user})
         return newTurtle
     else:
         logger.error('user {0} already has cloned this turtle'.format(user))
@@ -113,7 +109,7 @@ def unfollow_turtle(turtleName, user, leader):
         logger.error('turtle {0} has no user {1} or {2}'.format(turtleName, user, leader))
         return False
     turtle.followers.remove(user)
-    crane.turtleStore.update_one_in_fields(turtle, {'followers':turtle.followers})
+    crane.turtleStore.pull_one_in_fields(turtle, {'followers':user})
     follower.leader = None
     crane.turtleStore.update_one_in_fields(turtle, {'leader':None})
 
@@ -126,25 +122,34 @@ def create_turtle(turtleScript):
     if _turtle is None:
         logger.error('failed to load or create the turtle {0}'.format(turtleScript))
         return None
+    _turtle.save()
     return _turtle
     
 def load_turtle(turtleName, user):
-    return crane.turtleStore.load_one_by_name_user(turtleName, user)
-        
+    return crane.turtleStore.load_or_create({'name':turtleName, 'creator':user})
+
+def save_turtle(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
+    if not _turtle:
+        logger.error('turtle {0} has no user {1}'.format(turtleName, user))
+        return False
+    _turtle.save()
+    return True
+    
 def remove_turtle(turtleName, user, deep=False):
-    turtle = load_turtle(turtleName, user)
-    if not turtle:
+    _turtle = load_turtle(turtleName, user)
+    if not _turtle:
         logger.error('turtle {0} has no user {1}'.format(turtleName, user))
         return False
         
-    if turtle.leader:
+    if _turtle.leader:
         leadTurtle = load_turtle(turtleName, turtle.leader)
         leadTurtle.followers.remove(user)
-        crane.turtleStore.update_one_in_fields(leadTurtle, {'followers':leadTurtle.followers})
-    return turtle.delete(deep)
+        crane.turtleStore.pull_one_in_fields(leadTurtle, {'followers':user})
+    return _turtle.delete(deep)
     
 def entity_collection(turtleName, user):
-    _turtle = crane.turtleStore.load_one_by_name_user(turtleName, user)
+    _turtle = load_turtle(turtleName, user)
     if _turtle:
         return _turtle.entityCollectionName
     else:
@@ -159,7 +164,7 @@ def find_pandas(query, fields=None):
     return crane.pandaStore.load_all(query, fields)
 
 def add_panda(turtleName, user, panda):
-    _turtle = crane.turtleStore.load_one_by_name_user(turtleName, user)
+    _turtle = load_turtle(turtleName, user)
     if _turtle:
         return _turtle.add_panda(panda)
     else:
@@ -167,7 +172,7 @@ def add_panda(turtleName, user, panda):
         return None
 
 def delete_panda(turtleName, user, panda):
-    _turtle = crane.turtleStore.load_one_by_name_user(turtleName, user)
+    _turtle = load_turtle(turtleName, user)
     if _turtle:
         return _turtle.delete_panda(panda)
     else:
@@ -176,7 +181,7 @@ def delete_panda(turtleName, user, panda):
     
 # training APIs
 def add_data(turtleName, user, ent):
-    _turtle = crane.turtleStore.load_one_by_name_user(turtleName, user)
+    _turtle = load_turtle(turtleName, user)
     if _turtle:
         crane.entityStore.set_collection_name(_turtle.entityCollectionName)
         ent = crane.entityStore.load_or_create(ent)
@@ -186,7 +191,7 @@ def add_data(turtleName, user, ent):
         return False
 
 def train(turtleName, user):
-    _turtle = crane.turtleStore.load_one_by_name_user(turtleName, user)
+    _turtle = load_turtle(turtleName, user)
     if _turtle:
         _turtle.train()
         return True
@@ -195,7 +200,7 @@ def train(turtleName, user):
         return False
 
 def commit(turtleName, user):
-    _turtle = crane.turtleStore.load_one_by_name_user(turtleName, user)
+    _turtle = load_turtle(turtleName, user)
     if _turtle:
         _turtle.commit()
         return True
@@ -204,7 +209,7 @@ def commit(turtleName, user):
         return False
     
 def merge(turtleName, user, follower):
-    _turtle = crane.turtleStore.load_one_by_name_user(turtleName, user)
+    _turtle = load_turtle(turtleName, user)
     if _turtle:
         return _turtle.merge(follower)
     else:
@@ -213,7 +218,7 @@ def merge(turtleName, user, follower):
     
 # testing APIs
 def predict(turtleName, user, entity, fields=None):
-    _turtle = crane.turtleStore.load_one_by_name_user(turtleName, user)
+    _turtle = load_turtle(turtleName, user)
     if _turtle:
         return _turtle.predict(entity, fields)
     else:

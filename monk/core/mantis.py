@@ -35,17 +35,20 @@ class Mantis(base.MONKObject):
         self.maxNumInstances = 1000
         self.panda = None
         self.data = {}
-        self.mu = FlexibleVector()
-        self.q = FlexibleVector()
-        self.dq = FlexibleVector()
+        self.mu = []
+        self.q  = []
+        self.dq = []
         
     def __restore__(self):
         super(Mantis, self).__restore__()
         self.solver = None
         try:
-            self.solver = SVMDual(self.panda.weights, self.eps, self.gamma * self.rho / (self.gamma + self.rho),
+            self.mu = FlexibleVector(generic=self.mu)
+            self.q  = FlexibleVector(generic=self.q)
+            self.dq = FlexibleVector(generic=self.dq)
+            self.panda = crane.pandaStore.load_one_by_id(self.panda)
+            self.solver = SVMDual(self.panda.weights, self.eps, self.rho, self.gamma,
                                   self.maxNumIters, self.maxNumInstances)
-            #@todo: slow, need to optimize
             self.data = {ObjectId(k) : v for k,v in self.data.iteritems()}
             ents = crane.entityStore.load_all_by_ids(self.data.keys())
             for ent in ents:
@@ -53,8 +56,8 @@ class Mantis(base.MONKObject):
                 self.solver.setData(ent._features, y, c, index)
             return True
         except Exception as e:
-            logger.error('can not create a solver for {0}'.format(self.panda.name))
             logger.error('error {0}'.format(e.message))
+            logger.error('can not create a solver for {0}'.format(self.panda.name))
             return False
 
     def generic(self):
@@ -62,8 +65,8 @@ class Mantis(base.MONKObject):
         # every mantis should have a panda
         result[self.FPANDA] = self.panda._id
         result[self.FDUALS] = self.mu.generic()
-        result[self.FQ] = self.q.generic()
-        result[self.FDQ] = self.dq.generic()
+        result[self.FQ]     = self.q.generic()
+        result[self.FDQ]    = self.dq.generic()
         try:
             del result['solver']
         except Exception as e:
@@ -74,9 +77,9 @@ class Mantis(base.MONKObject):
         obj = super(Mantis, self).clone(user)
         obj.mu = FlexibleVector()
         obj.dq = FlexibleVector()
-        obj.q = self.panda.z.clone()
+        obj.q  = self.panda.z.clone()
         obj.panda = panda
-        obj.solver = SVMDual(panda.weights, self.eps, self.gamma * self.rho / (self.gamma + self.rho),
+        obj.solver = SVMDual(panda.weights, self.eps, self.rho, self.gamma,
                              self.maxNumIters, self.maxNumInstances)
         obj.data = {}
         self.m += 1

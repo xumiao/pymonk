@@ -11,7 +11,7 @@ cdef extern from "math.h":
     
 cpdef sigmoid(float v):
     cdef float ev2 = exp(v * 2)
-    return 1 - 2 / (ev2 + 1)
+    return 1 - 1 / (ev2 + 1)
 
 cpdef sign0(float v):
     if v > 0.5:

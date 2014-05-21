@@ -88,7 +88,7 @@ class MONKObject(object):
     def clone(self, user):
         """ Reuse the object in store """
         if self.store:
-            obj = self.store.load_one_by_name_user(self.name, user)
+            obj = self.store.load_or_create({'name':self.name, 'creator':user})
             if obj:
                 return obj
                 

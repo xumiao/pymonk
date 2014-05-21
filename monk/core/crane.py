@@ -17,7 +17,7 @@ logger = logging.getLogger("monk.crane")
 
 class Crane(object):
 
-    def __init__(self, database=None, collectionName=None, fields={}):
+    def __init__(self, database=None, collectionName=None, fields=None):
         if database is None or collectionName is None:
             return
             
@@ -71,23 +71,30 @@ class Crane(object):
         
         return self._coll.remove(obj)
         
-    def load_or_create(self, obj):
+    def load_or_create(self, obj, tosave=False):
         if not obj:
             return None
         
         if isinstance(obj, ObjectId):
             return self.load_one_by_id(obj)
         else:
-            return self.create_one(obj)
+            objId = self.load_one_in_id(obj)
+            if objId:
+                return self.load_one_by_id(objId['_id'])
+            else:
+                obj = self.create_one(obj)
+                if tosave:
+                    obj.save()
+                return obj
 
-    def load_or_create_all(self, objs):
+    def load_or_create_all(self, objs, tosave=False):
         if not objs:
             return []
         
         if isinstance(objs[0], ObjectId):
             return self.load_all_by_ids(objs)
         else:
-            return self.create_all(objs)
+            return [self.load_or_create(obj, tosave) for obj in objs]
     
     def lazy_load(self, field):
         if self._fields is None:
@@ -197,20 +204,6 @@ class Crane(object):
         self.__put_all(objs)
         return objs
     
-    def load_create_by_name(self, obj, tosave=False):
-        if 'name' not in obj:
-            return None
-            
-        objId = self.load_one_in_id({'name':obj['name']})
-        if objId:
-            return self.load_one_by_id(objId['_id'])
-        else:
-            logger.debug('new panda {0}'.format(obj['name']))
-            o = self.create_one(obj)
-            if tosave:
-                o.save()
-            return o
-            
     def load_one_by_id(self, objId):
         obj = self.__get_one(objId)
         if not obj:
@@ -245,7 +238,7 @@ class Crane(object):
             logger.warning('can not load document by query'.format(query))
             return None
 
-    def load_all_in_ids(self, query, skip, num):
+    def load_all_in_ids(self, query, skip=0, num=0):
         try:
             return list(self._coll.find(query, {'_id': 1}, skip=skip, limit=num))
         except Exception as e:
@@ -261,7 +254,7 @@ class Crane(object):
             logger.warning('query {0} can not be executed'.format(query))
             return None
 
-    def load_all(self, query, fields, skip, num):
+    def load_all(self, query, fields, skip=0, num=0):
         try:
             return list(self._coll.find(query, fields, skip=skip, limit=num))
         except Exception as e:
@@ -269,8 +262,8 @@ class Crane(object):
             logger.warning('query {0} can not be executed'.format(query))
             return None
 
-    def has_name(self, name):
-        if self._coll.find_one({'name': name}):
+    def has_name_user(self, name, user):
+        if self._coll.find_one({'name': name, 'creator':user}):
             return True
         else:
             return False
