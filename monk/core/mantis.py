@@ -13,15 +13,15 @@ import logging
 logger = logging.getLogger("monk.mantis")
 
 class Mantis(base.MONKObject):
-    FEPS = 'eps'
+    FEPS   = 'eps'
     FGAMMA = 'gamma'
-    FRHO = 'rho'
+    FRHO   = 'rho'
     FPANDA = 'panda'
-    FDATA = 'data'
+    FDATA  = 'data'
     FDUALS = 'mu'
-    FQ = 'q'
-    FDQ = 'dq'
-    FSIZE = 'm'
+    FQ     = 'q'
+    FDQ    = 'dq'
+    FSIZE  = 'm'
     FMAX_NUM_ITERS = 'maxNumIters'
     FMAX_NUM_INSTANCES = 'maxNumInstances'
     store = crane.mantisStore
@@ -119,7 +119,7 @@ class Mantis(base.MONKObject):
         da = self.data
         uuid = entity._id
         if uuid in da:
-            ind = da[uuid][0]
+            ind = da[uuid][0] 
         elif self.solver.num_instances < self.maxNumInstances:
             ind = self.solver.num_instances
             self.solver.num_instances = ind + 1
