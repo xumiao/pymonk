@@ -304,12 +304,16 @@ cdef class FlexibleVector(object):
             currA = currA.nextA[0]
         
     cpdef copyUpdate(self, FlexibleVector other):
-        cdef SkipNodeA* currA = other.head.nextA[0]
+        cdef SkipNodeA* currA = self.head.nextA[0]
         cdef long i
         while currA != NULL:
             for i in xrange(currA.length):
-                if currA.values[i] != 0:
-                    self.upsert(i + currA.index, currA.values[i])
+                currA.values[i] = 0
+            currA = currA.nextA[0]
+        currA = other.head.nextA[0]
+        while currA != NULL:
+            for i in xrange(currA.length):
+                self.upsert(i + currA.index, currA.values[i])
             currA = currA.nextA[0]
         
     def update(self, list f):
@@ -744,7 +748,16 @@ cdef class FlexibleVector(object):
                 self.found[height].nextA[height] = currA1
                 self.found[height] = currA1
             currA2 = currA2.nextA[0]
-
+    
+    def difference(FlexibleVector other, float tol = 1e-8):
+        self.add(other, -1)
+        self.trim(tol, True)
+    
+    def matching(FlexibleVector other, float tol = 0.01):
+        self.add(other, -1)
+        self.trim(tol, False)
+        self.foreach(_MATCH)
+        
 cpdef FlexibleVector difference(FlexibleVector a, FlexibleVector b, float tol = 1e-8):
     cdef FlexibleVector c = FlexibleVector()
     c.add(a,  1)

@@ -94,14 +94,14 @@ class LinearPanda(Panda):
 
     def __default__(self):
         super(LinearPanda, self).__default__()
-        self.weights = FlexibleVector()
-        self.z = FlexibleVector()
-        self.mantis = None
+        self.weights = []
+        self.z       = []
+        self.mantis  = None
 
     def __restore__(self):
         super(LinearPanda, self).__restore__()
-        self.weights = FlexibleVector(generic=self.weights)
-        self.z = FlexibleVector(generic=self.z)
+        self.weights = FlexibleVector(generic = self.weights)
+        self.z       = FlexibleVector(generic = self.z)
 
     def generic(self):
         result = super(LinearPanda, self).generic()
@@ -112,7 +112,7 @@ class LinearPanda(Panda):
     def clone(self, user):
         obj = super(LinearPanda, self).clone(user)
         obj.weights = self.weights.clone()
-        obj.z = obj.weights.clone()
+        obj.z       = obj.weights.clone()
         try:
             obj.mantis = self.mantis.clone(user, obj)
         except:
@@ -141,10 +141,14 @@ class LinearPanda(Panda):
         return isinstance(self.mantis, Mantis)
     
     def load_mantis(self):
-        if isinstance(self.mantis, dict):
+        try:
             self.mantis.setdefault(self.CREATOR, self.creator)
+            self.mantis.setdefault('panda', self._id)
+        except:
+            logger.error('mantis should be a dict for loading')
+            logger.error('now is {0}'.format(self.mantis))
+            return
         self.mantis = self.store.load_or_create(self.mantis)
-        self.mantis.panda = self
             
     def add_features(self, uids):
         self.weights.addKeys(uids)

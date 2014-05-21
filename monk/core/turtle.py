@@ -49,7 +49,7 @@ class Turtle(base.MONKObject):
         self.pMaxInferenceSteps = 1000
         self.entityCollectionName = cons.DEFAULT_EMPTY
         self.requires = dict()
-        self.followers = set()
+        self.followers = []
         self.leader = None
         
     def __restore__(self):
@@ -65,8 +65,7 @@ class Turtle(base.MONKObject):
         self.pandaUids = set((p.uid for p in self.pandas))
         self.invertedMapping = {v: k for k, v in self.mapping.iteritems()}
         
-        if not isinstance(self.followers, set):
-            self.followers = set(self.followers)
+        self.followers = set(self.followers)
             
         if self.FREQUIRES_UIDS in self.requires:
             uids = self.requires[self.FREQUIRES_UIDS]
@@ -74,8 +73,9 @@ class Turtle(base.MONKObject):
                 uids = eval(uids)
             [panda.add_features(uids) for panda in self.pandas]
         elif self.FREQUIRES_TURTLES in self.requires:
-            turtles = self.store.load_all_by_name_user(
-                      [(t, self.creator) for t in self.requires[self.FREQUIRES_TURTLES]])
+            turtles = self.store.load_or_create_all(
+                      [{'name':t, 'creator':self.creator}
+                       for t in self.requires[self.FREQUIRES_TURTLES]])
             [panda.add_features(turtle.get_panda_uids()) for turtle in turtles for panda in self.pandas]
         else:
             logger.error('dependent features are either in {0} or {1}, but not in {2}'.format(
@@ -85,8 +85,9 @@ class Turtle(base.MONKObject):
 
     def generic(self):
         result = super(Turtle, self).generic()
-        result[self.FTIGRESS] = self.tigress.signature()
-        result[self.FPANDAS] = [panda.signature() for panda in self.pandas]
+        result[self.FTIGRESS]   = self.tigress.signature()
+        result[self.FPANDAS]    = [panda.signature() for panda in self.pandas]
+        result[self.FFOLLOWERS] = list(self.followers)
         # invertedMapping is created from mapping
         del result['invertedMapping']
         del result['pandaUids']
@@ -123,7 +124,7 @@ class Turtle(base.MONKObject):
         if self.name == turtleName:
             logger.error('turle can not depend on itself {0}'.format(turtleName))
             return
-        turtle = self.store.load_all_by_name_user(turtleName, self.creator)
+        turtle = self.store.load_or_create({'name':turtleName, 'creator':self.creator})
         [panda.add_features(turtle.get_panda_uids()) for panda in self.pandas]
         
     def get_panda_uids(self):
@@ -244,7 +245,7 @@ class DictionaryTurtle(Turtle):
             panda = {self.MONK_TYPE: 'ExistPanda',
                      self.FNAME: name,
                      self.CREATOR: self.creator}
-            panda = crane.pandaStore.load_create_by_name_user(panda, True)
+            panda = crane.pandaStore.load_or_create(panda, tosave=True)
             self.add_panda(panda)
             self.dictionary[name] = panda.uid
             uid = panda.uid
