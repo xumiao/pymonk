@@ -10,7 +10,9 @@ from kafka.producer import UserProducer
 import simplejson
 import logging
 from bson.objectid import ObjectId
+from ..math.flexible_vector import FlexibleVector
 from random import sample
+import numpy as np
 
 logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -20,10 +22,12 @@ turtleId = '53403a19e7f10034b8c89cea'
 kafkaTopic = 'expression'
 parts = range(1, 33)
 users = {}
+trainData = {}
+testData = {}
 UoI = {'Steve_70f97adb-2860-4b96-aff3-b538a1781581':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0), 'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0)}
 #UoI = {'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0)}
-UoI = {'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0)}
 #UoI = {'Steve_70f97adb-2860-4b96-aff3-b538a1781581':int(0)}
+
 def stop_add_data(userId):
     if UoI[userId] >= 10:
         return True
@@ -32,6 +36,7 @@ def stop_add_data(userId):
         
 def add_data():
     global users
+    global UoI
     try:
         mcl = pm.MongoClient('10.137.168.196:27017')
         kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
@@ -40,8 +45,7 @@ def add_data():
                           ack_timeout=200)
         coll = mcl.DataSet['PMLExpression']
         ii = 0      # max is 151413 (number of doc in PMLExpression)
-        for ent in coll.find({'userId': {'$in': UoI.keys()}}, {'_id':True, 'userId':True}, timeout=False):
-            
+        for ent in coll.find({'userId': {'$in': UoI.keys()}}, {'_id':True, 'userId':True}, timeout=False):            
             ii += 1
             entity = str(ent['_id'])
             userId = ent['userId']
@@ -66,6 +70,40 @@ def add_data():
         producer.stop()
         mcl.close()
         kafka.close()
+        
+def addData():
+    global users
+    global UoI
+    global trainData
+    try:
+        mcl = pm.MongoClient('10.137.168.196:27017')
+        kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
+        producer = UserProducer(kafka, kafkaTopic, users, parts, async=False,
+                          req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
+                          ack_timeout=200)        
+        for userId in trainData.keys():            
+            for ent in trainData[userId]:
+                entity = str(ent)
+                encodedMessage = simplejson.dumps({'turtleId':turtleId,
+                                               'userId':userId,
+                                               'entity':entity,
+                                               'operation':'add_data'})
+                print producer.send(userId, encodedMessage)                
+            
+        for userId, partitionId in users.iteritems():
+            encodedMessage = simplejson.dumps({'turtleId':turtleId,
+                                               'userId':userId,
+                                               'operation':'save_one'})
+            print producer.send(userId, encodedMessage)
+            
+        userColl = mcl.DataSet['PMLUsers']
+        if users:
+            userColl.insert([{'userId':userId, 'partitionId':partitionId} for userId, partitionId in users.iteritems()])
+    finally:
+        producer.stop()
+        mcl.close()
+        kafka.close()        
+        
 
 def train(numIters):
     global users
@@ -109,14 +147,30 @@ def remove_data_for_experiment_only():
     tigress_id = turtle['tigress']              # clean up tigress
     MONKModelTigressStore.update({'_id':tigress_id},{'$set':{'confusionMatrix':{}}})
 
-def test():
+def test(isPersonalized):
+    global testData
     mcl = pm.MongoClient('10.137.168.196:27017')
-    MONKModelTurtleStore = mcl.MONKModel['TurtleStore']
+    coll = mcl.DataSet['PMLExpression']
+    #MONKModelTurtleStore = mcl.MONKModel['TurtleStore']
     MONKModelPandaStore = mcl.MONKModel['PandaStore']
-    MONKModelMantisStore = mcl.MONKModel['MantisStore']
-    turtle = MONKModelTurtleStore.find_one({'_id':ObjectId(turtleId)})
-    for pandas_id in turtle['pandas']:
-        panda = MONKModelPandaStore.find_one({'_id':pandas_id})
+    #MONKModelMantisStore = mcl.MONKModel['MantisStore']
+    #turtle = MONKModelTurtleStore.find_one({'_id':ObjectId(turtleId)})
+    resGT = []
+    for user in testData.keys():
+        pa = MONKModelPandaStore.find({'userId': {'$in': UoI.keys()}}, {'_id':True, 'weights':True, 'consensus':True}, timeout=False)
+        #[TODO] transform weights to FlexibleVector
+        if isPersonalized == True:
+            w = FlexibleVector()
+        else:
+            w = FlexibleVector()    
+        for ent in coll.find({'_id': {'$in':testData[user]}}, {'_features':True, 'labels':True}, timeout=False):   
+            #[TODO] transform features to FlexibleVector   
+            fea = FlexibleVector()   
+            if not len(ent['labels']) == 0:
+                resGT.append(float(w.dot(fea)), 1.0)
+            else:
+                resGT.append(float(w.dot(fea)), 0.0)
+    return resGT          
                 
 def retrieveData():
     mcl = pm.MongoClient('10.137.168.196:27017')        
@@ -134,7 +188,9 @@ def retrieveData():
         
     return originalData           
         
-def splitData(originalData, trainData, testData):
+def splitData(originalData):
+    global trainData
+    global testData
     fracTrain = 0.5
     for user in originalData.keys():
         trainData[user] = []
@@ -160,27 +216,72 @@ def splitData(originalData, trainData, testData):
 def stratifiedSelection(index, fracTrain): 
     
     num = int(len(index)*fracTrain)
-
-###============= method 1 =============    
-#    indexPos = sample(range(len(pos)), numOfPos)
-#    indexNeg = sample(range(len(neg)), numOfNeg)
-#    
-#    index = []
-#    for i in indexPos:
-#        index.append(pos[i])
-#    for i in indexNeg:
-#        index.append(neg[i])
-
-###============= method 2 ============= 
     selectIndex = sample(index, num)    
     
     return selectIndex
     
     
-def evaluate():
-    pass        
+def evaluate(resGT, curvefile):
+    totalP = 0
+    totalN = 0
+    for data in resGT:       
+        if data[1] > 0:
+           totalP += 1
+        else:
+           totalN += 1
+    resGT.sort()    
+    logging.debug("totalP = {0}".format(totalP))
+    logging.debug("totalN = {0}".format(totalN))
+    fCurve = file(curvefile, 'w')
+    fCurve.write('threshold\tPrecision\tRecall\tFPrate\n')     
+    totalFP = totalN
+    totalFN = 0
+    totalTP = totalP
+    totalTN = 0   
+    numberOfCurve = 500        
+    minVal = float(resGT[0][0])
+    maxVal = float(resGT[-1][0])
+    thre = np.linspace(minVal, maxVal, numberOfCurve)
+    k = 0
+    for i in xrange(numberOfCurve):
+        while(float(resGT[k][0]) < thre[i]):                
+            if(float(resGT[k][1]) > 0):
+                totalFN = totalFN + 1
+            else:
+                totalTN = totalTN + 1
+            k = k + 1                    
+        totalFP = totalN - totalTN
+        totalTP = totalP - totalFN
+            
+        if(totalTP+totalFP == 0):
+            precision = 1
+        else:
+            precision = totalTP / (totalTP+totalFP)                              
+        if(totalP == 0):
+            recall = 0
+        else:
+            recall = totalTP / totalP                              
+        if(totalN == 0):
+            FPrate = 0
+        else:
+            FPrate = totalFP / totalN       
+        o = '{0:.8f}\t{1:.8f}\t{2:.8f}\t{3:.8f}'.format(thre[i], precision, recall, FPrate)            
+        fCurve.write(o + '\n')
         
+    fCurve.close()
+
+
+           
 if __name__=='__main__':
-    remove_data_for_experiment_only()
-    add_data()
-    train(5)
+    ##### previous version; add data and train #####   
+    #remove_data_for_experiment_only()
+    #add_data()
+    #train(5)
+    
+    originalData = retrieveData()
+    splitData(originalData)
+    #addData()
+    #train(10)
+    isPersonalized= True
+    resGT = test(isPersonalized)
+    evaluate(resGT, "acc.curve")
