@@ -10,7 +10,7 @@ from kafka.producer import UserProducer
 import simplejson
 import logging
 from bson.objectid import ObjectId
-from ..math.flexible_vector import FlexibleVector
+from monk.math.flexible_vector import FlexibleVector
 from random import sample
 import numpy as np
 
@@ -191,7 +191,7 @@ def retrieveData():
 def splitData(originalData):
     global trainData
     global testData
-    fracTrain = 0.5
+    fracTrain = 0.2
     for user in originalData.keys():
         trainData[user] = []
         testData[user] = []
@@ -282,6 +282,6 @@ if __name__=='__main__':
     splitData(originalData)
     #addData()
     #train(10)
-    isPersonalized= True
-    resGT = test(isPersonalized)
-    evaluate(resGT, "acc.curve")
+    #isPersonalized= True
+    #resGT = test(isPersonalized)
+    #evaluate(resGT, "acc.curve")
