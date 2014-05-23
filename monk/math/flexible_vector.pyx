@@ -749,11 +749,11 @@ cdef class FlexibleVector(object):
                 self.found[height] = currA1
             currA2 = currA2.nextA[0]
     
-    def difference(FlexibleVector other, float tol = 1e-8):
+    cpdef difference(self, FlexibleVector other, float tol = 1e-8):
         self.add(other, -1)
         self.trim(tol, True)
     
-    def matching(FlexibleVector other, float tol = 0.01):
+    cpdef matching(self, FlexibleVector other, float tol = 0.01):
         self.add(other, -1)
         self.trim(tol, False)
         self.foreach(_MATCH)

@@ -88,15 +88,17 @@ class RegexPanda(ImmutablePanda):
             return 0
 
 class LinearPanda(Panda):
-    FWEIGHTS   = 'weights'
-    FMANTIS    = 'mantis'
-    FCONSENSUS = 'z'
+    FWEIGHTS      = 'weights'
+    FMANTIS       = 'mantis'
+    FCONSENSUS    = 'z'
+    FNUMFOLLOWERS = 'm'
 
     def __default__(self):
         super(LinearPanda, self).__default__()
         self.weights = []
         self.z       = []
         self.mantis  = None
+        self.m       = 1
 
     def __restore__(self):
         super(LinearPanda, self).__restore__()
@@ -105,25 +107,28 @@ class LinearPanda(Panda):
 
     def generic(self):
         result = super(LinearPanda, self).generic()
-        result[self.FMANTIS]    = self.mantis.signature()
+        if self.mantis_loaded():
+            result[self.FMANTIS]    = self.mantis.signature()
         result[self.FWEIGHTS]   = self.weights.generic()
         result[self.FCONSENSUS] = self.z.generic()
+        return result
 
     def clone(self, user):
         obj = super(LinearPanda, self).clone(user)
         obj.weights = self.weights.clone()
         obj.z       = obj.weights.clone()
+        obj.m       = 1
         try:
             obj.mantis = self.mantis.clone(user, obj)
         except:
-            self.mantis = self.store.load_or_create(self.mantis)
+            self.load_mantis()
             obj.mantis = self.mantis.clone(user, obj)
         return obj
         
-    def save(self, **kwargs):
-        super(LinearPanda, self).save(kwargs)
+    def save(self):
+        super(LinearPanda, self).save()
         if self.mantis_loaded():
-            self.mantis.save(kwargs)
+            self.mantis.save()
     
     def delete(self):
         result = super(LinearPanda, self).delete()
@@ -141,15 +146,38 @@ class LinearPanda(Panda):
         return isinstance(self.mantis, Mantis)
     
     def load_mantis(self):
+        if self.mantis_loaded():
+            return
+            
+        if self.mantis is None:
+            self.mantis = {self.MONK_TYPE:'Mantis',
+                           self.NAME:self.name}
+
         try:
             self.mantis.setdefault(self.CREATOR, self.creator)
-            self.mantis.setdefault('panda', self._id)
         except:
             logger.error('mantis should be a dict for loading')
             logger.error('now is {0}'.format(self.mantis))
             return
-        self.mantis = self.store.load_or_create(self.mantis)
             
+        self.mantis = crane.mantisStore.load_or_create(self.mantis, True)
+        self.mantis.initialize(self)
+
+    def add_data(self, entity, y, c):
+        try:
+            self.mantis.add_data(entity, y, c)
+        except:
+            self.load_mantis()
+            self.mantis.add_data(entity, y, c)
+    
+    def increment(self):
+        self.m += 1
+        self.store.update_one_in_fields(self, {self.FNUMFOLLOWERS:self.m})
+    
+    def decrease(self):
+        self.m -= 1
+        self.store.update_one_in_fields(self, {self.FNUMFOLLOWERS:self.m})
+        
     def add_features(self, uids):
         self.weights.addKeys(uids)
         self.z.addKeys(uids)
@@ -187,10 +215,10 @@ class LinearPanda(Panda):
     
     def merge(self, follower):
         try:
-            self.mantis.merge(follower)
+            self.mantis.merge(follower, self.m)
         except:
             self.load_mantis()
-            self.mantis.merge(follower)
+            self.mantis.merge(follower, self.m)
         self.commit()
     
     def predict(self, entity):

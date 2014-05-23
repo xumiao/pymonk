@@ -20,14 +20,12 @@ logger = logging.getLogger("monk.remote_trainer")
 def print_help():
     print 'remote_trainer.py -c <configFile> -p <kafkaPartitions, e.g., range(1,8)>'
 
+def onexit():
+    monkapi.exits()
+    logger.info('remote_rainter {0} is shutting down'.format(os.getpid))
+    
 def server(configFile, partitions):
-    config = Configuration(configFile)
-    if config.kafkaMasterPartition in partitions:
-        print 'master is using partition {0}'.format(config.kafkaMasterPartition)
-        return
-    pid = os.getpid()
-    fn = config.loggingConfig['handlers']['files']['filename']
-    config.loggingConfig['handlers']['files']['filename'] = '.'.join([fn[:-4],'remote',str(pid),'log'])
+    config = Configuration(configFile, "remote_trainer", str(os.getpid()))
     monkapi.initialize(config)
     
     try:
@@ -48,37 +46,60 @@ def server(configFile, partitions):
                 logger.error('Message {0} is not in json format'.format(message.message.value))
                 continue
             
-            op = decodedMessage.get('operation')
-            userId = decodedMessage.get('userId')
-            turtleId = decodedMessage.get('turtleId')
-            entity = decodedMessage.get('entity')
-            if op == 'shutdown':
-                logger.info('shutting down remote trainer server')
-                break
+            op         = decodedMessage.get('operation')
+            user       = decodedMessage.get('user')
+            turtleName = decodedMessage.get('turtleName')
             
-            if userId is None or turtleId is None:
+            if user is None or turtleName is None:
                 logger.error('needs turtleId and userId')
                 continue
 
-            turtleId = monkapi.UUID(turtleId)
-            if op == 'add_data':
-                if 'entity' in decodedMessage:
-                    entity = monkapi.UUID(decodedMessage['entity'])
-                    monkapi.add_data(turtleId, userId, entity)
-                else:
-                    logger.error('add_data needs entity in string id')
-            elif op == 'train_one':
-                monkapi.train_one(turtleId, userId)
-                encodedMessage = simplejson.dumps({'turtleId':str(turtleId),
-                                                    'userId':userId, 
-                                                    'operation':'aggregate'})
+            if op == 'add_user':
+                follower = decodedMessage.get('follower')
+                if follower:
+                    monkapi.clone_turtle(turtleName, user, follower)
+                    monkapi.follow_turtle_leader(turtleName, user, follower)
+                    encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                                       'user':follower,
+                                                       'leader':user,
+                                                       'operation':'follow'})
+                    producer.send(config.kafkaTopic, config.kafkaMasterPartition, encodedMessage)
+            elif op == 'follow':
+                leader = decodedMessage.get('leader')
+                if leader:
+                    monkapi.follow_turtle_follower(turtleName, user, leader)
+                follower = decodedMessage.get('follower')
+                if follower:
+                    monkapi.follow_turtle_leader(turtleName, user, follower)
+            elif op == 'unfollow':
+                leader = decodedMessage.get('leader')
+                if leader:
+                    monkapi.unfollow_turtle_follower(turtleName, user, leader)
+                follower = decodedMessage.get('follower')
+                if follower:
+                    monkapi.unfollow_turtle_leader(turtleName, user, follower)
+            elif op == 'remove_user':
+                leader = monkapi.get_leader(turtleName, user)
+                monkapi.remove_turtle(turtleName, user)
+                encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                                   'user':leader,
+                                                   'follower':user,
+                                                   'operation':'unfollow'})
                 producer.send(config.kafkaTopic, config.kafkaMasterPartition, encodedMessage)
-            elif op == 'add_one':
-                monkapi.add_one(turtleId, userId)
-            elif op == 'load_one':
-                monkapi.load_one(turtleId, userId)
-            elif op == 'save_one':
-                monkapi.save_one(turtleId, userId)
+            elif op == 'add_data':
+                entity = decodedMessage.get('entity')
+                if entity:
+                    monkapi.add_data(turtleName, user, entity)
+            elif op == 'train':
+                monkapi.train(turtleName, user)
+                leader = monkapi.get_leader(turtleName, user)
+                if not leader:
+                    leader = user
+                encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                                    'user':leader,
+                                                    'follower':user,
+                                                    'operation':'merge'})
+                producer.send(config.kafkaTopic, config.kafkaMasterPartition, encodedMessage)
             else:
                 logger.error('Operation not recognized {0}'.format(op))
     except Exception as e:
@@ -106,7 +127,7 @@ if __name__=='__main__':
             sys.exit()
         elif opt in ('-c', '--configFile'):
             configFile = arg
-        elif opt in ('-p', '--kafkaPartition'):
+        elif opt in ('-p', '--kafkaPartitions'):
             kafkaPartitions = eval(arg)
 
     server(configFile, kafkaPartitions)

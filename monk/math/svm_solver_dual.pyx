@@ -122,7 +122,7 @@ cdef class SVMDual(object):
         self.QD[j] = (self.gamma + self.rho) / (self.gamma * self.rho) * c + x.norm2()
         return x.getIndex()
         
-    def setModel(self, FlexibleVecotr q, FlexibleVector mu):
+    def setModel(self, q, mu):
         cdef int j
         self.w.copyUpdate(q)
         for j in xrange(self.num_instances):

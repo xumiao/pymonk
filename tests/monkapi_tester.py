@@ -42,15 +42,15 @@ class TestMONKAPI:
         turtleName = self.get_turtle()
         if monkapi.has_turtle_in_store(turtleName, self.user):
             monkapi.remove_turtle(turtleName, self.user)
-        result = monkapi.follow(turtleName, self.user, self.leader)
+        result = monkapi.follow_turtle(turtleName, self.user, self.leader)
         assert result != None
-        result = monkapi.follow(turtleName, self.user, self.leader)
+        result = monkapi.follow_turtle(turtleName, self.user, self.leader)
         assert result == None
     
     def test_turtle_load_user(self):
         turtleName = self.get_turtle()
         if not monkapi.has_turtle_in_store(turtleName, self.user):
-            monkapi.follow(turtleName, self.user, self.leader)
+            monkapi.follow_turtle(turtleName, self.user, self.leader)
         result = monkapi.load_turtle(turtleName, self.user)
         assert result != None
         # load can be repeated, overwrite the memory from database
@@ -60,7 +60,7 @@ class TestMONKAPI:
     def test_turtle_remove_user(self):
         turtleName = self.get_turtle()
         if not monkapi.has_turtle_in_store(turtleName, self.user):
-            monkapi.follow(turtleName, self.user, self.leader)
+            monkapi.follow_turtle(turtleName, self.user, self.leader)
         result = monkapi.remove_turtle(turtleName, self.user)
         assert result == True
         result = monkapi.remove_turtle(turtleName, self.user)
@@ -68,10 +68,10 @@ class TestMONKAPI:
     
     def test_add_data(self):
         turtleName = self.get_turtle()
-        ent = {monkapi.MONK_TYPE:'Entity',
-               monkapi.FEATURES:[(1,1),(2,2),(3,-1)]}
+        ent = {monkapi.entity.Entity.MONK_TYPE:'Entity',
+               monkapi.entity.Entity.FEATURES:[(1,1),(2,2),(3,-1)]}
         if not monkapi.has_turtle_in_store(turtleName, self.user):
-            monkapi.follow(turtleName, self.user, self.leader)
+            monkapi.follow_turtle(turtleName, self.user, self.leader)
         result = monkapi.add_data(turtleName, self.user, ent)
         assert result == True
         result = monkapi.save_turtle(turtleName, self.user)
@@ -84,9 +84,14 @@ if __name__=='__main__':
     tester = TestMONKAPI()
     tester.setup_class()
     try:
+        print 'test_turtle_creation'
         tester.test_turtle_creation()
+        print 'test_turtle_add_user'
         tester.test_turtle_add_user()
+        print 'test_turtle_load_user'
         tester.test_turtle_load_user()
+        print 'test_add_data'
+        tester.test_add_data()
     finally:
         tester.teardown_class()
     

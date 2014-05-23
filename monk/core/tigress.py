@@ -107,19 +107,20 @@ class PatternTigress(Tigress):
     def retrieve_target(self, entity):
         combinedField = ' . '.join([utils.translate(entity._getattr(field, ""), ' . ') for field in self.fields])
         logger.debug('combinedField {0}'.format(combinedField))
-        return (t for r, t in self.p.iteritems() if r.search(combinedField))
+        result = [t for r, t in self.p.iteritems() if r.search(combinedField)]
+        return result
     
     def _supervise(self, turtle, entity, tags):
         for t in tags:
             cost = self.costs.get(t, self.defaultCost)
             ys = turtle.mapping[t]
-            [panda.mantis.add_data(entity, y, cost) for panda, y in izip(turtle.pandas, ys)]
+            [panda.add_data(entity, y, cost) for panda, y in izip(turtle.pandas, ys)]
             if self.mutualExclusive:
                 return True
 
         if self.defaulting and not tags:
             # no pattern found, add all negative
-            [panda.mantis.add_data(entity, -1, self.defaultCost) for panda in turtle.pandas]
+            [panda.add_data(entity, -1, self.defaultCost) for panda in turtle.pandas]
         
     def supervise(self, turtle, entity=None):
         if entity:
@@ -194,9 +195,9 @@ class MultiLabelTigress(PatternTigress):
 
     def _supervise(self, turtle, entity, tags):
         targets = set(tags)
-        [panda.mantis.add_data(entity, 1, self.costs.get(panda.name, self.defaultCost))
+        [panda.add_data(entity, 1, self.costs.get(panda.name, self.defaultCost))
          for panda in turtle.pandas if panda.name in targets]
-        [panda.mantis.add_data(entity, -1, self.costs.get(panda.name, self.defaultCost))
+        [panda.add_data(entity, -1, self.costs.get(panda.name, self.defaultCost))
          for panda in turtle.pandas if panda.name not in targets]
     
 class SelfTigress(Tigress):

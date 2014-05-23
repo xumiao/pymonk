@@ -1,7 +1,8 @@
 # mouth open turtle
 ---
 monkType: SingleTurtle
-name:  mouth_open_turtle
+name:  mouthOpen
+creator: monk
 description:  classify mouth openness
 requires:
     uids: range(10)

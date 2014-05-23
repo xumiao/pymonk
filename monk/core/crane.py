@@ -11,6 +11,7 @@ from pymongo import MongoClient
 #from monk.utils.cache import lru_cache
 import logging
 import base
+import constants as cons
 from bson.objectid import ObjectId
 from uid import UID
 logger = logging.getLogger("monk.crane")
@@ -48,7 +49,10 @@ class Crane(object):
         map(self.__put_one, objs)
 
     def __erase_one(self, obj):
-        del self._cache[obj._id]
+        try:
+            del self._cache[obj._id]
+        except:
+            pass
 
     def __erase_all(self, objs):
         map(self.__erase_one, objs)
@@ -69,23 +73,28 @@ class Crane(object):
         if not isinstance(obj, ObjectId):
             return False
         
-        return self._coll.remove(obj)
+        self._coll.remove(obj)
+        self.__erase_one(obj)
+        return True
         
     def load_or_create(self, obj, tosave=False):
-        if not obj:
+        if obj is None:
             return None
         
         if isinstance(obj, ObjectId):
             return self.load_one_by_id(obj)
         else:
-            objId = self.load_one_in_id(obj)
+            objId = self.load_one_in_id({'name':obj.get('name', cons.DEFAULT_EMPTY),
+                                         'creator':obj.get('creator', cons.DEFAULT_CREATOR)})
             if objId:
                 return self.load_one_by_id(objId['_id'])
-            else:
+            elif 'monkType' in obj:
                 obj = self.create_one(obj)
                 if tosave:
                     obj.save()
                 return obj
+            else:
+                return None
 
     def load_or_create_all(self, objs, tosave=False):
         if not objs:
@@ -196,7 +205,8 @@ class Crane(object):
         
     def create_one(self, obj):
         obj = base.monkFactory.decode(obj)
-        self.__put_one(obj)
+        if obj:
+            self.__put_one(obj)
         return obj
     
     def create_all(self, objs):
@@ -206,10 +216,12 @@ class Crane(object):
     
     def load_one_by_id(self, objId):
         obj = self.__get_one(objId)
-        if not obj:
+        if not obj and objId:
             try:
-                obj = base.monkFactory.decode(self._coll.find_one({'_id': objId}, self._fields))
-                self.__put_one(obj)
+                obj = self._coll.find_one({'_id': objId}, self._fields)
+                obj = base.monkFactory.decode(obj)
+                if obj:
+                    self.__put_one(obj)
             except Exception as e:
                 logger.warning(e.message)
                 logger.warning('can not load document by id {0}'.format(objId))
@@ -336,13 +348,21 @@ def initialize_storage(config):
     pandaStore   = Crane(modelDB,
                          config.pandaCollectionName,
                          config.pandaFields)
+    from panda import Panda
+    Panda.store = pandaStore
     mantisStore  = Crane(modelDB,
                          config.mantisCollectionName,
                          config.mantisFields)
+    from mantis import Mantis
+    Mantis.store = mantisStore
     turtleStore  = Crane(modelDB,
                          config.turtleCollectionName,
                          config.turtleFields)
+    from turtle import Turtle
+    Turtle.store = turtleStore
     tigressStore = Crane(modelDB,
                          config.tigressCollectionName,
                          config.tigressFields)
+    from tigress import Tigress
+    Tigress.store = tigressStore
     return True

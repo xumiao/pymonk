@@ -6,7 +6,6 @@ Created on Sun Mar 16 23:42:45 2014
 """
 import yaml
 import socket
-import constants
 
 class Configuration(object):
 
@@ -42,13 +41,6 @@ class Configuration(object):
             with open(configurationFileName, 'r') as conf:
                 self.__dict__.update(yaml.load(conf))
         
-        # TODO: factor it better
-        if self.pandaFields is None:
-            self.pandaFields = {}
-        self.pandaFields[constants.WEIGHTS] = False
-        if self.mantisFields is None:
-            self.mantisFields = {}
-        self.mantisFields[constants.DATA] = False
         if logFileMidName:
             self.loggingConfig['handlers']['files']['filename'] = \
             '.'.join([self.logFileNameStub, logFileMidName, pid, 'log'])

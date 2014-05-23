@@ -56,17 +56,17 @@ class Turtle(base.MONKObject):
         super(Turtle, self).__restore__()
         try:
             [panda.setdefault(self.CREATOR, self.creator) for panda in self.pandas]
+            [panda.setdefault(self.NAME, self.name) for panda in self.pandas]
             self.tigress.setdefault(self.CREATOR, self.creator)
+            self.tigress.setdefault(self.NAME, self.name)
         except:
             pass
         self.pandas = crane.pandaStore.load_or_create_all(self.pandas)
         self.tigress = crane.tigressStore.load_or_create(self.tigress)
-        
         self.pandaUids = set((p.uid for p in self.pandas))
         self.invertedMapping = {v: k for k, v in self.mapping.iteritems()}
-        
         self.followers = set(self.followers)
-            
+        
         if self.FREQUIRES_UIDS in self.requires:
             uids = self.requires[self.FREQUIRES_UIDS]
             if isinstance(uids, basestring):
@@ -77,7 +77,7 @@ class Turtle(base.MONKObject):
                       [{'name':t, 'creator':self.creator}
                        for t in self.requires[self.FREQUIRES_TURTLES]])
             [panda.add_features(turtle.get_panda_uids()) for turtle in turtles for panda in self.pandas]
-        else:
+        elif self.requires:
             logger.error('dependent features are either in {0} or {1}, but not in {2}'.format(
                          self.FREQUIRES_UIDS,
                          self.FREQUIRES_TURTLES,
@@ -98,13 +98,14 @@ class Turtle(base.MONKObject):
         obj.pandaUids = set(self.pandaUids)
         obj.tigress = self.tigress.clone(user)
         obj.pandas = [p.clone(user) for p in self.pandas]
+        obj.requires = dict(self.requires)
         return obj
         
-    def save(self, **kwargs):
-        super(Turtle, self).save(kwargs)
+    def save(self):
+        super(Turtle, self).save()
         if self.tigress:
-            self.tigress.save(kwargs)
-        [pa.save(kwargs) for pa in self.pandas]
+            self.tigress.save()
+        [pa.save() for pa in self.pandas]
         
     def delete(self, deep=False):
         result = super(Turtle, self).delete()
@@ -114,6 +115,27 @@ class Turtle(base.MONKObject):
             result = result and [pa.delete() for pa in self.pandas].all()
         return result
     
+    def add_follower(self, follower):
+        if follower not in self.followers:
+            self.followers.add(follower)
+            self.store.push_one_in_fields(self, {'followers':follower})
+            [pa.increment() for pa in self.pandas]
+            
+    def add_leader(self, leader):
+        self.leader = leader
+        self.store.update_one_in_fields(self, {'leader': leader})
+        
+    def remove_leader(self):
+        if self.leader:
+            self.leader = None
+            self.store.update_one_in_fields(self, {'leader':None})
+            
+    def remove_follower(self, follower):
+        if follower in self.followers:
+            self.followers.remove(follower)
+            self.store.pull_one_in_fields(self, {'followers':follower})
+            [pa.decrease() for pa in self.pandas]
+        
     def require_panda(self, panda):
         if self.has_panda(panda):
             logger.error('turtle can not depends on itself {0}'.format(panda._id))
@@ -169,7 +191,7 @@ class Turtle(base.MONKObject):
             logger.info("turtle {0} does not have active superviser".format(self.name))
     
     def train(self):
-        [panda.train(self.leader) for panda in self.pandas]
+        [panda.train() for panda in self.pandas]
     
     def checkout(self):
         [panda.checkout(self.leader) for panda in self.pandas]
@@ -178,7 +200,7 @@ class Turtle(base.MONKObject):
         [panda.commit() for panda in self.pandas]
         
     def merge(self, follower):
-        if follower not in self.followers:
+        if follower not in self.followers and follower != self.creator:
             logger.error('user {0} is not a follower of {1}@{2}'.format(follower, self.creator, self.name))
             return False
         [panda.merge(follower) for panda in self.pandas]

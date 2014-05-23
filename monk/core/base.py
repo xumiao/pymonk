@@ -67,9 +67,10 @@ class MONKObject(object):
         result = {}
         result.update(self.__dict__)
         result[self.LAST_MODIFIED] = datetime.now()
+        del result[self.ID]
         return result
     
-    def save(self, **kwargs):
+    def save(self):
         if self.store:
             self.store.update_one_in_fields(self, self.generic())
         else:
@@ -80,7 +81,7 @@ class MONKObject(object):
         
     def delete(self, deep=False):
         if self.store:
-            return self.store.delete_one_by_id(self._id)
+            return self.store.delete_by_id(self._id)
         else:
             logger.warning('no store for abstract MONKObject')
             return False
@@ -125,7 +126,7 @@ class MONKObjectFactory(object):
         
     def decode(self, generic):
         try:
-            return self.factory[generic[cons.MONK_TYPE]](generic)
+            return self.factory[generic[MONKObject.MONK_TYPE]](generic)
         except Exception as e:
             logger.error(e.message)
             logger.error('can not decode {0}'.format(generic))

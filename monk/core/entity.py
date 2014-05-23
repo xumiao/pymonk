@@ -32,12 +32,9 @@ class Entity(base.MONKObject):
         logger.error('entity can not be cloned')
         return None
         
-    def save(self,**kwargs):
-        if kwargs and 'fields' in kwargs:
-            fields = kwargs['fields']
-        else:
-            fields = {self.FEATURES:self._features.generic(),
-                      self.RAWS:self._raws}
+    def save(self):
+        fields = {self.FEATURES:self._features.generic(),
+                  self.RAWS:self._raws}
         crane.entityStore.update_one_in_fields(self, fields)
         
     def __contains__(self, key):

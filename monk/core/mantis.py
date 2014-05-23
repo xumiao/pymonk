@@ -21,16 +21,15 @@ class Mantis(base.MONKObject):
     FDUALS = 'mu'
     FQ     = 'q'
     FDQ    = 'dq'
-    FSIZE  = 'm'
     FMAX_NUM_ITERS = 'maxNumIters'
     FMAX_NUM_INSTANCES = 'maxNumInstances'
     store = crane.mantisStore
     
     def __default__(self):
+        super(Mantis, self).__default__()
         self.eps = 1e-4
         self.gamma = 1
         self.rho = 1
-        self.m = 0
         self.maxNumIters = 1000
         self.maxNumInstances = 1000
         self.panda = None
@@ -46,27 +45,31 @@ class Mantis(base.MONKObject):
             self.mu = FlexibleVector(generic=self.mu)
             self.q  = FlexibleVector(generic=self.q)
             self.dq = FlexibleVector(generic=self.dq)
-            self.panda = crane.pandaStore.load_one_by_id(self.panda)
-            self.solver = SVMDual(self.panda.weights, self.eps, self.rho, self.gamma,
-                                  self.maxNumIters, self.maxNumInstances)
             self.data = {ObjectId(k) : v for k,v in self.data.iteritems()}
-            ents = crane.entityStore.load_all_by_ids(self.data.keys())
-            for ent in ents:
-                index, y, c = self.data[ent._id]
-                self.solver.setData(ent._features, y, c, index)
             return True
         except Exception as e:
             logger.error('error {0}'.format(e.message))
             logger.error('can not create a solver for {0}'.format(self.panda.name))
             return False
 
+    def initialize(self, panda):
+        self.panda = panda
+        self.solver = SVMDual(self.panda.weights, self.eps, self.rho, self.gamma,
+                              self.maxNumIters, self.maxNumInstances)
+        ents = crane.entityStore.load_all_by_ids(self.data.keys())
+        for ent in ents:
+            index, y, c = self.data[ent._id]
+            self.solver.setData(ent._features, y, c, index)
+
     def generic(self):
         result = super(Mantis, self).generic()
         # every mantis should have a panda
-        result[self.FPANDA] = self.panda._id
+        if self.panda:
+            result[self.FPANDA] = self.panda._id
         result[self.FDUALS] = self.mu.generic()
         result[self.FQ]     = self.q.generic()
         result[self.FDQ]    = self.dq.generic()
+        result[self.FDATA]  = {str(k) : v for k,v in self.data.iteritems()}
         try:
             del result['solver']
         except Exception as e:
@@ -82,7 +85,6 @@ class Mantis(base.MONKObject):
         obj.solver = SVMDual(panda.weights, self.eps, self.rho, self.gamma,
                              self.maxNumIters, self.maxNumInstances)
         obj.data = {}
-        self.m += 1
         return obj
     
     def train(self):
@@ -96,23 +98,29 @@ class Mantis(base.MONKObject):
         self.q.add(self.dq)
     
     def checkout(self, leader):
-        z = crane.pandaStore.load_one({'name':self.panda.name,
-                                       'creator':leader},
-                                      {'z':True}).get('z',[])
-        z = FlexibleVector(generic=z)
-        self.mu.clear()
-        self.mu.add(self.q, 1)
-        self.mu.add(z, -1)
-        del z
+        if leader:
+            z = crane.pandaStore.load_one({'name':self.panda.name,
+                                           'creator':leader},
+                                          {'z':True}).get('z',[])
+            z = FlexibleVector(generic=z)
+            self.mu.copyUpdate(self.q)
+            self.mu.add(z, -1)
+            del z
+        else:
+            self.mu.copyUpdate(self.q)
+            self.mu.add(self.panda.z, -1)
 
-    def merge(self, follower):
-        fdq = crane.mantisStore.load_one({'name':self.name,
-                                          'creator':follower},
-                                         {'dq':True}).get('dq',[])
-        fdq = FlexibleVector(generic=fdq)
-        self.panda.z.add(fdq, 1.0 / (self.m + 1 / self.rho))
-        del fdq
-        
+    def merge(self, follower, m):
+        if follower != self.creator:
+            fdq = crane.mantisStore.load_one({'name':self.name,
+                                              'creator':follower},
+                                             {'dq':True}).get('dq',[])
+            fdq = FlexibleVector(generic=fdq)
+            self.panda.z.add(fdq, 1.0 / (m + 1 / self.rho))
+            del fdq
+        else:
+            self.panda.z.add(self.dq, 1.0 / (m + 1 / self.rho))
+            
     def commit(self):
         crane.mantisStore.update_one_in_fields(self, {self.FDUALS : self.mu.generic(),
                                                       self.FQ : self.q.generic(),
@@ -133,5 +141,4 @@ class Mantis(base.MONKObject):
         self.solver.setData(entity._features, y, c, ind)
         da[uuid] = (ind, y, c)
     
-
 base.register(Mantis)

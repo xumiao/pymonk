@@ -25,13 +25,10 @@ class Relation(Entity):
         result[self.ARGUMENTS] = [x._id for x in self._arguments]
         return result
 
-    def save(self, **kwargs):
-        if kwargs and 'fields' in kwargs:
-            fields = kwargs['fields']
-        else:
-            fields = {self.FEATURES: self._features.generic(),
-                      self.RAWS: self._raws,
-                      self.ARGUMENTS: [x._id for x in self._arguments]}
+    def save(self):
+        fields = {self.FEATURES: self._features.generic(),
+                  self.RAWS: self._raws,
+                  self.ARGUMENTS: [x._id for x in self._arguments]}
         crane.entityStore.update_one_in_fields(self, fields)
         
     def arity(self):

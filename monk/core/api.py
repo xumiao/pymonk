@@ -86,43 +86,77 @@ def load_entity(entity, collectionName=None):
 def has_turtle_in_store(turtleName, user):
     return crane.turtleStore.has_name_user(turtleName, user)
 
-def follow_turtle(turtleName, user, leader):
-    if not has_turtle_in_store(turtleName, user):
-        turtle = load_turtle(turtleName, leader)
-        if not turtle:
-            logger.error('turtle {0} with user {1} does not exists'.format(turtleName, leader))
+def clone_turtle(turtleName, user, follower):
+    if not has_turtle_in_store(turtleName, follower):
+        _turtle = load_turtle(turtleName, user)
+        if not _turtle:
+            logger.error('turtle {0} with user {1} does not exists'.format(turtleName, user))
             return None
-        newTurtle = turtle.clone(user)
-        turtle.followers.add(user)
-        newTurtle.leader = leader
+        newTurtle = _turtle.clone(follower)
+        newTurtle.leader = None
+        newTurtle.followers = []
         newTurtle.save()
-        crane.turtleStore.push_one_in_fields(turtle, {'followers':user})
         return newTurtle
     else:
         logger.error('user {0} already has cloned this turtle'.format(user))
         return None
 
-def unfollow_turtle(turtleName, user, leader):
-    turtle = load_turtle(turtleName, leader)
-    follower = load_turtle(turtleName, user)
-    if not turtle or not follower:
-        logger.error('turtle {0} has no user {1} or {2}'.format(turtleName, user, leader))
+def remove_turtle(turtleName, user, deep=False):
+    _turtle = load_turtle(turtleName, user)
+    if not _turtle:
+        logger.error('turtle {0} has no user {1}'.format(turtleName, user))
         return False
-    turtle.followers.remove(user)
-    crane.turtleStore.pull_one_in_fields(turtle, {'followers':user})
-    follower.leader = None
-    crane.turtleStore.update_one_in_fields(turtle, {'leader':None})
+    return _turtle.delete(deep)
+
+def follow_turtle_leader(turtleName, user, follower):
+    try:
+        _turtle = load_turtle(turtleName, user)
+        _turtle.add_follower(follower)
+        return True
+    except Exception as e:
+        logger.error(e)
+        logger.error('can not find turtle {0}@{1}'.format(turtleName, user))
+        return False
+        
+def follow_turtle_follower(turtleName, user, leader):
+    try:
+        _turtle = load_turtle(turtleName, user)
+        _turtle.add_leader(leader)
+        return True
+    except Exception as e:
+        logger.error(e)
+        logger.error('can not find turtle {0}@{1}'.format(turtleName, user))
+        return False
+        
+def unfollow_turtle_leader(turtleName, user, follower):
+    try:
+        _turtle = load_turtle(turtleName, user)
+        _turtle.remove_follower(follower)
+        return True
+    except Exception as e:
+        logger.error(e)
+        logger.error('can not find turtle {0}@{1}'.format(turtleName, user))
+        return False
+        
+def unfollow_turtle_follower(turtleName, user, leader):
+    try:
+        _turtle = load_turtle(turtleName, user)
+        _turtle.remove_leader()
+        return True
+    except Exception as e:
+        logger.error(e)
+        logger.error('can not find turtle {0}@{1}'.format(turtleName, user))
+        return False
 
 def find_turtles(query):
     ids = [t['_id'] for t in crane.turtleStore.load_all_in_ids(query, 0, 0)]
     return crane.turtleStore.load_all_by_ids(ids)
     
 def create_turtle(turtleScript):
-    _turtle = crane.turtleStore.load_or_create(turtleScript)
+    _turtle = crane.turtleStore.load_or_create(turtleScript, True)
     if _turtle is None:
         logger.error('failed to load or create the turtle {0}'.format(turtleScript))
         return None
-    _turtle.save()
     return _turtle
     
 def load_turtle(turtleName, user):
@@ -135,19 +169,7 @@ def save_turtle(turtleName, user):
         return False
     _turtle.save()
     return True
-    
-def remove_turtle(turtleName, user, deep=False):
-    _turtle = load_turtle(turtleName, user)
-    if not _turtle:
-        logger.error('turtle {0} has no user {1}'.format(turtleName, user))
-        return False
         
-    if _turtle.leader:
-        leadTurtle = load_turtle(turtleName, turtle.leader)
-        leadTurtle.followers.remove(user)
-        crane.turtleStore.pull_one_in_fields(leadTurtle, {'followers':user})
-    return _turtle.delete(deep)
-    
 def entity_collection(turtleName, user):
     _turtle = load_turtle(turtleName, user)
     if _turtle:
@@ -184,21 +206,40 @@ def add_data(turtleName, user, ent):
     _turtle = load_turtle(turtleName, user)
     if _turtle:
         crane.entityStore.set_collection_name(_turtle.entityCollectionName)
-        ent = crane.entityStore.load_or_create(ent)
+        ent = crane.entityStore.load_or_create(ObjectId(ent))
         return _turtle.add_data(ent)
     else:
         logger.warning('can not find turtle {0}@{1} to add data'.format(user, turtleName))
         return False
 
+def checkout(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        _turtle.checkout()
+        return True
+    else:
+        logger.warning('can not find turtle by {0}@{1} to checkout'.format(user, turtleName))
+        return False
+        
 def train(turtleName, user):
     _turtle = load_turtle(turtleName, user)
     if _turtle:
+        _turtle.checkout()
         _turtle.train()
+        _turtle.commit()
         return True
     else:
         logger.warning('can not find turtle by {0}@{1} to train'.format(user, turtleName))
         return False
-
+        
+def get_leader(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        return _turtle.leader
+    else:
+        logger.warning('can not find turtle by {0}@{1} to get leader'.format(user, turtleName))
+        return None
+        
 def commit(turtleName, user):
     _turtle = load_turtle(turtleName, user)
     if _turtle:
@@ -207,7 +248,7 @@ def commit(turtleName, user):
     else:
         logger.warning('can not find turtle by {0}@{1} to commit'.format(user, turtleName))
         return False
-    
+        
 def merge(turtleName, user, follower):
     _turtle = load_turtle(turtleName, user)
     if _turtle:
