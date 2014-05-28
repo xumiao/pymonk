@@ -13,6 +13,7 @@ from bson.objectid import ObjectId
 from monk.math.flexible_vector import FlexibleVector
 from random import sample
 import numpy as np
+import pickle
 
 logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -24,11 +25,13 @@ parts = range(1, 33)
 users = {}
 trainData = {}
 testData = {}
-UoI = {'Steve_70f97adb-2860-4b96-aff3-b538a1781581':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0), 'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0)}
+UoI = {}
+#UoI = {'Steve_70f97adb-2860-4b96-aff3-b538a1781581':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0), 'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0)}
 #UoI = {'carlos_fcfcb84e-3178-4c46-81ea-b8f8bb49709f':int(0), 'Amanda_e824e832-d3de-4bbb-bc4d-f7774e02d3b5':int(0)}
 #UoI = {'Steve_70f97adb-2860-4b96-aff3-b538a1781581':int(0)}
 
 def stop_add_data(userId):
+    global UoI
     if UoI[userId] >= 10:
         return True
     else:
@@ -107,6 +110,7 @@ def addData():
 
 def train(numIters):
     global users
+    global UoI
     try:
         mcl = pm.MongoClient('10.137.168.196:27017')
         userColl = mcl.DataSet['PMLUsers']
@@ -178,17 +182,27 @@ def test(isPersonalized):
     return resGT          
                 
 def retrieveData():
+    global UoI
     mcl = pm.MongoClient('10.137.168.196:27017')        
     coll = mcl.DataSet['PMLExpression']
     originalData = {}
     for user in UoI.keys():
         originalData[user] = {'0':[], '1':[]}
     
-    for ent in coll.find({'userId': {'$in': UoI.keys()}}, {'_id':True, 'userId':True, 'labels':True}, timeout=False):
+    #for ent in coll.find({'userId': {'$in': UoI.keys()}}, {'_id':True, 'userId':True, 'labels':True}, timeout=False):
+    for ent in coll.find({}, {'_id':True, 'userId':True, 'labels':True}, timeout=False):
         userId = ent['userId'] 
+
+        if not userId in originalData:
+            if len(originalData.keys()) >= 8:    # control the number of total users
+                break
+            originalData[userId] = {'0':[], '1':[]} 
+            UoI[userId] = 0
+            
 #        if (stop_add_data(userId)):
 #            continue
-#        UoI[userId] += 1
+#        UoI[userId] += 1   
+            
         if not len(ent['labels']) == 0:
             originalData[userId]['1'].append(ent['_id']) 
         else:
@@ -207,9 +221,7 @@ def splitData(originalData):
         numOfNegData = len(originalData[user]['0'])
         pos = range(numOfPosData)
         neg = range(numOfNegData)
-        selectedPos = stratifiedSelection(pos, fracTrain)
-        selectedNeg = stratifiedSelection(neg, fracTrain)
-        #selected = selectForTraining(numOfData, fracTrain)
+        selectedPos, selectedNeg = stratifiedSelection(pos, neg, fracTrain)        
         for i in range(numOfPosData):
             if i in selectedPos:
                 trainData[user].append(originalData[user]['1'][i])                
@@ -221,12 +233,14 @@ def splitData(originalData):
             else:
                 testData[user].append(originalData[user]['0'][i])          
 
-def stratifiedSelection(index, fracTrain): 
+def stratifiedSelection(posindex, negindex, fracTrain): 
     
-    num = int(len(index)*fracTrain)
-    selectIndex = sample(index, num)    
+    num = int(len(posindex)*fracTrain)
+    selectPosIndex = sample(posindex, num)    
+    num = int(len(negindex)*fracTrain)
+    selectNegIndex = sample(negindex, num)    
     
-    return selectIndex
+    return selectPosIndex, selectNegIndex
     
     
 def evaluate(resGT, curvefile):
@@ -240,7 +254,7 @@ def evaluate(resGT, curvefile):
     resGT.sort()    
     logging.debug("totalP = {0}".format(totalP))
     logging.debug("totalN = {0}".format(totalN))
-    fCurve = file(curvefile, 'w')
+    fCurve = open(curvefile, 'w')
     fCurve.write('threshold\tPrecision\tRecall\tFPrate\n')     
     totalFP = totalN
     totalFN = 0.0
@@ -282,14 +296,27 @@ def evaluate(resGT, curvefile):
            
 if __name__=='__main__':
     ##### previous version; add data and train #####   
-    remove_data_for_experiment_only()
+    #remove_data_for_experiment_only()
     #add_data()
     #train(10)
     
-    originalData = retrieveData()
-    splitData(originalData)
-    addData()
-    train(10)
+#    remove_data_for_experiment_only()    
+#    originalData = retrieveData()
+#    splitData(originalData)
+#    
+#    destfile = open("testData", 'w')       # save testData _id
+#    pickle.dump(testData, destfile)
+#    destfile.close()
+#    
+#    addData()
+#    train(10)
+    
+    
     isPersonalized= True
+    
+    destfile = open("testData", 'r')       # load testData _id
+    testData = pickle.load(destfile)
+    destfile.close()
+    
     resGT = test(isPersonalized)
     evaluate(resGT, "acc.curve")
