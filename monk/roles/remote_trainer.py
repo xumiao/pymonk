@@ -59,11 +59,6 @@ def server(configFile, partitions):
                 if follower:
                     monkapi.clone_turtle(turtleName, user, follower)
                     monkapi.follow_turtle_leader(turtleName, user, follower)
-                    encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                       'user':follower,
-                                                       'leader':user,
-                                                       'operation':'follow'})
-                    producer.send(config.kafkaTopic, config.kafkaMasterPartition, encodedMessage)
             elif op == 'follow':
                 leader = decodedMessage.get('leader')
                 if leader:
@@ -90,6 +85,12 @@ def server(configFile, partitions):
                 entity = decodedMessage.get('entity')
                 if entity:
                     monkapi.add_data(turtleName, user, entity)
+            elif op == 'save_turtle':
+                monkapi.save_turtle(turtleName, user)
+            elif op == 'merge':
+                follower = decodedMessage.get('follower')
+                if follower:
+                    monkapi.merge(turtleName, user, follower)
             elif op == 'train':
                 monkapi.train(turtleName, user)
                 leader = monkapi.get_leader(turtleName, user)
@@ -113,7 +114,7 @@ def server(configFile, partitions):
         monkapi.exits()
     
 if __name__=='__main__':
-    configFile = 'remote_trainer.yml'
+    configFile = 'monk_config.yml'
     kafkaPartition = 1
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hc:p:',['configFile=', 'kafkaPartitions='])
