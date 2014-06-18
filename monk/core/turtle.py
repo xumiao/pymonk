@@ -112,7 +112,7 @@ class Turtle(base.MONKObject):
         if self.tigress:
             result = result and self.tigress.delete()
         if deep:
-            result = result and [pa.delete() for pa in self.pandas].all()
+            result = result and [pa.delete() for pa in self.pandas]
         return result
     
     def add_follower(self, follower):

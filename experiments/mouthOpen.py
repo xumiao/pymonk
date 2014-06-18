@@ -17,15 +17,16 @@ logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(mess
 
 turtleName = 'mouthOpenTurtle'
 kafkaTopic = 'expression'
-parts = range(0, 1)
+partitions = range(1)
 users = {}
 
 def add_users():
     global users
+    
     try:
         mcl = pm.MongoClient('10.137.168.196:27017')
         kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
-        producer = UserProducer(kafka, kafkaTopic, users, parts, async=False,
+        producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
                                 req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                                 ack_timeout=200)
         coll = mcl.DataSet['PMLExpression']
@@ -54,7 +55,7 @@ def add_data():
         users = {user['userId']:user['partitionId'] for user in userColl.find()}
         mcl.close()
         kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
-        producer = UserProducer(kafka, kafkaTopic, users, parts, async=False,
+        producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
                           req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                           ack_timeout=200)
         coll = mcl.DataSet['PMLExpression']

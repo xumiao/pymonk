@@ -14,19 +14,63 @@ from kafka.producer import KeyedProducer
 import simplejson
 import sys, getopt
 import os
+import platform
+if platform.system() == 'Windows':
+    import win32api
+else:
+    import signal
+import thread
 
 logger = logging.getLogger("monk.remote_trainer")
+
+kafka = None
+producer = None
+consumer = None
 
 def print_help():
     print 'remote_trainer.py -c <configFile> -p <kafkaPartitions, e.g., range(1,8)>'
 
-def onexit():
-    monkapi.exits()
-    logger.info('remote_rainter {0} is shutting down'.format(os.getpid))
     
+def onexit():
+    global kafka, consumer, producer
+    if consumer:
+        consumer.commit()
+        consumer.stop()
+        consumer = None
+    if producer:
+        producer.stop()
+        producer = None
+    if kafka:
+        kafka.close()
+        kafka = None
+    monkapi.exits()
+    logger.info('remote_rainter {0} is shutting down'.format(os.getpid()))
+    exit(0)
+
+def handler(sig, hook = thread.interrupt_main):
+    global kafka, consumer, producer
+    if consumer:
+        consumer.commit()
+        consumer.stop()
+        consumer = None
+    if producer:
+        producer.stop()
+        producer = None
+    if kafka:
+        kafka.close()
+        kafka = None
+    monkapi.exits()
+    logger.info('remote_rainter {0} is shutting down'.format(os.getpid()))
+    exit(1)
+
 def server(configFile, partitions):
+    global kafka, producer, consumer
     config = Configuration(configFile, "remote_trainer", str(os.getpid()))
     monkapi.initialize(config)
+    if platform.system() == 'Windows':
+        win32api.SetConsoleCtrlHandler(handler, 1)
+    else:
+        signal.signal(signal.SIGINT, onexit)
     
     try:
         kafka = KafkaClient(config.kafkaConnectionString,timeout=None)
@@ -106,16 +150,14 @@ def server(configFile, partitions):
     except Exception as e:
         logger.warning('Exception {0}'.format(e))
         logger.warning('Can not consume actions')
+    except KeyboardInterrupt:
+        onexit()
     finally:
-        consumer.commit()
-        consumer.stop()
-        producer.stop()
-        kafka.close()
-        monkapi.exits()
+        onexit()
     
 if __name__=='__main__':
     configFile = 'monk_config.yml'
-    kafkaPartition = 1
+    kafkaPartitions = [0]
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hc:p:',['configFile=', 'kafkaPartitions='])
     except getopt.GetoptError:
