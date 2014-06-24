@@ -6,8 +6,8 @@ entityCollectionName : PMLExpression
 uidConnectionString : 10.137.168.196:27017
 uidDataBaseName : uidDB
 kafkaConnectionString : mozo.cloudapp.net:9092
-kafkaGroup : expression
-kafkaTopic : expression
+kafkaGroup : expr
+kafkaTopic : expr
 loggingConfig:
     version : 1
     disable_existing_loggers : True

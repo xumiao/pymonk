@@ -16,8 +16,8 @@ logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(mess
                     level=logging.DEBUG)
 
 turtleName = 'mouthOpenTurtle'
-kafkaTopic = 'expression'
-partitions = range(1)
+kafkaTopic = 'expr'
+partitions = range(4)
 users = {}
 
 def add_users():
@@ -33,11 +33,12 @@ def add_users():
         
         for ent in coll.find(None, {'_id':True, 'userId':True}, timeout=False):
             follower = ent['userId']
-            encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                               'user':'monk',
-                                               'follower':follower,
-                                               'operation':'add_user'})
-            print producer.send(follower, encodedMessage)
+            if follower not in users:
+                encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                                   'user':'monk',
+                                                   'follower':follower,
+                                                   'operation':'add_user'})
+                print producer.send(follower, encodedMessage)
         
         userColl = mcl.DataSet['PMLUsers']
         if users:
@@ -51,9 +52,6 @@ def add_data():
     global users
     try:
         mcl = pm.MongoClient('10.137.168.196:27017')
-        userColl = mcl.DataSet['PMLUsers']
-        users = {user['userId']:user['partitionId'] for user in userColl.find()}
-        mcl.close()
         kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
         producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
                           req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
@@ -74,6 +72,7 @@ def add_data():
                                                'user':user,
                                                'operation':'save_turtle'})
             print producer.send(user, encodedMessage)
+        mcl.close()
     finally:
         producer.stop()
         kafka.close()
@@ -81,10 +80,6 @@ def add_data():
 def train(numIters):
     global users
     try:
-        mcl = pm.MongoClient('10.137.168.196:27017')
-        userColl = mcl.DataSet['PMLUsers']
-        users = {user['userId']:user['partitionId'] for user in userColl.find()}
-        mcl.close()
         kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
         producer = UserProducer(kafka, kafkaTopic, users, async=False,
                           req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,

@@ -93,9 +93,9 @@ class Mantis(base.MONKObject):
         self.dq.clear()
         rg = self.rho + self.gamma
         self.dq.add(self.q, - self.gamma / rg)
-        self.dq.add(self.solver.w, self.gamma / rg)
+        self.dq.add(self.panda.weights, self.gamma / rg)
         self.dq.add(self.mu, (self.gamma - self.rho) / rg)
-        self.q.add(self.dq)
+        self.q.add(self.dq, 1)
     
     def checkout(self, leader):
         if leader:

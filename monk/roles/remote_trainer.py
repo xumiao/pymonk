@@ -20,6 +20,7 @@ if platform.system() == 'Windows':
 else:
     import signal
 import thread
+import traceback
 
 logger = logging.getLogger("monk.remote_trainer")
 
@@ -88,6 +89,7 @@ def server(configFile, partitions):
             except Exception as e:
                 logger.error('Exception {0}'.format(e))
                 logger.error('Message {0} is not in json format'.format(message.message.value))
+                logger.error(traceback.format_exc())
                 continue
             
             op         = decodedMessage.get('operation')
@@ -124,13 +126,13 @@ def server(configFile, partitions):
                                                    'user':leader,
                                                    'follower':user,
                                                    'operation':'unfollow'})
-                producer.send(config.kafkaTopic, config.kafkaMasterPartition, encodedMessage)
+                producer.send(config.kafkaTopic, 0, encodedMessage)
             elif op == 'add_data':
                 entity = decodedMessage.get('entity')
                 if entity:
                     monkapi.add_data(turtleName, user, entity)
             elif op == 'save_turtle':
-                monkapi.save_turtle(turtleName, user)
+                monkapi.save_turtle(turtleName, user) 
             elif op == 'merge':
                 follower = decodedMessage.get('follower')
                 if follower:
@@ -144,12 +146,13 @@ def server(configFile, partitions):
                                                     'user':leader,
                                                     'follower':user,
                                                     'operation':'merge'})
-                producer.send(config.kafkaTopic, config.kafkaMasterPartition, encodedMessage)
+                producer.send(config.kafkaTopic, 0, encodedMessage)
             else:
                 logger.error('Operation not recognized {0}'.format(op))
     except Exception as e:
         logger.warning('Exception {0}'.format(e))
         logger.warning('Can not consume actions')
+        logger.warning(traceback.format_exc())
     except KeyboardInterrupt:
         onexit()
     finally:

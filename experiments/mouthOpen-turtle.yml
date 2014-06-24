@@ -7,7 +7,7 @@ description:  classify mouth openness
 requires:
     uids: range(1,4276)
 mapping:
-    mouthOpen: 1
+    mouthOpen: [1]
 pandas:
    - monkType: LinearPanda
      name: mouthOpen
