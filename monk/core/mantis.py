@@ -89,13 +89,16 @@ class Mantis(base.MONKObject):
     
     def train(self):
         self.solver.setModel(self.q, self.mu)
+        self.solver.status()
         self.solver.trainModel()
+        self.solver.status()
         self.dq.clear()
         rg = self.rho + self.gamma
         self.dq.add(self.q, - self.gamma / rg)
         self.dq.add(self.panda.weights, self.gamma / rg)
         self.dq.add(self.mu, (self.gamma - self.rho) / rg)
         self.q.add(self.dq, 1)
+        logger.debug('user {0}, dq {1}, q {2}'.format(self.creator, self.dq, self.q))
     
     def checkout(self, leader):
         if leader:

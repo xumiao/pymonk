@@ -113,6 +113,18 @@ cdef class SVMDual(object):
             self.index[j] = j
             self.QD[j] = (self.gamma + self.rho) / (self.gamma * self.rho) * self.c[j] + self.x[j].norm2()
 
+    def status(self):
+        cdef int j
+        cdef float loss
+        cdef float l
+        loss = 0
+        for j in xrange(self.num_instances):
+            xj = self.x[j]
+            yj = self.y[j]
+            l = max(0, 1 - self.w.dot(xj) * yj) 
+            loss += l * l
+        logger.debug('objective = {0}'.format(loss + self.w.norm2() / 2))
+        
     def setData(self, x, y, c, ind):
         cdef int j = ind
         self.x[j] = x
@@ -185,14 +197,13 @@ cdef class SVMDual(object):
                         
             iteration += 1
 #            if iteration % 10 == 0:
-#                print '.',
+#                logger.debug('.')
 
             if PGmax_new - PGmin_new <= self.eps:
                 if active_size == self.num_instances:
                     break
                 else:
                     active_size = self.num_instances
-#                    self.status(i)
                     PGmax_old = 1e10
                     PGmin_old = -1e10
                     continue
@@ -203,4 +214,5 @@ cdef class SVMDual(object):
                 PGmax_old = 1e10
             if PGmin_old >= 0:
                 PGmin_old = -1e10
-        #logger.debug(str(iteration))
+            
+#            logger.debug('*')

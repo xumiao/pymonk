@@ -17,9 +17,15 @@ logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(mess
 
 turtleName = 'mouthOpenTurtle'
 kafkaTopic = 'expr'
-partitions = range(4)
+partitions = range(8)
 users = {}
 
+def rebalance_users():
+    for i in range(4):
+        usersi = [user for user in users if users[user] == i]
+        for user in usersi[len(usersi)/2:]:
+            users[user] = i + 4
+    
 def add_users():
     global users
     
