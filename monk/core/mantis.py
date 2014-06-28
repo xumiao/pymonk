@@ -51,6 +51,9 @@ class Mantis(base.MONKObject):
             logger.error('error {0}'.format(e.message))
             logger.error('can not create a solver for {0}'.format(self.panda.name))
             return False
+        
+        # for debugging
+        self.gamma = 0.001
 
     def initialize(self, panda):
         self.panda = panda
@@ -60,12 +63,15 @@ class Mantis(base.MONKObject):
         for ent in ents:
             index, y, c = self.data[ent._id]
             self.solver.setData(ent._features, y, c, index)
-
+        self.solver.num_instances = len(ents)
+        keys = self.panda.weights.getKeys()
+        self.q.addKeys(keys)
+        self.dq.addKeys(keys)
+        
     def generic(self):
         result = super(Mantis, self).generic()
         # every mantis should have a panda
-        if self.panda:
-            result[self.FPANDA] = self.panda._id
+        result[self.FPANDA] = self.panda._id
         result[self.FDUALS] = self.mu.generic()
         result[self.FQ]     = self.q.generic()
         result[self.FDQ]    = self.dq.generic()
@@ -93,12 +99,11 @@ class Mantis(base.MONKObject):
         self.solver.trainModel()
         self.solver.status()
         self.dq.clear()
-        rg = self.rho + self.gamma
+        rg = float(self.rho + self.gamma)
         self.dq.add(self.q, - self.gamma / rg)
         self.dq.add(self.panda.weights, self.gamma / rg)
         self.dq.add(self.mu, (self.gamma - self.rho) / rg)
         self.q.add(self.dq, 1)
-        logger.debug('user {0}, dq {1}, q {2}'.format(self.creator, self.dq, self.q))
     
     def checkout(self, leader):
         if leader:
@@ -106,8 +111,13 @@ class Mantis(base.MONKObject):
                                            'creator':leader},
                                           {'z':True}).get('z',[])
             z = FlexibleVector(generic=z)
+            oldmu = FlexibleVector()
+            oldmu.copyUpdate(self.mu)
             self.mu.copyUpdate(self.q)
             self.mu.add(z, -1)
+            oldmu.add(self.mu, -1)
+            logger.debug('difference of user {0} is {1}'.format(self.creator, oldmu.norm2()))
+            del oldmu
             del z
         else:
             self.mu.copyUpdate(self.q)

@@ -106,7 +106,7 @@ cdef class SVMDual(object):
         index[j] = index[k]
         index[k] = tmp
 
-    def initialization(self):
+    def initialize(self):
         cdef int j
         for j in xrange(self.num_instances):
             self.alpha[j] = 0
@@ -123,7 +123,7 @@ cdef class SVMDual(object):
             yj = self.y[j]
             l = max(0, 1 - self.w.dot(xj) * yj) 
             loss += l * l
-        logger.debug('objective = {0}'.format(loss + self.w.norm2() / 2))
+        logger.debug('objective = {0}'.format(loss))
         
     def setData(self, x, y, c, ind):
         cdef int j = ind
@@ -132,7 +132,6 @@ cdef class SVMDual(object):
         self.c[j] = c
         self.alpha[j] = 0
         self.QD[j] = (self.gamma + self.rho) / (self.gamma * self.rho) * c + x.norm2()
-        return x.getIndex()
         
     def setModel(self, q, mu):
         cdef int j
@@ -140,7 +139,6 @@ cdef class SVMDual(object):
         for j in xrange(self.num_instances):
             self.w.addFast(self.x[j], self.y[j] * self.alpha[j])
         self.w.addFast(mu, -2)
-        self.initialization()
         
     def trainModel(self):
         cdef int j, k, s, iteration
@@ -196,8 +194,6 @@ cdef class SVMDual(object):
                     self.w.addFast(xj, d)
                         
             iteration += 1
-#            if iteration % 10 == 0:
-#                logger.debug('.')
 
             if PGmax_new - PGmin_new <= self.eps:
                 if active_size == self.num_instances:
@@ -214,5 +210,3 @@ cdef class SVMDual(object):
                 PGmax_old = 1e10
             if PGmin_old >= 0:
                 PGmin_old = -1e10
-            
-#            logger.debug('*')
