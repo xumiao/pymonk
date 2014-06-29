@@ -1,0 +1,19 @@
+# mouth open turtle
+---
+monkType: SingleTurtle
+name:  mouthOpenTurtle2
+creator: monk
+description:  classify mouth openness
+requires:
+    uids: range(1,4276)
+mapping:
+    mouthOpen: [1]
+pandas:
+   - monkType: LinearPanda
+     name: mouthOpen2
+tigress:
+    monkType: PatternTigress
+    fields: [labels]
+    patterns: 
+      mouthOpen: mouthOpen
+    defaulting: True

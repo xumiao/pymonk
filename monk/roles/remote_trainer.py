@@ -126,7 +126,7 @@ def server(configFile, partitions):
                                                    'user':leader,
                                                    'follower':user,
                                                    'operation':'unfollow'})
-                producer.send(config.kafkaTopic, 0, encodedMessage)
+                producer.send(config.kafkaTopic, 8, encodedMessage)
             elif op == 'add_data':
                 entity = decodedMessage.get('entity')
                 if entity:
@@ -135,9 +135,13 @@ def server(configFile, partitions):
                 monkapi.save_turtle(turtleName, user) 
             elif op == 'merge':
                 follower = decodedMessage.get('follower')
+                iteration = decodedMessage.get('iteration', 0)
+                logger.debug('merging for interation {0}'.format(iteration))
                 if follower:
                     monkapi.merge(turtleName, user, follower)
             elif op == 'train':
+                iteration = decodedMessage.get('iteration',0)
+                logger.debug('training iteration {0}'.format(iteration))
                 monkapi.train(turtleName, user)
                 leader = monkapi.get_leader(turtleName, user)
                 if not leader:
@@ -145,8 +149,9 @@ def server(configFile, partitions):
                 encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                     'user':leader,
                                                     'follower':user,
-                                                    'operation':'merge'})
-                producer.send(config.kafkaTopic, 0, encodedMessage)
+                                                    'operation':'merge',
+                                                    'iteration':iteration})
+                producer.send(config.kafkaTopic, 8, encodedMessage)
             else:
                 logger.error('Operation not recognized {0}'.format(op))
     except Exception as e:

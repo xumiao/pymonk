@@ -15,7 +15,7 @@ logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(mess
                     datefmt='%m/%d/%Y %I:%M:%S %p',
                     level=logging.DEBUG)
 
-turtleName = 'mouthOpenTurtle'
+turtleName = 'mouthOpenTurtle2'
 kafkaTopic = 'expr'
 partitions = range(8)
 users = {}
@@ -90,13 +90,11 @@ def train(numIters):
         producer = UserProducer(kafka, kafkaTopic, users, async=False,
                           req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                           ack_timeout=200)
-                          
         for i in range(numIters):
             for user, partitionId in users.iteritems():
                 encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                    'user':user,
-                                                   'operation':'train',
-                                                   'iteration':i})
+                                                   'operation':'train'})
                 print i, producer.send(user, encodedMessage)
     finally:
         producer.stop()
@@ -110,3 +108,4 @@ if __name__=='__main__':
     add_users()
     add_data()
     train(10)
+    test()
