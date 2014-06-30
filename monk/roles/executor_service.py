@@ -96,9 +96,11 @@ class Recommend(DefferedResource):
         simplejson.dump(results, request, cls=DateTimeEncoder)
         request.finish()
 
+   
 root = DefferedResource()
 root.putChild("recommend", Recommend())
 root.putChild("recommendTags", Recommend("5338c7562524830c64a2d599"))
+root.putChild("train", Train())
 
 site = MonkAPI(root, "web.log")
 reactor.listenTCP(8080, site)

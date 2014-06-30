@@ -326,8 +326,19 @@ cdef class FlexibleVector(object):
         cdef long sz = len(f)
         cdef long i
         for i in xrange(sz):
-            self.upsert(f[i], 0)
+            if self.find(f[i]) == 0:
+                self.upsert(f[i], 0)
     
+    def getKeys(self):
+        cdef SkipNodeA* currA = self.head.nextA[0]
+        cdef long i
+        cdef list keys = []
+        while currA != NULL:
+            for i in xrange(currA.length):
+                keys.append(currA.index + i)
+            currA = currA.nextA[0]
+        return keys
+        
     def queryStats(self):
         print self.queryLength / self.queries
         print self.queryLength / self.queries, self._numOfNodes()

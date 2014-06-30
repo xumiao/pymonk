@@ -14,19 +14,64 @@ from kafka.producer import KeyedProducer
 import simplejson
 import sys, getopt
 import os
+import platform
+if platform.system() == 'Windows':
+    import win32api
+else:
+    import signal
+import thread
+import traceback
 
 logger = logging.getLogger("monk.remote_trainer")
+
+kafka = None
+producer = None
+consumer = None
 
 def print_help():
     print 'remote_trainer.py -c <configFile> -p <kafkaPartitions, e.g., range(1,8)>'
 
-def onexit():
-    monkapi.exits()
-    logger.info('remote_rainter {0} is shutting down'.format(os.getpid))
     
+def onexit():
+    global kafka, consumer, producer
+    if consumer:
+        consumer.commit()
+        consumer.stop()
+        consumer = None
+    if producer:
+        producer.stop()
+        producer = None
+    if kafka:
+        kafka.close()
+        kafka = None
+    monkapi.exits()
+    logger.info('remote_rainter {0} is shutting down'.format(os.getpid()))
+    exit(0)
+
+def handler(sig, hook = thread.interrupt_main):
+    global kafka, consumer, producer
+    if consumer:
+        consumer.commit()
+        consumer.stop()
+        consumer = None
+    if producer:
+        producer.stop()
+        producer = None
+    if kafka:
+        kafka.close()
+        kafka = None
+    monkapi.exits()
+    logger.info('remote_rainter {0} is shutting down'.format(os.getpid()))
+    exit(1)
+
 def server(configFile, partitions):
+    global kafka, producer, consumer
     config = Configuration(configFile, "remote_trainer", str(os.getpid()))
     monkapi.initialize(config)
+    if platform.system() == 'Windows':
+        win32api.SetConsoleCtrlHandler(handler, 1)
+    else:
+        signal.signal(signal.SIGINT, onexit)
     
     try:
         kafka = KafkaClient(config.kafkaConnectionString,timeout=None)
@@ -44,6 +89,7 @@ def server(configFile, partitions):
             except Exception as e:
                 logger.error('Exception {0}'.format(e))
                 logger.error('Message {0} is not in json format'.format(message.message.value))
+                logger.error(traceback.format_exc())
                 continue
             
             op         = decodedMessage.get('operation')
@@ -59,11 +105,6 @@ def server(configFile, partitions):
                 if follower:
                     monkapi.clone_turtle(turtleName, user, follower)
                     monkapi.follow_turtle_leader(turtleName, user, follower)
-                    encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                       'user':follower,
-                                                       'leader':user,
-                                                       'operation':'follow'})
-                    producer.send(config.kafkaTopic, config.kafkaMasterPartition, encodedMessage)
             elif op == 'follow':
                 leader = decodedMessage.get('leader')
                 if leader:
@@ -85,12 +126,22 @@ def server(configFile, partitions):
                                                    'user':leader,
                                                    'follower':user,
                                                    'operation':'unfollow'})
-                producer.send(config.kafkaTopic, config.kafkaMasterPartition, encodedMessage)
+                producer.send(config.kafkaTopic, 8, encodedMessage)
             elif op == 'add_data':
                 entity = decodedMessage.get('entity')
                 if entity:
                     monkapi.add_data(turtleName, user, entity)
+            elif op == 'save_turtle':
+                monkapi.save_turtle(turtleName, user) 
+            elif op == 'merge':
+                follower = decodedMessage.get('follower')
+                iteration = decodedMessage.get('iteration', 0)
+                logger.debug('merging for interation {0}'.format(iteration))
+                if follower:
+                    monkapi.merge(turtleName, user, follower)
             elif op == 'train':
+                iteration = decodedMessage.get('iteration',0)
+                logger.debug('training iteration {0}'.format(iteration))
                 monkapi.train(turtleName, user)
                 leader = monkapi.get_leader(turtleName, user)
                 if not leader:
@@ -98,23 +149,23 @@ def server(configFile, partitions):
                 encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                     'user':leader,
                                                     'follower':user,
-                                                    'operation':'merge'})
-                producer.send(config.kafkaTopic, config.kafkaMasterPartition, encodedMessage)
+                                                    'operation':'merge',
+                                                    'iteration':iteration})
+                producer.send(config.kafkaTopic, 8, encodedMessage)
             else:
                 logger.error('Operation not recognized {0}'.format(op))
     except Exception as e:
         logger.warning('Exception {0}'.format(e))
         logger.warning('Can not consume actions')
+        logger.warning(traceback.format_exc())
+    except KeyboardInterrupt:
+        onexit()
     finally:
-        consumer.commit()
-        consumer.stop()
-        producer.stop()
-        kafka.close()
-        monkapi.exits()
+        onexit()
     
 if __name__=='__main__':
-    configFile = 'remote_trainer.yml'
-    kafkaPartition = 1
+    configFile = 'monk_config.yml'
+    kafkaPartitions = [0]
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hc:p:',['configFile=', 'kafkaPartitions='])
     except getopt.GetoptError:

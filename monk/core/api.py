@@ -93,7 +93,7 @@ def clone_turtle(turtleName, user, follower):
             logger.error('turtle {0} with user {1} does not exists'.format(turtleName, user))
             return None
         newTurtle = _turtle.clone(follower)
-        newTurtle.leader = None
+        newTurtle.leader = user
         newTurtle.followers = []
         newTurtle.save()
         return newTurtle

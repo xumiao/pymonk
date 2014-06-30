@@ -65,7 +65,7 @@ class Turtle(base.MONKObject):
         self.pandas = crane.pandaStore.load_or_create_all(self.pandas)
         self.tigress = crane.tigressStore.load_or_create(self.tigress)
         self.pandaUids = set((p.uid for p in self.pandas))
-        self.invertedMapping = {v: k for k, v in self.mapping.iteritems()}
+        self.invertedMapping = {tuple(v): k for k, v in self.mapping.iteritems()}
         self.followers = set(self.followers)
         
         if self.FREQUIRES_UIDS in self.requires:
@@ -113,7 +113,7 @@ class Turtle(base.MONKObject):
         if self.tigress:
             result = result and self.tigress.delete()
         if deep:
-            result = result and [pa.delete() for pa in self.pandas].all()
+            result = result and [pa.delete() for pa in self.pandas]
         return result
     
     def add_follower(self, follower):

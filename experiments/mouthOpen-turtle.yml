@@ -1,11 +1,11 @@
 # mouth open turtle
 ---
 monkType: SingleTurtle
-name:  mouthOpen
+name:  mouthOpenTurtle
 creator: monk
 description:  classify mouth openness
 requires:
-    uids: range(10)
+    uids: range(1,4276)
 mapping:
     mouthOpen: [1]
 pandas:
