@@ -46,11 +46,11 @@ class Entity(base.MONKObject):
     def __getitem__(self, key):
         return self._features[key]
 
-    def get_raw(self, rawKey):
+    def get_raw(self, rawKey, default=0):
         if rawKey in self._raws:
             return self._raws[rawKey]
         else:
-            return cons.DEFAULT_EMPTY
+            return default
 
     def set_raw(self, rawKey, rawValue):
         if isinstance(rawKey, basestring):

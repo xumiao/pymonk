@@ -14,12 +14,15 @@ class Relation(Entity):
     
     def __default__(self):
         super(Relation, self).__default__()
-        self.ARGUMENTS = []
+        self._arguments = []
         
     def __restore__(self):
         super(Relation, self).__restore__()
         self._arguments = crane.entityStore.load_or_create_all(self._arguments)
-
+    
+    def set_argument(self, position, entity):
+        self._arguments[position] = entity
+        
     def generic(self):
         result = super(Relation, self).generic()
         result[self.ARGUMENTS] = [x._id for x in self._arguments]

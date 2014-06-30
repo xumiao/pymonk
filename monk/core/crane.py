@@ -16,18 +16,40 @@ from bson.objectid import ObjectId
 from uid import UID
 logger = logging.getLogger("monk.crane")
 
-class Crane(object):
+class MongoClientPool(object):
+    
+    def __init__(self):
+        self.__clients = {}
+        
+    def getClient(self, connectionString):
+        if connectionString in self.__clients:
+            return self.__clients[connectionString]
+        else:
+            try:
+                client = MongoClient(connectionString)
+                self.__clients[connectionString] = client
+                return client
+            except Exception as e:
+                logger.warning(e.message)
+                logger.warning('failed to connect {0}'.format(connectionString))
+        return None
+    
+    def exists(self):
+        [client.close() for client in self.__clients.values()]
 
-    def __init__(self, database=None, collectionName=None, fields=None):
-        if database is None or collectionName is None:
+class Crane(object):
+    mongoClientPool = MongoClientPool()
+
+    def __init__(self, connectionString=None, database=None, collectionName=None):
+        if connectionString is None or database is None or collectionName is None:
             return
-            
+        
+        client = self.mongoClientPool.getClient(connectionString)
         logger.info('initializing {0} '.format(collectionName))
         self._defaultCollectionName = collectionName
         self._currentCollectionName = collectionName
-        self._database = database
+        self._database = client[database]
         self._coll = self._database[collectionName]
-        self._fields = fields        
         self._cache = {}
 
     # cache related operation
@@ -104,27 +126,7 @@ class Crane(object):
             return self.load_all_by_ids(objs)
         else:
             return [self.load_or_create(obj, tosave) for obj in objs]
-    
-    def lazy_load(self, field):
-        if self._fields is None:
-            self._fields = {}
-        if True in self._fields.values:
-            logger.error('can only be all lazy or explicit')
-            logger.debug('original fields {0}'.format(self._fields))
-            logger.debug('try to lazy load field {0}'.format(field))
-            self._fields = {}
-        self._fields[field] = False
-    
-    def explicit_load(self, field):
-        if self._fields is None:
-            self._fields = {}
-        if False in self._fields.values:
-            logger.error('can only be all lazy or explicit')
-            logger.debug('original fields {0}'.format(self._fields))
-            logger.debug('try to explicitly load field {0}'.format(field))
-            self._fields = {}
-        self._fields[field] = True
-        
+            
     def exists_field(self, obj, field):
         query = {'_id':obj._id, field:{'$exists':True}}
         if self._coll.find_one(query, {'_id':1}):
@@ -218,7 +220,7 @@ class Crane(object):
         obj = self.__get_one(objId)
         if not obj and objId:
             try:
-                obj = self._coll.find_one({'_id': objId}, self._fields)
+                obj = self._coll.find_one({'_id': objId})
                 obj = base.monkFactory.decode(obj)
                 if obj:
                     self.__put_one(obj)
@@ -233,7 +235,7 @@ class Crane(object):
         if rems:
             try:
                 remainObjs = map(base.monkFactory.decode, 
-                                 self._coll.find({'_id': {'$in':rems}}, self._fields))
+                                 self._coll.find({'_id': {'$in':rems}}))
             except Exception as e:
                 logger.warning(e.message)
                 logger.warning('can not load remains {0} ...'.format(rems[0]))
@@ -280,89 +282,54 @@ class Crane(object):
         else:
             return False
 
-dataClient   = None
-dataDB       = None
-modelClient  = None
-modelDB      = None
-uidClient    = None
-uidDB        = None
-uidStore     = None
+uidStore     = UID()
 entityStore  = Crane()
 pandaStore   = Crane()
 mantisStore  = Crane()
 turtleStore  = Crane()
 tigressStore = Crane()
 
-def create_db(connectionString, databaseName):
-    try:
-        client = MongoClient(connectionString)
-        database = client[databaseName]
-    except Exception as e:
-        logger.warning(e.message)
-        logger.warning('failed to connection to database {0}.{1}'.format(connectionString, databaseName))
-        return None
-    return client, database
-
 def exit_storage():
-    global dataClient, modelClient, uidClient
-    dataClient.close()
-    modelClient.close()
-    uidClient.close()
+    Crane.mongoClientPool.exists()
     
 def initialize_storage(config):
-    global dataClient, modelClient, uidClient
-    global dataDB, modelDB, uidDB
     global uidStore, entityStore, pandaStore
     global mantisStore, turtleStore, tigressStore
     
-    #initialize uid store
-    uidClient, uidDB = create_db(config.uidConnectionString,
-                                 config.uidDataBaseName)
-    if uidDB is None:
-        logger.error('can not access the database {0} at {1}'.format(
-                     config.uidDataBaseName,
-                     config.uidConnectionString))
-        return False
-    uidStore = UID(uidDB)
+    uidStore     = UID(config.uidConnectionString,
+                       config.uidDataBaseName)
 
-    #initialize data store
-    dataClient, dataDB = create_db(config.dataConnectionString,
-                                   config.dataDataBaseName)
-    if dataDB is None:
-        logger.error('can not access the database {0} at {1}'.format(
-                     config.dataDataBaseName,
-                     config.dataConnectionString))
-        return False
-    entityStore   = Crane(dataDB,
-                          config.entityCollectionName,
-                          config.entityFields)
+    entityStore  = Crane(config.dataConnectionString,
+                         config.dataDataBaseName,
+                         config.entityCollectionName,
+                         config.entityFields)
 
-    #initialize model store
-    modelClient, modelDB = create_db(config.modelConnectionString,
-                                     config.modelDataBaseName)
-    if modelDB is None:
-        logger.error('can not access the database {0} at {1}'.format(
-                     config.modelDataBaseName,
-                     config.modelConnectionString))
-        return False
-    pandaStore   = Crane(modelDB,
+    pandaStore   = Crane(config.modelConnectionString,
+                         config.modelDataBaseName,
                          config.pandaCollectionName,
                          config.pandaFields)
     from panda import Panda
     Panda.store = pandaStore
-    mantisStore  = Crane(modelDB,
+
+    mantisStore  = Crane(config.modelConnectionString,
+                         config.modelDataBaseName,
                          config.mantisCollectionName,
                          config.mantisFields)
     from mantis import Mantis
     Mantis.store = mantisStore
-    turtleStore  = Crane(modelDB,
+    
+    turtleStore  = Crane(config.modelConnectionString,
+                         config.modelDataBaseName,
                          config.turtleCollectionName,
                          config.turtleFields)
     from turtle import Turtle
     Turtle.store = turtleStore
-    tigressStore = Crane(modelDB,
+    
+    tigressStore = Crane(config.modelConnectionString,
+                         config.modelDataBaseName,
                          config.tigressCollectionName,
                          config.tigressFields)
     from tigress import Tigress
     Tigress.store = tigressStore
+    
     return True
