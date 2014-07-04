@@ -116,7 +116,7 @@ class Mantis(base.MONKObject):
             self.mu.copyUpdate(self.q)
             self.mu.add(z, -1)
             oldmu.add(self.mu, -1)
-            logger.debug('difference of user {0} is {1}'.format(self.creator, oldmu.norm2()/self.mu.norm2()))
+            logger.debug('difference of user {0} is {1}'.format(self.creator, oldmu.norm2()/(self.mu.norm2() + 1e-12)))
             del oldmu
             del z
         else:
