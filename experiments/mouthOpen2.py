@@ -148,7 +148,34 @@ def train(numIters):
 def test(isPersonalized):
     global users
     global testData
-    checkUserPartitionMapping
+    checkUserPartitionMapping()
+    try:
+        mcl = pm.MongoClient('10.137.168.196:27017')        
+        kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
+        producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
+                          req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
+                          ack_timeout=200)
+        
+        for user, partitionId in users.iteritems():
+            if user != u'':
+                for dataID in testData[user]:
+                    entity = str(dataID)
+                    encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                                       'user':user,
+                                                       'entity':entity,
+                                                       'isPersonalized':isPersonalized,
+                                                       'operation':'test_data'})
+                    print producer.send(user, encodedMessage)                      
+                    
+        mcl.close()
+    finally:
+        producer.stop()
+        kafka.close()                        
+    
+def centralizedTest(isPersonalized):
+    global users
+    global testData
+    checkUserPartitionMapping()
     
     mcl = pm.MongoClient('10.137.168.196:27017')
     coll = mcl.DataSet['PMLExpression']
@@ -381,7 +408,7 @@ if __name__=='__main__':
     
     #prepareData()
     loadPreparedData("trainData", "testData")
-    
+    test(True)
 #    print "add_users"
 #    add_users()
 #    print "add_data"
@@ -389,15 +416,15 @@ if __name__=='__main__':
 #    print "train"
 #    train(10)
     
-    print "test"
-    isPersonalized = False
-    resGT = test(isPersonalized)
-    destfile = open("resGT", 'w')       # save result and gt
-    pickle.dump(resGT, destfile)
-    destfile.close()
-    
-    print "evaluate"
-#    file = open("resGT", 'r')
-#    resGT = pickle.load(file)
-#    file.close()
-    evaluate(resGT, "acc.curve")
+#    print "test"
+#    isPersonalized = False
+#    resGT = centralizedTest(isPersonalized)
+#    destfile = open("resGT", 'w')       # save result and gt
+#    pickle.dump(resGT, destfile)
+#    destfile.close()
+#    
+#    print "evaluate"
+##    file = open("resGT", 'r')
+##    resGT = pickle.load(file)
+##    file.close()
+#    evaluate(resGT, "acc.curve")
