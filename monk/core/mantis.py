@@ -51,9 +51,6 @@ class Mantis(base.MONKObject):
             logger.error('error {0}'.format(e.message))
             logger.error('can not create a solver for {0}'.format(self.panda.name))
             return False
-        
-        # for debugging
-        self.gamma = 0.001
 
     def initialize(self, panda):
         self.panda = panda
@@ -158,6 +155,6 @@ class Mantis(base.MONKObject):
         crane.mantisStore.update_one_in_fields(self, {self.FDUALS : [],
                                                       self.FQ : [],
                                                       self.FDQ : []})
-        #crane.mantisStore.update_one_in_fields(self, {self.FDATA : {}})                                                      
+        #crane.mantisStore.update_one_in_fields(self, {self.FDATA : {}})
     
 base.register(Mantis)

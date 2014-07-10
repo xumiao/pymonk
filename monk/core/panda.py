@@ -44,6 +44,9 @@ class Panda(base.MONKObject):
     
     def predict(self, entity):
         return 0
+    
+    def reset(self):
+        pass
 
 class ImmutablePanda(Panda):
     '''
