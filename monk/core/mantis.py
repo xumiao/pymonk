@@ -153,5 +153,11 @@ class Mantis(base.MONKObject):
             olduuid, (ind, oldy, oldc)  = da.popitem()
         self.solver.setData(entity._features, y, c, ind)
         da[uuid] = (ind, y, c)
+        
+    def reset(self):
+        crane.mantisStore.update_one_in_fields(self, {self.FDUALS : [],
+                                                      self.FQ : [],
+                                                      self.FDQ : []})
+        #crane.mantisStore.update_one_in_fields(self, {self.FDATA : {}})                                                      
     
 base.register(Mantis)

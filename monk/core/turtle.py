@@ -210,7 +210,9 @@ class Turtle(base.MONKObject):
             return False
         [panda.merge(follower) for panda in self.pandas]
     
-       
+    def reset(self):
+        [panda.reset() for panda in self.pandas]       
+        
 class SingleTurtle(Turtle):
     
     def predict(self, entity, fields=None):

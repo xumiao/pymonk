@@ -277,6 +277,15 @@ def test_data(turtleName, user, entity):
     else:
         logger.warning('can not find turtle by {0}@{1} to test data'.format(user, turtleName))
         return 0        
+
+def reset(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        _turtle.reset()
+        return True
+    else:
+        logger.warning('can not find turtle by {0}@{1} to reset'.format(user, turtleName))
+        return False
                
 # meta query APIs
 def find_type(typeName):

@@ -222,6 +222,15 @@ class LinearPanda(Panda):
     def predict(self, entity):
         entity[self.uid] = sigmoid(self.weights.dot(entity._features))
         return entity[self.uid]
+    
+    def reset(self):
+        self.store.update_one_in_fields(self, {self.FWEIGHTS:[],
+                                               self.FCONSENSUS:[]})
+        try:
+            self.mantis.reset()
+        except:
+            self.load_mantis()
+            self.mantis.reset()        
 
 base.register(Panda)
 base.register(ExistPanda)
