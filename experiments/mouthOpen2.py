@@ -139,7 +139,8 @@ def train(numIters):
             for user, partitionId in users.iteritems():
                 encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                    'user':user,
-                                                   'operation':'train'})
+                                                   'operation':'train',
+                                                   'iteration':i})
                 print i, producer.send(user, encodedMessage)
     finally:
         producer.stop()
@@ -472,15 +473,16 @@ def plotCurveFromFile(fileNames):
     
 if __name__=='__main__':
     
+    #reset()
     #prepareData()
-#    loadPreparedData("trainData", "testData")
+    loadPreparedData("trainData", "testData")
 #
 ##    print "add_users"
 ##    add_users()
 ##    print "add_data"
 ##    add_data()
-##    print "train"
-##    train(10)
+    print "train"
+    train(10)
 #    
 #    print "test"
 #    isPersonalized = True
@@ -494,4 +496,4 @@ if __name__=='__main__':
 #    resGTs_consensus = pickle.load(file)
 #    file.close()
 #    evaluate(resGTs_consensus, "acc.curve")
-    reset()
+
