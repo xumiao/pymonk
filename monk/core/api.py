@@ -261,10 +261,31 @@ def merge(turtleName, user, follower):
 def predict(turtleName, user, entity, fields=None):
     _turtle = load_turtle(turtleName, user)
     if _turtle:
+        #crane.entityStore.set_collection_name(_turtle.entityCollectionName)
+        entity = crane.entityStore.load_or_create(ObjectId(entity))
         return _turtle.predict(entity, fields)
     else:
         logger.warning('can not find turtle by {0}@{1} to predict'.format(user, turtleName))
         return 0
+        
+def test_data(turtleName, user, entity):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        #crane.entityStore.set_collection_name(_turtle.entityCollectionName)
+        entity = crane.entityStore.load_or_create(ObjectId(entity))
+        return _turtle.test_data(entity)
+    else:
+        logger.warning('can not find turtle by {0}@{1} to test data'.format(user, turtleName))
+        return 0        
+
+def reset(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        _turtle.reset()
+        return True
+    else:
+        logger.warning('can not find turtle by {0}@{1} to reset'.format(user, turtleName))
+        return False
                
 # meta query APIs
 def find_type(typeName):

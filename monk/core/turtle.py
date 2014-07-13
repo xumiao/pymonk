@@ -180,6 +180,11 @@ class Turtle(base.MONKObject):
         predicted = self.invertedMapping[tuple([sign0(panda.predict(entity)) for panda in self.pandas])]
         self.tigress.measure(entity, predicted)
         return predicted
+        
+    def test_data(self, entity):
+        test = [panda.predict(entity) for panda in self.pandas]
+        logger.info('turtle {0} value is {1}'.format(self.creator, test[0]))
+        return test    
 
     def add_data(self, entity):
         return self.tigress.supervise(self, entity)
@@ -206,7 +211,9 @@ class Turtle(base.MONKObject):
             return False
         [panda.merge(follower) for panda in self.pandas]
     
-       
+    def reset(self):
+        [panda.reset() for panda in self.pandas]       
+        
 class SingleTurtle(Turtle):
     
     def predict(self, entity, fields=None):

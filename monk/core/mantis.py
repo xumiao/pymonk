@@ -51,9 +51,6 @@ class Mantis(base.MONKObject):
             logger.error('error {0}'.format(e.message))
             logger.error('can not create a solver for {0}'.format(self.panda.name))
             return False
-        
-        # for debugging
-        self.gamma = 0.001
 
     def initialize(self, panda):
         self.panda = panda
@@ -116,7 +113,7 @@ class Mantis(base.MONKObject):
             self.mu.copyUpdate(self.q)
             self.mu.add(z, -1)
             oldmu.add(self.mu, -1)
-            logger.debug('difference of user {0} is {1}'.format(self.creator, oldmu.norm2()/self.mu.norm2()))
+            logger.debug('difference of user {0} is {1}'.format(self.creator, oldmu.norm2()/(self.mu.norm2() + 1e-12)))
             del oldmu
             del z
         else:
@@ -153,5 +150,11 @@ class Mantis(base.MONKObject):
             olduuid, (ind, oldy, oldc)  = da.popitem()
         self.solver.setData(entity._features, y, c, ind)
         da[uuid] = (ind, y, c)
+        
+    def reset(self):
+        crane.mantisStore.update_one_in_fields(self, {self.FDUALS : [],
+                                                      self.FQ : [],
+                                                      self.FDQ : []})
+        #crane.mantisStore.update_one_in_fields(self, {self.FDATA : {}})
     
 base.register(Mantis)

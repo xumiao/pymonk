@@ -44,6 +44,9 @@ class Panda(base.MONKObject):
     
     def predict(self, entity):
         return 0
+    
+    def reset(self):
+        pass
 
 class ImmutablePanda(Panda):
     '''
@@ -108,7 +111,7 @@ class LinearPanda(Panda):
     def generic(self):
         result = super(LinearPanda, self).generic()
         if self.mantis_loaded():
-            result[self.FMANTIS]    = self.mantis.signature()
+            result[self.FMANTIS] = self.mantis.signature()
         result[self.FWEIGHTS]   = self.weights.generic()
         result[self.FCONSENSUS] = self.z.generic()
         return result
@@ -118,11 +121,8 @@ class LinearPanda(Panda):
         obj.weights = self.weights.clone()
         obj.z       = obj.weights.clone()
         obj.m       = 1
-        try:
-            obj.mantis = self.mantis.clone(user, obj)
-        except:
-            self.load_mantis()
-            obj.mantis = self.mantis.clone(user, obj)
+        self.load_mantis()
+        obj.mantis = self.mantis.clone(user, obj)
         return obj
         
     def save(self):
@@ -150,11 +150,12 @@ class LinearPanda(Panda):
             return
             
         if self.mantis is None:
-            self.mantis = {self.MONK_TYPE:'Mantis',
-                           self.NAME:self.name}
+            self.mantis = {Mantis.MONK_TYPE:'Mantis',
+                           Mantis.NAME:self.name}
 
         try:
-            self.mantis.setdefault(self.CREATOR, self.creator)
+            self.mantis.setdefault(Mantis.CREATOR, self.creator)
+            self.mantis.setdefault(Mantis.FPANDA, self)
         except:
             logger.error('mantis should be a dict for loading')
             logger.error('now is {0}'.format(self.mantis))
@@ -224,6 +225,15 @@ class LinearPanda(Panda):
     def predict(self, entity):
         entity[self.uid] = sigmoid(self.weights.dot(entity._features))
         return entity[self.uid]
+    
+    def reset(self):
+        self.store.update_one_in_fields(self, {self.FWEIGHTS:[],
+                                               self.FCONSENSUS:[]})
+        try:
+            self.mantis.reset()
+        except:
+            self.load_mantis()
+            self.mantis.reset()        
 
 base.register(Panda)
 base.register(ExistPanda)
