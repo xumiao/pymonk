@@ -22,6 +22,7 @@ logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(mess
 
 turtleName = 'mouthOpenTurtle2'
 pandaName = 'mouthOpen2'
+kafkaHost = 'monkkafka.cloudapp.net:9092'
 kafkaTopic = 'expr'
 partitions = range(8)
 users = {}
@@ -66,112 +67,95 @@ def loadPreparedData(file1, file2 = None):
 def add_users():
     global users
     
-    try:
-        mcl = pm.MongoClient('10.137.168.196:27017')
-        kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
-        producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
-                                req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
-                                ack_timeout=200)
-        coll = mcl.DataSet['PMLExpression']
-        
-        for ent in coll.find(None, {'_id':True, 'userId':True}, timeout=False):
-            follower = ent['userId']
-            if follower not in users:
-                encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                   'user':'monk',
-                                                   'follower':follower,
-                                                   'operation':'add_user'})
-                print producer.send(follower, encodedMessage)
-        
-        userColl = mcl.DataSet['PMLUsers']
-        if users:
-            for userId, partitionId in users.iteritems():            
-                u = userColl.find_one({'userId':userId}, {'userId':userId}, timeout=False)
-                if not u:
-                    userColl.insert({'userId':userId, 'partitionId':partitionId});
-            #userColl.insert([{'userId':userId, 'partitionId':partitionId} for userId, partitionId in users.iteritems()])
-    finally:
-        producer.stop()
-        mcl.close()
-        kafka.close()
+    mcl = pm.MongoClient('10.137.168.196:27017')
+    kafka = KafkaClient(kafkaHost, timeout=None)
+    producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
+                            req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
+                            ack_timeout=200)
+    coll = mcl.DataSet['PMLExpression']
+    
+    for ent in coll.find(None, {'_id':True, 'userId':True}, timeout=False):
+        follower = ent['userId']
+        if follower not in users:
+            encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                               'user':'monk',
+                                               'follower':follower,
+                                               'operation':'add_user'})
+            print producer.send(follower, encodedMessage)
+    
+    userColl = mcl.DataSet['PMLUsers']
+    if users:
+        for userId, partitionId in users.iteritems():            
+            u = userColl.find_one({'userId':userId}, {'userId':userId}, timeout=False)
+            if not u:
+                userColl.insert({'userId':userId, 'partitionId':partitionId});
+        #userColl.insert([{'userId':userId, 'partitionId':partitionId} for userId, partitionId in users.iteritems()])
         
 def add_data():
     global users
     global trainData
     checkUserPartitionMapping()
-    try:
-        mcl = pm.MongoClient('10.137.168.196:27017')        
-        kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
-        producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
-                          req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
-                          ack_timeout=200)
-        coll = mcl.DataSet['PMLExpression']
+    mcl = pm.MongoClient('10.137.168.196:27017')        
+    kafka = KafkaClient(kafkaHost, timeout=None)
+    producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
+                      req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
+                      ack_timeout=200)
+    coll = mcl.DataSet['PMLExpression']
 
-        for ent in coll.find(None, {'_id':True, 'userId':True}, timeout=False):
-            entity = str(ent['_id'])
-            user = ent['userId']
-            if ent['_id'] in trainData[user]:
-                encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                   'user':user,
-                                                   'entity':entity,
-                                                   'operation':'add_data'})
-                print producer.send(user, encodedMessage)
-            
-        for user, partitionId in users.iteritems():
+    for ent in coll.find(None, {'_id':True, 'userId':True}, timeout=False):
+        entity = str(ent['_id'])
+        user = ent['userId']
+        if ent['_id'] in trainData[user]:
             encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                'user':user,
-                                               'operation':'save_turtle'})
+                                               'entity':entity,
+                                               'operation':'add_data'})
             print producer.send(user, encodedMessage)
-        mcl.close()
-    finally:
-        producer.stop()
-        kafka.close()
+        
+    for user, partitionId in users.iteritems():
+        encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                           'user':user,
+                                           'operation':'save_turtle'})
+        print producer.send(user, encodedMessage)
+    mcl.close()
 
 def train(numIters):
     global users
     checkUserPartitionMapping()
-    try:
-        kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
-        producer = UserProducer(kafka, kafkaTopic, users, async=False,
-                          req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
-                          ack_timeout=200)
-        for i in range(numIters):
-            for user, partitionId in users.iteritems():
-                encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                   'user':user,
-                                                   'operation':'train',
-                                                   'iteration':i})
-                print i, producer.send(user, encodedMessage)
-    finally:
-        producer.stop()
-        kafka.close()
+    kafka = KafkaClient(kafkaHost, timeout=None)
+    producer = UserProducer(kafka, kafkaTopic, users, async=False,
+                      req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
+                      ack_timeout=200)
+    for i in range(numIters):
+        for user, partitionId in users.iteritems():
+            encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                               'user':user,
+                                               'operation':'train',
+                                               'iteration':i})
+            print i, producer.send(user, encodedMessage)
 
 def test(isPersonalized):
     global users
     global testData
     checkUserPartitionMapping()
-    try:
-        mcl = pm.MongoClient('10.137.168.196:27017')        
-        kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
-        producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
-                          req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
-                          ack_timeout=200)
-        
-        for user, partitionId in users.iteritems():
-            if user != u'':
-                for dataID in testData[user]:
-                    entity = str(dataID)
-                    encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                       'user':user,
-                                                       'entity':entity,
-                                                       'isPersonalized':isPersonalized,
-                                                       'operation':'test_data'})
-                    print producer.send(user, encodedMessage)                      
-                    
-        mcl.close()
-    finally:
-        producer.stop()
-        kafka.close()                        
+    mcl = pm.MongoClient('10.137.168.196:27017')        
+    kafka = KafkaClient(kafkaHost, timeout=None)
+    producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
+                      req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
+                      ack_timeout=200)
+    
+    for user, partitionId in users.iteritems():
+        if user != u'':
+            for dataID in testData[user]:
+                entity = str(dataID)
+                encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                                   'user':user,
+                                                   'entity':entity,
+                                                   'isPersonalized':isPersonalized,
+                                                   'operation':'test_data'})
+                print producer.send(user, encodedMessage)                      
+                
+    mcl.close()
     
 def centralizedTest(isPersonalized):
     global users
@@ -225,19 +209,15 @@ def evaluate(resGTs, curvefile=None):
 def reset():
     global users
     checkUserPartitionMapping()
-    try:
-        kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
-        producer = UserProducer(kafka, kafkaTopic, users, async=False,
-                          req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
-                          ack_timeout=200)
-        for user, partitionId in users.iteritems():            
-            encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                               'user':user,
-                                               'operation':'reset'})
-            print producer.send(user, encodedMessage)
-    finally:
-        producer.stop()
-        kafka.close()
+    kafka = KafkaClient(kafkaHost, timeout=None)
+    producer = UserProducer(kafka, kafkaTopic, users, async=False,
+                      req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
+                      ack_timeout=200)
+    for user, partitionId in users.iteritems():            
+        encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                           'user':user,
+                                           'operation':'reset'})
+        print producer.send(user, encodedMessage)
         
         
 

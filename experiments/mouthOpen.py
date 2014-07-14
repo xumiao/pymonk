@@ -17,6 +17,7 @@ logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(mess
 
 turtleName = 'mouthOpenTurtle'
 kafkaTopic = 'expr'
+kafkaHost = 'monkkafka.cloudapp.net:9092'
 partitions = range(8)
 users = {}
 
@@ -31,7 +32,7 @@ def add_users():
     
     try:
         mcl = pm.MongoClient('10.137.168.196:27017')
-        kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
+        kafka = KafkaClient(kafkaHost, timeout=None)
         producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
                                 req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                                 ack_timeout=200)
@@ -58,7 +59,7 @@ def add_data():
     global users
     try:
         mcl = pm.MongoClient('10.137.168.196:27017')
-        kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
+        kafka = KafkaClient(kafkaHost, timeout=None)
         producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
                           req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                           ack_timeout=200)
@@ -86,7 +87,7 @@ def add_data():
 def train(numIters):
     global users
     try:
-        kafka = KafkaClient('mozo.cloudapp.net:9092', timeout=None)
+        kafka = KafkaClient(kafkaHost, timeout=None)
         producer = UserProducer(kafka, kafkaTopic, users, async=False,
                           req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                           ack_timeout=200)

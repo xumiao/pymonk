@@ -32,7 +32,7 @@ loggingConfig:
             level : DEBUG
             propagate : True
         kafka :
-            level : ERROR
+            level : DEBUG
             propagate : True
     root :
         level : DEBUG

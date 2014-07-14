@@ -28,7 +28,7 @@ class Configuration(object):
         self.entityCollectionName = 'EntityStore'
         self.entityFields = None
         
-        self.kafkaConnectionString = "mozo.cloudapp.net:9092"
+        self.kafkaConnectionString = "monkkafka.cloudapp.net:9092"
         self.kafkaGroup = 'test'
         self.kafkaTopic = 'test_topic'
         self.kafkaMasterPartition = 0
