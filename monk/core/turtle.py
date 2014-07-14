@@ -238,7 +238,8 @@ class RankingTurtle(Turtle):
     FTARGET_COLLECTION_NAME   = 'targetCollectionName'
     FTARGET_NUM_LEVELS        = 'numLevels'
     FBEAM_SIZE                = 'beamSize'
-    FQUERY                    = 'query'
+    FWINDOW_SIZE              = 'windowSize'
+    FQUERY                    = 'queryFunc'
     FTARGET_STORE             = 'targetStore'
     
     def __default__(self):
@@ -261,6 +262,7 @@ class RankingTurtle(Turtle):
     def generic(self):
         result = super(RankingTurtle, self).generic()
         del result[self.FTARGET_STORE]
+        return result
     
     def clone(self, user):
         obj = super(RankingTurtle, self).clone(user)

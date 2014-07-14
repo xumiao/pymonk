@@ -301,34 +301,29 @@ def initialize_storage(config):
 
     entityStore  = Crane(config.dataConnectionString,
                          config.dataDataBaseName,
-                         config.entityCollectionName,
-                         config.entityFields)
+                         config.entityCollectionName)
 
     pandaStore   = Crane(config.modelConnectionString,
                          config.modelDataBaseName,
-                         config.pandaCollectionName,
-                         config.pandaFields)
+                         config.pandaCollectionName)
     from panda import Panda
     Panda.store = pandaStore
 
     mantisStore  = Crane(config.modelConnectionString,
                          config.modelDataBaseName,
-                         config.mantisCollectionName,
-                         config.mantisFields)
+                         config.mantisCollectionName)
     from mantis import Mantis
     Mantis.store = mantisStore
     
     turtleStore  = Crane(config.modelConnectionString,
                          config.modelDataBaseName,
-                         config.turtleCollectionName,
-                         config.turtleFields)
+                         config.turtleCollectionName)
     from turtle import Turtle
     Turtle.store = turtleStore
     
     tigressStore = Crane(config.modelConnectionString,
                          config.modelDataBaseName,
-                         config.tigressCollectionName,
-                         config.tigressFields)
+                         config.tigressCollectionName)
     from tigress import Tigress
     Tigress.store = tigressStore
     
