@@ -6,6 +6,7 @@ solving machine learning problems
 @author: xm
 """
 import base, crane
+from numpy import sqrt
 from ..math.svm_solver_dual import SVMDual
 from ..math.flexible_vector import FlexibleVector
 from bson.objectid import ObjectId
@@ -51,7 +52,7 @@ class Mantis(base.MONKObject):
             logger.error('error {0}'.format(e.message))
             logger.error('can not create a solver for {0}'.format(self.panda.name))
             return False
-
+                
     def initialize(self, panda):
         self.panda = panda
         self.solver = SVMDual(self.panda.weights, self.eps, self.rho, self.gamma,
@@ -101,6 +102,7 @@ class Mantis(base.MONKObject):
         self.dq.add(self.panda.weights, self.gamma / rg)
         self.dq.add(self.mu, (self.gamma - self.rho) / rg)
         self.q.add(self.dq, 1)
+        logger.debug('relative difference of q {0}'.format(sqrt(self.dq.norm2() / (self.q.norm2() + 1e-12))))
     
     def checkout(self, leader):
         if leader:
@@ -108,13 +110,8 @@ class Mantis(base.MONKObject):
                                            'creator':leader},
                                           {'z':True}).get('z',[])
             z = FlexibleVector(generic=z)
-            oldmu = FlexibleVector()
-            oldmu.copyUpdate(self.mu)
             self.mu.copyUpdate(self.q)
             self.mu.add(z, -1)
-            oldmu.add(self.mu, -1)
-            logger.debug('difference of user {0} is {1}'.format(self.creator, oldmu.norm2()/(self.mu.norm2() + 1e-12)))
-            del oldmu
             del z
         else:
             self.mu.copyUpdate(self.q)
@@ -152,6 +149,9 @@ class Mantis(base.MONKObject):
         da[uuid] = (ind, y, c)
         
     def reset(self):
+        self.mu.clear()
+        self.q.clear()
+        self.dq.clear()
         crane.mantisStore.update_one_in_fields(self, {self.FDUALS : [],
                                                       self.FQ : [],
                                                       self.FDQ : []})

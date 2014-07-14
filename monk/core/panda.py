@@ -227,6 +227,8 @@ class LinearPanda(Panda):
         return entity[self.uid]
     
     def reset(self):
+        self.weights.clear()
+        self.z.clear()
         self.store.update_one_in_fields(self, {self.FWEIGHTS:[],
                                                self.FCONSENSUS:[]})
         try:

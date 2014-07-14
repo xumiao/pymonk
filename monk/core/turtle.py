@@ -7,13 +7,14 @@ The complex problem solver that manage a team of pandas.
 import base
 import constants as cons
 import crane
+from relation import MatchingRelation
+from ..utils.utils import binary2decimal, translate
 from ..math.cmath import sign0
 #from itertools import izip
 import logging
 import nltk
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
-from monk.utils.utils import translate
 
 logger = logging.getLogger("monk.turtle")
 
@@ -96,9 +97,9 @@ class Turtle(base.MONKObject):
     def clone(self, user):
         obj = super(Turtle, self).clone(user)
         obj.pandaUids = set(self.pandaUids)
-        obj.tigress = self.tigress.clone(user)
-        obj.pandas = [p.clone(user) for p in self.pandas]
-        obj.requires = dict(self.requires)
+        obj.tigress   = self.tigress.clone(user)
+        obj.pandas    = [p.clone(user) for p in self.pandas]
+        obj.requires  = dict(self.requires)
         return obj
         
     def save(self):
@@ -232,16 +233,68 @@ class MultiLabelTurtle(Turtle):
         return predicted
         
 class RankingTurtle(Turtle):
+    FTARGET_CONNECTION_STRING = 'targetConnectionString'
+    FTARGET_DATABASE_NAME     = 'targetDatabaseName'
+    FTARGET_COLLECTION_NAME   = 'targetCollectionName'
+    FTARGET_NUM_LEVELS        = 'numLevels'
+    FBEAM_SIZE                = 'beamSize'
+    FWINDOW_SIZE              = 'windowSize'
+    FQUERY                    = 'queryFunc'
+    FTARGET_STORE             = 'targetStore'
+    
+    def __default__(self):
+        super(RankingTurtle, self).__default__()
+        self.targetConnectionString = cons.DEFAULT_EMPTY
+        self.targetDatabaseName     = cons.DEFAULT_EMPTY
+        self.targetCollectionName   = cons.DEFAULT_EMPTY
+        self.targetStore = crane.Crane()
+        self.numLevels   = 1
+        self.beamSize    = 10
+        self.windowSize  = 2 * self.beamSize
+        self.queryFunc   = cons.DEFAULT_FUNC
+    
+    def __restore__(self):
+        super(RankingTurtle, self).__restore__()
+        self.targetStore = crane.Crane(self.targetConnectionString,
+                                       self.targetDatabaseName,
+                                       self.targetCollectionName)
+        
+    def generic(self):
+        result = super(RankingTurtle, self).generic()
+        del result[self.FTARGET_STORE]
+        return result
+    
+    def clone(self, user):
+        obj = super(RankingTurtle, self).clone(user)
+        return obj
         
     def predict(self, entity, fields=None):
-        pass
+        query = eval(self.queryFunc)(entity)
+        targetIds = self.targetStore.load_all_in_ids(query, 0, self.windowSize)
+        targets = self.targetStore.load_all_by_ids(targetIds)
+        relation = MatchingRelation()
+        relation.set_argument(0, entity)
+        results = []
+        for target in targets:
+            relation.set_argument(1, target)
+            relation.compute()
+            rank = self.invertedMapping[[sign0(panda.predict(relation)) for panda in self.pandas]]
+            results.append((rank, target))
+        results.sort(reverse=True)
+        return results[:self.beamSize]
     
     def add_data(self, entity):
-        pass
-    
-    def train(self):
-        pass
-    
+        targetId = entity.get_raw('_targetId', None)
+        relevance = entity.get_raw('_relevance', 0)
+        if targetId:
+            target = self.targetStore.load_one_by_id(targetId)
+            relation = MatchingRelation()
+            relation.set_argument(0, entity)
+            relation.set_argument(1, target)
+            relation.compute()
+            relation.set_raw('_relevance', relevance)
+            self.tigress.supervise(self, relation)
+        
 class SPNTurtle(Turtle):
     pass
 

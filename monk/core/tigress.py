@@ -199,7 +199,42 @@ class MultiLabelTigress(PatternTigress):
          for panda in turtle.pandas if panda.name in targets]
         [panda.add_data(entity, -1, self.costs.get(panda.name, self.defaultCost))
          for panda in turtle.pandas if panda.name not in targets]
+
+class RankingTigress(Tigress):
+    """
+    Get the ranking results and measure the performance
+    Fields:
+        
+    """
+    def retrieve_target(self, entity):
+        return entity.get_raw('_relevance', 0)
+            
+    def supervise(self, turtle, entity):
+        t = self.retrieve_target(entity)
+        cost = self.costs.get(t, self.defaultCost)
+        ys = turtle.mapping[t]
+        [panda.add_data(entity, y, cost) for panda, y in izip(turtle.pandas, ys)]
+            
+    def measure(self, entity, predicted):
+        cm = self.confusionMatrix
+        target = self.retrieve_target(entity)
+        if target not in cm:
+            cm[target] = {predicted:1}
+        elif predicted not in cm[target]:
+            cm[target][predicted] = 1
+        else:
+            cm[target][predicted] += 1
+        self.total += 1
     
+    def RMS(self):
+        d = 0
+        total = 0
+        for t in self.confusionMatrix:
+            for p in self.confusionMatrix[t]:
+                d += self.confusionMatrix[t][p] * abs(t - p)
+                total += self.confusionMatrix[t][p]
+        return d / total
+
 class SelfTigress(Tigress):
     pass
 class SPNTigress(Tigress):

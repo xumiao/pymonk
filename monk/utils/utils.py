@@ -26,6 +26,9 @@ class DateTimeEncoder(simplejson.JSONEncoder):
         else:
             return super(DateTimeEncoder, self).default(obj)
 
+def binary2decimal(a):
+    return reduce(lambda x,y: (x + y) << 1, 0) / 2
+    
 def show(ent, fields=[], imgField=None):
     ret = ent.generic()
     if not fields:
