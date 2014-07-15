@@ -42,6 +42,11 @@ class Mantis(base.MONKObject):
     def __restore__(self):
         super(Mantis, self).__restore__()
         self.solver = None
+        if self.gamma < 1e-8:
+            self.gamma = 1
+        if self.rho < 1e-8:
+            self.rho = 1
+            
         try:
             self.mu = FlexibleVector(generic=self.mu)
             self.q  = FlexibleVector(generic=self.q)
@@ -110,8 +115,10 @@ class Mantis(base.MONKObject):
                                            'creator':leader},
                                           {'z':True}).get('z',[])
             z = FlexibleVector(generic=z)
+            logger.debug('checkout z {0}'.format(z))
             self.mu.copyUpdate(self.q)
             self.mu.add(z, -1)
+            logger.debug('update mu {0}'.format(self.mu))
             del z
         else:
             self.mu.copyUpdate(self.q)
@@ -123,7 +130,9 @@ class Mantis(base.MONKObject):
                                               'creator':follower},
                                              {'dq':True}).get('dq',[])
             fdq = FlexibleVector(generic=fdq)
+            logger.debug('merge {0} dq {1}'.format(follower, fdq))
             self.panda.z.add(fdq, 1.0 / (m + 1 / self.rho))
+            logger.debug('update z {0}'.format(self.panda.z))
             del fdq
         else:
             self.panda.z.add(self.dq, 1.0 / (m + 1 / self.rho))
@@ -152,6 +161,9 @@ class Mantis(base.MONKObject):
         self.mu.clear()
         self.q.clear()
         self.dq.clear()
+        logger.debug('mu {0}'.format(self.mu))
+        logger.debug('q {0}'.format(self.q))
+        logger.debug('dq {0}'.format(self.dq))
         crane.mantisStore.update_one_in_fields(self, {self.FDUALS : [],
                                                       self.FQ : [],
                                                       self.FDQ : []})

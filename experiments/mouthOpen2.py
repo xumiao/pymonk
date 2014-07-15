@@ -218,10 +218,13 @@ def reset():
                                            'user':user,
                                            'operation':'reset'})
         print producer.send(user, encodedMessage)
-        
-        
-
     
+    users['monk'] = 8
+    encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                       'user':'monk',
+                                       'operation':'reset'})
+    print producer.send('monk', encodedMessage)
+                                      
 #========================================== Data Preparation ======================================
 
 def retrieveData():

@@ -229,6 +229,8 @@ class LinearPanda(Panda):
     def reset(self):
         self.weights.clear()
         self.z.clear()
+        logger.debug('weights {0}'.format(self.weights))
+        logger.debug('z {0}'.format(self.z))
         self.store.update_one_in_fields(self, {self.FWEIGHTS:[],
                                                self.FCONSENSUS:[]})
         try:
