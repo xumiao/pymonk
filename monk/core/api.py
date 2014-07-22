@@ -224,7 +224,6 @@ def checkout(turtleName, user):
 def train(turtleName, user):
     _turtle = load_turtle(turtleName, user)
     if _turtle:
-        _turtle.checkout()
         _turtle.train()
         _turtle.commit()
         return True

@@ -97,16 +97,28 @@ class Mantis(base.MONKObject):
         return obj
     
     def train(self):
-        self.solver.setModel(self.q, self.mu)
+        # check out z
+        z = self.checkout(self.panda.leader)
+        # update mu
+        self.mu.add(self.q, 1)
+        self.mu.add(z, -1)
+        
+        # update w
+        self.solver.setModel(z, self.mu)
         self.solver.status()
         self.solver.trainModel()
         self.solver.status()
-        self.dq.clear()
-        rg = float(self.rho + self.gamma)
-        self.dq.add(self.q, - self.gamma / rg)
-        self.dq.add(self.panda.weights, self.gamma / rg)
-        self.dq.add(self.mu, (self.gamma - self.rho) / rg)
-        self.q.add(self.dq, 1)
+        
+        # update q
+        r = self.rho / float(self.rho + self.gamma)
+        self.dq.copyUpdate(self.q)        
+        self.q.clear()
+        self.q.add(z, r)
+        self.q.add(self.panda.weights, 1 - r)
+        self.q.add(self.mu, -r)
+        self.dq.add(self.q, -1)
+        del z
+
         logger.debug('relative difference of q {0}'.format(sqrt(self.dq.norm2() / (self.q.norm2() + 1e-12))))
     
     def checkout(self, leader):
@@ -116,13 +128,9 @@ class Mantis(base.MONKObject):
                                           {'z':True}).get('z',[])
             z = FlexibleVector(generic=z)
             logger.debug('checkout z {0}'.format(z))
-            self.mu.copyUpdate(self.q)
-            self.mu.add(z, -1)
-            logger.debug('update mu {0}'.format(self.mu))
-            del z
+            return z
         else:
-            self.mu.copyUpdate(self.q)
-            self.mu.add(self.panda.z, -1)
+            return self.panda.z
 
     def merge(self, follower, m):
         if follower != self.creator:
@@ -131,16 +139,19 @@ class Mantis(base.MONKObject):
                                              {'dq':True}).get('dq',[])
             fdq = FlexibleVector(generic=fdq)
             logger.debug('merge {0} dq {1}'.format(follower, fdq))
-            self.panda.z.add(fdq, 1.0 / (m + 1 / self.rho))
+            self.panda.z.add(fdq, - 1.0 / (m + 1 / self.rho))
             logger.debug('update z {0}'.format(self.panda.z))
             del fdq
         else:
-            self.panda.z.add(self.dq, 1.0 / (m + 1 / self.rho))
+            self.panda.z.add(self.dq,  - 1.0 / (m + 1 / self.rho))
+
+        crane.mantisStore.update_one_in_fields(self, {self.FCONSENSUS:self.z.generic()})
+
             
     def commit(self):
         crane.mantisStore.update_one_in_fields(self, {self.FDUALS : self.mu.generic(),
-                                                      self.FQ : self.q.generic(),
-                                                      self.FDQ : self.dq.generic()})
+                                                      self.FQ     : self.q.generic(),
+                                                      self.FDQ    : self.dq.generic()})
     
     def add_data(self, entity, y, c):
         da = self.data

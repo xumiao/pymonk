@@ -220,7 +220,6 @@ class LinearPanda(Panda):
         except:
             self.load_mantis()
             self.mantis.merge(follower, self.m)
-        self.commit()
     
     def predict(self, entity):
         entity[self.uid] = sigmoid(self.weights.dot(entity._features))
