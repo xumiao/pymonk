@@ -22,7 +22,7 @@ logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(mess
 
 turtleName = 'mouthOpenTurtle2'
 pandaName = 'mouthOpen2'
-kafkaHost = 'monkkafka.cloudapp.net:9092'
+kafkaHost = 'monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9094'
 kafkaTopic = 'expr'
 partitions = range(8)
 users = {}
@@ -453,6 +453,8 @@ def plotCurveFromFile(fileNames):
     #print '{0}\t{1}\t{2}\t{3}'.format(float(th[-1]), float(precision[-1]), float(recall[-1]), float(fpRate[-1]))      
     plot(groupTH, groupTP, groupFP, groupPrecision)    
 
+
+reset()
     
 if __name__=='__main__':
     

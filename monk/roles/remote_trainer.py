@@ -46,7 +46,6 @@ def onexit():
         kafka = None
     monkapi.exits()
     logger.info('remote_rainter {0} is shutting down'.format(os.getpid()))
-    exit(0)
 
 def handler(sig, hook = thread.interrupt_main):
     global kafka, consumer, producer
@@ -63,7 +62,7 @@ def handler(sig, hook = thread.interrupt_main):
     monkapi.exits()
     logger.info('remote_rainter {0} is shutting down'.format(os.getpid()))
     exit(1)
-
+    
 def server(configFile, partitions):
     global kafka, producer, consumer
     config = Configuration(configFile, "remote_trainer", str(os.getpid()))
@@ -75,13 +74,14 @@ def server(configFile, partitions):
     
     try:
         kafka = KafkaClient(config.kafkaConnectionString,timeout=None)
-        producer = KeyedProducer(kafka, async=False,
-                                 req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE,
+        producer = KeyedProducer(kafka, async=True,
+                                 req_acks=KeyedProducer.ACK_NOT_REQUIRED,
                                  ack_timeout=200)
         consumer = SimpleConsumer(kafka, config.kafkaGroup,
                                   config.kafkaTopic,
-                                  partitions=partitions)
-        #consumer.seek(0, 2)                                       
+                                  partitions=partitions,
+                                  iter_timeout=600)
+
         for message in consumer:
             logger.debug(message)
             try:
@@ -171,7 +171,7 @@ def server(configFile, partitions):
         onexit()
     finally:
         onexit()
-    
+
 if __name__=='__main__':
     configFile = 'monk_config.yml'
     kafkaPartitions = [0]
@@ -190,4 +190,5 @@ if __name__=='__main__':
         elif opt in ('-p', '--kafkaPartitions'):
             kafkaPartitions = eval(arg)
 
-    server(configFile, kafkaPartitions)
+    while 1:
+        server(configFile, kafkaPartitions)

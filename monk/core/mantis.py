@@ -96,9 +96,9 @@ class Mantis(base.MONKObject):
         obj.data = {}
         return obj
     
-    def train(self):
+    def train(self, leader):
         # check out z
-        z = self.checkout(self.panda.leader)
+        z = self.checkout(leader)
         # update mu
         self.mu.add(self.q, 1)
         self.mu.add(z, -1)

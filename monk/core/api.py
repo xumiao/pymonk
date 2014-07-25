@@ -66,7 +66,11 @@ def reloads(config=None):
     reload(mantis) 
     reload(panda)
     initialize(config)
-    
+
+
+def dummy():
+    pass
+
 # entity APIs
 def load_entities(entities=[], query={}, skip=0, num=100, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)

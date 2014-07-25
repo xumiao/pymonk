@@ -192,12 +192,12 @@ class LinearPanda(Panda):
         self.store.update_one_in_fields(self, {self.FWEIGHTS:self.weights.generic(),
                                                self.FCONSENSUS:self.z.generic()})
     
-    def train(self):
+    def train(self, leader):
         try:
-            self.mantis.train()
+            self.mantis.train(leader)
         except:
             self.load_mantis()
-            self.mantis.train()
+            self.mantis.train(leader)
     
     def checkout(self, leader):
         try:

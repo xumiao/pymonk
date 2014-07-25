@@ -133,12 +133,12 @@ cdef class SVMDual(object):
         self.alpha[j] = 0
         self.QD[j] = (self.gamma + self.rho) / (self.gamma * self.rho) * c + x.norm2()
         
-    def setModel(self, q, mu):
+    def setModel(self, z, mu):
         cdef int j
-        self.w.copyUpdate(q)
+        self.w.copyUpdate(z)
         for j in xrange(self.num_instances):
             self.w.addFast(self.x[j], self.y[j] * self.alpha[j])
-        self.w.addFast(mu, -2)
+        self.w.addFast(mu, -1)
         
     def trainModel(self):
         cdef int j, k, s, iteration

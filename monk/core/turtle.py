@@ -197,7 +197,7 @@ class Turtle(base.MONKObject):
             logger.info("turtle {0} does not have active superviser".format(self.name))
     
     def train(self):
-        [panda.train() for panda in self.pandas]
+        [panda.train(self.leader) for panda in self.pandas]
     
     def checkout(self):
         [panda.checkout(self.leader) for panda in self.pandas]
