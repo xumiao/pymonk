@@ -102,6 +102,7 @@ def clone_turtle(turtleName, user, follower):
         newTurtle.save()
         return newTurtle
     else:
+        follow_turtle_follower(turtleName, follower, user)
         logger.error('user {0} already has cloned this turtle'.format(user))
         return None
 
