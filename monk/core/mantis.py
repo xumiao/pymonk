@@ -127,7 +127,7 @@ class Mantis(base.MONKObject):
                                            'creator':leader},
                                           {'z':True}).get('z',[])
             z = FlexibleVector(generic=z)
-            logger.debug('checkout z {0}'.format(z))
+            #logger.debug('checkout z {0}'.format(z))
             return z
         else:
             return self.panda.z
@@ -138,14 +138,14 @@ class Mantis(base.MONKObject):
                                               'creator':follower},
                                              {'dq':True}).get('dq',[])
             fdq = FlexibleVector(generic=fdq)
-            logger.debug('merge {0} dq {1}'.format(follower, fdq))
+            #logger.debug('merge {0} dq {1}'.format(follower, fdq))
             self.panda.z.add(fdq, - 1.0 / (m + 1 / self.rho))
-            logger.debug('update z {0}'.format(self.panda.z))
+            #logger.debug('update z {0}'.format(self.panda.z))
             del fdq
         else:
             self.panda.z.add(self.dq,  - 1.0 / (m + 1 / self.rho))
 
-        crane.mantisStore.update_one_in_fields(self, {self.FCONSENSUS:self.z.generic()})
+        crane.pandaStore.update_one_in_fields(self.panda, {self.panda.FCONSENSUS:self.panda.z.generic()})
 
             
     def commit(self):
