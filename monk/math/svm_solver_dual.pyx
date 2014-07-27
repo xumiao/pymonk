@@ -111,7 +111,7 @@ cdef class SVMDual(object):
         for j in xrange(self.num_instances):
             self.alpha[j] = 0
             self.index[j] = j
-            self.QD[j] = (self.gamma + self.rho) / (self.gamma * self.rho) * self.c[j] + self.x[j].norm2()
+            self.QD[j] = ((self.gamma * self.rho) / (self.gamma + self.rho)) / (2 * self.c[j]) + self.x[j].norm2()
 
     def status(self):
         cdef int j
@@ -131,7 +131,7 @@ cdef class SVMDual(object):
         self.y[j] = y
         self.c[j] = c
         self.alpha[j] = 0
-        self.QD[j] = (self.gamma + self.rho) / (self.gamma * self.rho) * c + x.norm2()
+        self.QD[j] = ((self.gamma * self.rho) / (self.gamma + self.rho)) / (2 * c) + x.norm2()
         
     def setModel(self, z, mu):
         cdef int j
@@ -170,7 +170,7 @@ cdef class SVMDual(object):
                 xj = self.x[j]
                 
                 G = self.w.dot(xj) * yj - 1
-                G += alpha[j] * self.gamma * self.rho / ((self.gamma + self.rho) * self.c[j])
+                G += alpha[j] * self.gamma * self.rho / ((self.gamma + self.rho) * 2 * self.c[j])
                 
                 PG = 0
                 if alpha[j] <= 0:
