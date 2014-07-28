@@ -68,8 +68,11 @@ def reloads(config=None):
     initialize(config)
 
 
-def dummy():
-    pass
+def dummy(duration):
+    crane.entityStore.load_one_in_id({'name':'tests'})
+    import time
+    time.sleep(duration)
+    
 
 # entity APIs
 def load_entities(entities=[], query={}, skip=0, num=100, collectionName=None):
@@ -238,7 +241,10 @@ def train(turtleName, user):
 def get_leader(turtleName, user):
     _turtle = load_turtle(turtleName, user)
     if _turtle:
-        return _turtle.leader
+        if _turtle.leader is None:
+            return user
+        else:
+            return _turtle.leader
     else:
         logger.warning('can not find turtle by {0}@{1} to get leader'.format(user, turtleName))
         return None

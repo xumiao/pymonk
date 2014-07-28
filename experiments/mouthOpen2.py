@@ -7,7 +7,7 @@ Created on Tue Apr 01 17:47:38 2014
 
 import pymongo as pm
 from kafka.client import KafkaClient
-from kafka.producer import UserProducer
+from kafka.producer import UserProducer, KeyedProducer
 import simplejson
 import logging
 from monk.math.flexible_vector import FlexibleVector
@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
-                    level=logging.DEBUG)
+                    level=logging.ERROR)
 
 turtleName = 'mouthOpenTurtle2'
 pandaName = 'mouthOpen2'
@@ -123,7 +123,7 @@ def train(numIters):
     global users
     checkUserPartitionMapping()
     kafka = KafkaClient(kafkaHost, timeout=None)
-    producer = UserProducer(kafka, kafkaTopic, users, async=False,
+    producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
                       req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                       ack_timeout=200)
     for i in range(numIters):
@@ -133,6 +133,10 @@ def train(numIters):
                                                'operation':'train',
                                                'iteration':i})
             print i, producer.send(user, encodedMessage)
+    
+    producer.stop(1)
+    kafka.close()
+
 
 def test(isPersonalized):
     global users
@@ -206,13 +210,29 @@ def evaluate(resGTs, curvefile=None):
     
     plotUserCurve(thres, precisions, recalls, FPrates)
 
+def offsetCommit():
+    global users
+    checkUserPartitionMapping()
+    kafkaClient = KafkaClient(kafkaHost, timeout=None)
+    producer = KeyedProducer(kafkaClient, async=False,
+                      req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
+                      ack_timeout=200)
+    for partition in partitions:
+        encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                           'user':'',
+                                           'operation':'offsetCommit'})
+        print producer.send(kafkaTopic, partition, encodedMessage)
+    producer.stop(1)
+    kafkaClient.close()
+    
 def reset():
     global users
     checkUserPartitionMapping()
     kafka = KafkaClient(kafkaHost, timeout=None)
-    producer = UserProducer(kafka, kafkaTopic, users, async=False,
+    producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
                       req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                       ack_timeout=200)
+
     for user, partitionId in users.iteritems():            
         encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                            'user':user,
@@ -224,6 +244,8 @@ def reset():
                                        'user':'monk',
                                        'operation':'reset'})
     print producer.send('monk', encodedMessage)
+    producer.stop(1)
+    kafka.close()
                                       
 #========================================== Data Preparation ======================================
 
@@ -453,9 +475,6 @@ def plotCurveFromFile(fileNames):
     #print '{0}\t{1}\t{2}\t{3}'.format(float(th[-1]), float(precision[-1]), float(recall[-1]), float(fpRate[-1]))      
     plot(groupTH, groupTP, groupFP, groupPrecision)    
 
-
-reset()
-    
 if __name__=='__main__':
     
     #reset()

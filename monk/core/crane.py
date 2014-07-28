@@ -177,7 +177,17 @@ class Crane(object):
             logger.warning('can not pull fields {0} from document {1}'.format(fields, obj._id))
             return False
         return True
-            
+    
+    def update_in_fields(self, query, fields):
+        obj = self.load_one_in_id(query)
+        try:
+            self._coll.update({'_id':obj['_id']}, {'$set':fields}, upsert=True)
+        except Exception as e:
+            logger.warning(e.message)
+            logger.warning('can not update document {0} in fields {1}'.format(obj, fields))
+            return False
+        return True
+        
     def update_one_in_fields(self, obj, fields):
         # fields are in flat form
         # 'f1.f2':'v' is ok, 'f1.f3' won't be erased
