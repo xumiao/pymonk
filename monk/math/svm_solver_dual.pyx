@@ -52,6 +52,7 @@ cdef class SVMDual(object):
     cpdef public int num_instances
     cpdef public float rho
     cpdef public float gamma
+    cdef public float rho0
     cdef int active_size
     cdef list x # features
     cdef int* y # target array
@@ -73,6 +74,7 @@ cdef class SVMDual(object):
         self.max_num_iters = max_num_iters
         self.max_num_instances = max_num_instances
         self.num_instances = 0
+        self.rho0 = rho * gamma / (2 * (rho + gamma))
         
         self.x     = [None for j in xrange(self.max_num_instances)]
         self.y     = <int*>calloc(self.max_num_instances, cython.sizeof(int))
@@ -111,7 +113,7 @@ cdef class SVMDual(object):
         for j in xrange(self.num_instances):
             self.alpha[j] = 0
             self.index[j] = j
-            self.QD[j] = (self.gamma + self.rho) / (self.gamma * self.rho) * self.c[j] + self.x[j].norm2()
+            self.QD[j] = self.rho0 / self.c[j] + self.x[j].norm2()
 
     def status(self):
         cdef int j
@@ -131,7 +133,7 @@ cdef class SVMDual(object):
         self.y[j] = y
         self.c[j] = c
         self.alpha[j] = 0
-        self.QD[j] = (self.gamma + self.rho) / (self.gamma * self.rho) * c + x.norm2()
+        self.QD[j] = self.rho0 / c + x.norm2()
         
     def setModel(self, z, mu):
         cdef int j
@@ -170,7 +172,7 @@ cdef class SVMDual(object):
                 xj = self.x[j]
                 
                 G = self.w.dot(xj) * yj - 1
-                G += alpha[j] * self.gamma * self.rho / ((self.gamma + self.rho) * self.c[j])
+                G += alpha[j] * self.rho0 / self.c[j]
                 
                 PG = 0
                 if alpha[j] <= 0:
