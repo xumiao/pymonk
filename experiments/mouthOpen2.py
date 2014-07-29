@@ -23,7 +23,7 @@ logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(mess
 turtleName = 'mouthOpenTurtle2'
 pandaName = 'mouthOpen2'
 kafkaHost = 'monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9094'
-kafkaTopic = 'expr'
+kafkaTopic = 'expr2'
 partitions = range(8)
 users = {}
 trainData = {}          # the ObjectID of the selected data in DB
@@ -165,10 +165,12 @@ def centralizedTest(isPersonalized):
     mcl = pm.MongoClient('10.137.168.196:27017')
     coll = mcl.DataSet['PMLExpression']
     MONKModelPandaStore = mcl.MONKModel['PandaStore']
-    monkpa = MONKModelPandaStore.find_one({'creator': 'monk', 'name': pandaName}, {'_id':True, 'weights':True, 'z':True}, timeout=False)
+    monkpa = MONKModelPandaStore.find_one({'creator': 'monk2', 'name': pandaName}, {'_id':True, 'weights':True, 'z':True}, timeout=False)
     resGTs = {}
     for user in testData.keys():
         if user == '':
+            continue
+        if users[user] < 4:
             continue
         pa = MONKModelPandaStore.find_one({'creator': user, 'name': pandaName}, {'_id':True, 'weights':True, 'z':True}, timeout=False)
         if pa == None:
@@ -219,11 +221,11 @@ def reset():
                                            'operation':'reset'})
         print producer.send(user, encodedMessage)
     
-    users['monk'] = 8
+    users['monk2'] = 8
     encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                       'user':'monk',
+                                       'user':'monk2',
                                        'operation':'reset'})
-    print producer.send('monk', encodedMessage)
+    print producer.send('monk2', encodedMessage)
                                       
 #========================================== Data Preparation ======================================
 
@@ -454,7 +456,7 @@ def plotCurveFromFile(fileNames):
     plot(groupTH, groupTP, groupFP, groupPrecision)    
 
 
-reset()
+#reset()
     
 if __name__=='__main__':
     
@@ -466,19 +468,19 @@ if __name__=='__main__':
 ##    add_users()
 ##    print "add_data"
 ##    add_data()
-    print "train"
-    train(10)
-#    
-#    print "test"
-#    isPersonalized = True
-#    resGTs = centralizedTest(isPersonalized)
-#    destfile = open("resGTs", 'w')       # save result and gt
-#    pickle.dump(resGTs, destfile)
-#    destfile.close()
+#    print "train"
+#    train(10)
     
-#    print "evaluate"
-#    file = open("resGTs_consensus", 'r')
-#    resGTs_consensus = pickle.load(file)
-#    file.close()
-#    evaluate(resGTs_consensus, "acc.curve")
+    print "test"
+    isPersonalized = False
+    resGTs = centralizedTest(isPersonalized)
+    destfile = open("resGTs_consensus", 'w')       # save result and gt
+    pickle.dump(resGTs, destfile)
+    destfile.close()
+    
+    print "evaluate"
+    file = open("resGTs_consensus", 'r')
+    resGTs_consensus = pickle.load(file)
+    file.close()
+    evaluate(resGTs_consensus, "acc.curve")
 

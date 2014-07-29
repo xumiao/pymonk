@@ -155,7 +155,7 @@ cdef class SVMDual(object):
         cdef float PGmin_old = -1e10
         cdef float PGmax_new
         cdef float PGmin_new
-                 
+        logger.debug('gamma in svm_solver_dual.trainModel {0}'.format(self.gamma))                 
         iteration = 0
         while iteration < self.max_num_iters:
             PGmax_new = -1e10

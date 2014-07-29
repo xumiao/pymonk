@@ -52,11 +52,14 @@ class Mantis(base.MONKObject):
             self.q  = FlexibleVector(generic=self.q)
             self.dq = FlexibleVector(generic=self.dq)
             self.data = {ObjectId(k) : v for k,v in self.data.iteritems()}
+            self.gamma = 0.1
             return True
         except Exception as e:
             logger.error('error {0}'.format(e.message))
             logger.error('can not create a solver for {0}'.format(self.panda.name))
             return False
+            
+        
                 
     def initialize(self, panda):
         self.panda = panda
@@ -102,7 +105,7 @@ class Mantis(base.MONKObject):
         # update mu
         self.mu.add(self.q, 1)
         self.mu.add(z, -1)
-        
+        logger.debug('gamma in mantis {0}'.format(self.gamma))
         # update w
         self.solver.setModel(z, self.mu)
         self.solver.status()
