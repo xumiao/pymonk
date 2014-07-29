@@ -219,7 +219,7 @@ cdef class FlexibleVector(object):
     def __str__(self):
         a = []
         cdef SkipNodeA* currA = self.head.nextA[0]
-        cdef int height
+        cdef int height, j
         cdef long i
         while currA != NULL:
             b = []
@@ -227,9 +227,14 @@ cdef class FlexibleVector(object):
                 b.append('*')
             for height in xrange(currA.height, self.height):
                 b.append('|')
+            j = 0
             for i in xrange(currA.length):
                 if currA.values[i] != 0:
                     b.append('{0}:{1:.4}'.format(currA.index + i, currA.values[i]))
+                    j += 1
+                    if j == 4:
+                        b.append('...')
+                        break
             a.append(' '.join(b))
             currA = currA.nextA[0]
         return '\n'.join(a)

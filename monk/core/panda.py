@@ -173,11 +173,11 @@ class LinearPanda(Panda):
     
     def increment(self):
         self.m += 1
-        self.store.update_one_in_fields(self, {self.FNUMFOLLOWERS:self.m})
+        self.update_fields({self.FNUMFOLLOWERS:self.m})
     
     def decrease(self):
         self.m -= 1
-        self.store.update_one_in_fields(self, {self.FNUMFOLLOWERS:self.m})
+        self.update_fields({self.FNUMFOLLOWERS:self.m})
         
     def add_features(self, uids):
         self.weights.addKeys(uids)
@@ -189,8 +189,8 @@ class LinearPanda(Panda):
         self.z.update(genericW.get(self.FCONSENSUS, []))
     
     def push_model(self):
-        self.store.update_one_in_fields(self, {self.FWEIGHTS:self.weights.generic(),
-                                               self.FCONSENSUS:self.z.generic()})
+        self.update_fields({self.FWEIGHTS:self.weights.generic(),
+                            self.FCONSENSUS:self.z.generic()})
     
     def train(self, leader):
         try:
@@ -230,13 +230,14 @@ class LinearPanda(Panda):
         self.z.clear()
         logger.debug('weights {0}'.format(self.weights))
         logger.debug('z {0}'.format(self.z))
-        self.store.update_one_in_fields(self, {self.FWEIGHTS:[],
-                                               self.FCONSENSUS:[]})
+        self.update_fields({self.FWEIGHTS:[],
+                            self.FCONSENSUS:[]})
+        logger.debug('resetting mantis')
         try:
             self.mantis.reset()
         except:
-            self.load_mantis()
-            self.mantis.reset()        
+            crane.mantisStore.update_in_fields({Mantis.NAME:self.name, Mantis.CREATOR:self.creator}, 
+                                               {Mantis.FDUALS : [], Mantis.FQ : [], Mantis.FDQ : []})
 
 base.register(Panda)
 base.register(ExistPanda)

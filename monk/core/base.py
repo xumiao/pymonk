@@ -103,7 +103,11 @@ class MONKObject(object):
             logger.error(e.message)
             logger.error('can not clone {0}'.format(self.generic()))
             return None
-        
+    
+    def update_fields(self, fields={}):
+        if fields:
+            self.store.update_one_in_fields(self, fields)
+            
     @classmethod
     def get_type_name(cls):
         return cls.__name__

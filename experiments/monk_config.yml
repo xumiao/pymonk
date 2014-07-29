@@ -1,9 +1,9 @@
-modelConnectionString : 10.137.168.196:27017
+modelConnectionString : localhost:27017
 modelDataBaseName : MONKModel
-dataConnectionString : 10.137.168.196:27017
+dataConnectionString : localhost:27017
 dataDataBaseName : DataSet
 entityCollectionName : PMLExpression
-uidConnectionString : 10.137.168.196:27017
+uidConnectionString : localhost:27017
 uidDataBaseName : uidDB
 kafkaConnectionString : monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9094
 kafkaGroup : expr2
@@ -32,7 +32,7 @@ loggingConfig:
             level : DEBUG
             propagate : True
         kafka :
-            level : DEBUG
+            level : WARNING
             propagate : True
     root :
         level : DEBUG
