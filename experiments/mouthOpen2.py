@@ -23,7 +23,7 @@ logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(mess
 turtleName = 'mouthOpenTurtle2'
 pandaName = 'mouthOpen2'
 kafkaHost = 'monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9094'
-kafkaTopic = 'expr2'
+kafkaTopic = 'expr'
 partitions = range(8)
 users = {}
 trainData = {}          # the ObjectID of the selected data in DB
@@ -169,12 +169,10 @@ def centralizedTest(isPersonalized):
     mcl = pm.MongoClient('10.137.168.196:27017')
     coll = mcl.DataSet['PMLExpression']
     MONKModelPandaStore = mcl.MONKModel['PandaStore']
-    monkpa = MONKModelPandaStore.find_one({'creator': 'monk2', 'name': pandaName}, {'_id':True, 'weights':True, 'z':True}, timeout=False)
+    monkpa = MONKModelPandaStore.find_one({'creator': 'monk', 'name': pandaName}, {'_id':True, 'weights':True, 'z':True}, timeout=False)
     resGTs = {}
     for user in testData.keys():
         if user == '':
-            continue
-        if users[user] < 4:
             continue
         pa = MONKModelPandaStore.find_one({'creator': user, 'name': pandaName}, {'_id':True, 'weights':True, 'z':True}, timeout=False)
         if pa == None:
@@ -241,13 +239,35 @@ def reset():
                                            'operation':'reset'})
         print producer.send(user, encodedMessage)
     
-    users['monk2'] = 8
+    users['monk'] = 8
     encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                       'user':'monk2',
+                                       'user':'monk',
                                        'operation':'reset'})
-    print producer.send('monk2', encodedMessage)
+    print producer.send('monk', encodedMessage)
     producer.stop(1)
     kafka.close()
+    
+def reset_all_data():
+    global users
+    checkUserPartitionMapping()
+    kafka = KafkaClient(kafkaHost, timeout=None)
+    producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
+                      req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
+                      ack_timeout=200)
+
+    for user, partitionId in users.iteritems():            
+        encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                           'user':user,
+                                           'operation':'reset_all_data'})
+        print producer.send(user, encodedMessage)
+    
+    users['monk'] = 8
+    encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                       'user':'monk',
+                                       'operation':'reset_all_data'})
+    print producer.send('monk', encodedMessage)
+    producer.stop(1)
+    kafka.close()    
                                       
 #========================================== Data Preparation ======================================
 
