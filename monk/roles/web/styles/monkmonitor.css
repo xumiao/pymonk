@@ -1,0 +1,605 @@
+.module.insetFullWidth {
+  font-size: 160%;
+}
+
+#main div.storyHeader h1 {
+    font-size: 26px;
+    margin-bottom: 4px;
+    margin-top: 30px;
+    margin-left: 40px;
+}
+
+#main #interactiveFooter {
+    border-top:1px solid #ddd;
+    padding-top:12px;
+    width: 600px;
+    margin: 10px auto;
+}
+
+#main .storySummary {
+  margin-left: 40px;
+}
+
+#main .storySummary .summary{
+  font-size: 15px;
+  margin-top: 10px;
+  z-index: 1000;
+  position: relative;
+}
+
+.g-shell {
+  margin: -20px 10px 10px;
+  font-family: georgia;
+  position: relative;
+}
+
+.g-analysis {
+  width: 600px;
+  margin-left: 180px;
+}
+
+.g-analysis h3 {
+  font-size: 23px;
+  margin: 40px 0 25px;
+  font-family: Georgia;
+  font-weight: normal;
+  clear: both;
+}
+
+.g-analysis h4,
+.g-chart h4 {
+  font-size: 15px;
+  margin: 20px 0 10px;
+  color: #333;
+  font-family: Arial;
+  font-weight: bold;
+}
+
+.g-analysis h5 {
+  font-size: 10px;
+  line-height: 18px;
+  margin-bottom: 6px;
+  font-weight: normal;
+  text-transform: uppercase;
+  font-family: Helvetica, Arial;
+  color: #333;
+}
+
+.g-copy {
+  font-size: 15px;
+  line-height: 1.5em;
+  margin: 20px 0 20px 0;
+}
+
+.g-credit {
+  font-size: 9px;
+  line-height: 9px;
+  color: #999;
+  font-family: Arial;
+  text-align: right;
+  margin: 4px 0 8px;
+}
+
+.g-chart {
+  font-size: 13px;
+  line-height: 1.5em;
+  position: relative;
+}
+
+.g-main-chart h4 {
+  font-size: 14px;
+  position: absolute;
+  top: 8px;
+  left: 40px;
+  padding-right: 10px;
+  background: white;
+}
+
+.g-main-chart h4 span {
+  font-weight: normal;
+  font-size: 12px;
+  color: #999;
+}
+
+.g-legend {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: Arial;
+  font-size: 11px;
+  line-height: 11px;
+  background: white;
+  padding: 0 4px 10px 0;
+}
+
+.g-legend select {
+  width: 160px;
+  color: hsl(39, 80%, 40%);
+  font-size: 12px;
+  padding: 2px;
+  float: left;
+  margin-top: -4px;
+}
+
+.g-legend a {
+  font-size: 9px;
+  line-height: 10px;
+  padding: 3px;
+  border-radius: 8px;
+  width: 9px;
+  height: 9px;
+  text-align: center;
+  background: #ddd;
+  text-shadow: 0px 1px 4px rgba(0, 0, 0, 0.15);
+  color: white;
+  position: relative;
+  top: -2px;
+  left: 6px;
+}
+
+.g-pitch-chart a,
+.g-bat-chart a {
+  top: -4px;
+}
+
+.g-legend a:hover {
+  text-decoration: none;
+  background: #aaa;
+}
+
+/*.g-pitch-chart .g-legend select:focus,
+.g-bat-chart select:focus {
+  outline-style: none;
+  border: solid 1px hsl(200, 70%, 50%);
+}*/
+
+.g-pitch-chart select,
+.g-bat-chart select {
+  /*-webkit-appearance: none;*/
+  /*border: solid 1px #dfdfdf;*/
+  /*border: none;*/
+  font-size: 10px;
+  margin-left: -4px;
+  /*font-family: Arial;*/
+  /*background: hsl(39, 60%, 97%);*/
+  /*border-radius: 3px;*/
+  /*color: hsl(39, 80%, 40%);*/
+  width: 120px;
+}
+
+.g-legend svg {
+  float: left;
+  margin: 3px 14px 3px 0;
+}
+
+.g-average-legend {
+  margin: 0 0 10px 0;
+}
+
+.g-main-chart {
+  position: static;
+  margin-bottom: 30px;
+}
+
+.g-main-chart .y.axis .tick:nth-child(9) text {
+  display: none;
+}
+
+.g-main-chart .g-legend select {
+  -webkit-appearance: menulist;
+}
+
+.g-main-chart .g-legend {
+  font-size: 12px;
+  left: 40px;
+  top: 56px;
+}
+
+.g-main-chart .g-average-legend {
+  margin-bottom: 13px;
+}
+
+.g-overlay {
+  position: absolute;
+}
+
+.g-shell .g-aside {
+  font-size: 11px;
+  line-height: 1.3em;
+  color: #999;
+  font-family: Arial, Helvetica;
+}
+
+svg {
+  font-family: Helvetica, Arial;
+}
+
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  font-size: 11px;
+  text-anchor: start !important;
+}
+
+.axis path {
+  display: none;
+}
+
+#g-y-axis-title {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.y.axis text {
+  fill: #999;
+}
+
+.y.axis .minor line {
+  stroke: #ccc;
+  stroke-dasharray: 2,4;
+}
+
+.x.axis .minor text {
+  display: none;
+}
+
+.x.axis text {
+}
+
+.g-bg-circle {
+  fill: #dfdfdf;
+  opacity: 1;
+}
+
+.g-mean-circle {
+  fill: hsl(200, 80%, 30%);
+  stroke-width: 1px;
+  stroke: #fff;
+  stroke-opacity: 0.5;
+}
+
+.g-secondary-mean-circle {
+  fill: #777;
+  stroke-width: 1px;
+  stroke: #fff;
+  stroke-opacity: 0.5;
+}
+
+circle.g-highlight {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: 0.5;
+}
+
+.g-mean-line {
+  fill: none;
+  stroke-width: 2px;
+  stroke: hsl(200, 80%, 30%);
+}
+
+.g-secondary-mean-line {
+ fill: none;
+ stroke-width: 2px;
+ stroke: #777;
+}
+
+.g-mean-text {
+  pointer-events: none;
+  font-family: Helvetica, Arial;
+  text-anchor: middle;
+  font-size: 10px;
+}
+
+.g-mean-text .number {
+  font-weight: bold;
+  font-size: 24px;
+  fill: hsl(200, 80%, 30%);
+}
+
+.g-mean-label {
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.g-mean-text .small.number {
+  fill: #777;
+  font-size: 12px;
+}
+
+.annotation-line {
+  stroke: #000;
+  stroke-opacity: 0.15;
+  stroke-width: 1px;
+  pointer-events: none;
+}
+
+
+.g-text-annotation {
+  font-size: 11px;
+  font-family: Arial;
+  fill: #999;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.scatterplot-general-dots {
+  fill: #ccc;
+  opacity: .3;
+}
+
+svg circle {
+  fill: #ddd;
+  opacity:.8;
+}
+
+.g-overlay,
+.g-overlay circle {
+  fill: none;
+  pointer-events: all;
+}
+
+svg .g-team.g-team-selected,
+svg .g-team.g-team-hovered {
+  display: inline;
+}
+
+.g-team {
+  cursor: default;
+}
+
+svg .g-team {
+  display: none;
+}
+
+svg .g-team path{
+  fill: none;
+  stroke: #aaa;
+  stroke-width: 1px;
+  stroke-opacity: 0.5;
+}
+
+svg .g-team.g-team-selected path{
+  stroke: orange;
+  stroke-width: 1.5px;
+}
+
+.g-legend text {
+  font-size: 11px;
+  fill: #666;
+}
+
+.g-average-legend {
+  color: hsl(200, 70%, 40%);
+}
+
+.g-average-legend line {
+  stroke: hsl(200, 80%, 30%);
+  stroke-width: 2px;
+}
+
+.g-average-legend circle {
+  fill: hsl(200, 80%, 30%);
+  stroke: none;
+}
+
+.g-selected-legend {
+  color: hsl(39, 60%, 50%);
+}
+
+.g-selected-legend line {
+  stroke: hsl(39, 90%, 50%);
+  stroke-width: 2px;
+}
+
+.g-selected-legend circle {
+  fill: hsl(39, 90%, 50%);
+  stroke: none;
+}
+
+.selected-team {
+  fill: hsl(39, 90%, 50%);
+  color: hsl(39, 90%, 50%);
+  font-size: 12px;
+}
+
+svg .g-team circle {
+  fill: #aaa;
+}
+
+svg .g-team.g-team-selected circle {
+  stroke: white;
+  stroke-opacity: 0.5;
+  fill: orange;
+}
+
+.g-pitch-chart {
+  margin: 0 0 35px 0;
+}
+
+.g-pitch-chart .g-legend {
+  top: 35px;
+}
+
+.g-pitch-chart .g-left {
+  position: absolute;
+  left: -170px;
+  top: 100px;
+  width: 150px;
+}
+
+.g-pitch-chart .g-right {
+  position: absolute;
+  left: 610px;
+  top: -200px;
+  width: 150px;
+}
+
+.g-strikeout-table {
+  overflow: hidden;
+}
+
+.g-strikeout-table .g-league {
+  width: 284px;
+  float: left;
+  margin-left: 30px;
+}
+
+.g-strikeout-table .g-league:first-child {
+  margin-left: 0;
+}
+
+.g-strikeout-table tr {
+  cursor: pointer;
+}
+
+.g-strikeout-table tr:hover .g-franchise{
+  text-decoration: underline;
+}
+
+.g-shell table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Helvetica, Arial;
+  font-size: 11px;
+  line-height: 24px;
+  color: #999;
+  border-top: solid 1px #dedede;
+  margin-bottom: 20px;
+}
+
+.g-shell td {
+  padding: 0 4px 0 8px;
+  border-bottom: solid 1px #dedede;
+}
+
+.g-shell .g-record-row {
+  color: #000;
+  background: hsl(204, 26%, 94%);
+}
+
+.g-record {
+  font-weight: bold;
+  color: black;
+  padding: 4px;
+  font-size: 10px;
+  line-height: 12px;
+  width: 31px;
+}
+
+.g-strikeout-table .g-designations {
+  width: 50px;
+}
+
+.g-strikeout-table .g-designations div {
+  padding: 4px;
+  font-size: 9px;
+  line-height: 12px;
+  width: 45px;
+}
+
+.g-strikeout-table .g-designations div.g-record {
+  font-size: 10px;
+}
+
+.g-strikeout-table .g-franchise {
+  width: 200px;
+}
+
+.g-strikeout-table .g-team-selected {
+  color: hsl(39, 80%, 40%);
+  background: hsl(39, 90%, 90%);
+}
+
+.g-chart-subhed {
+  font-size:11px;
+  font-weight:normal;
+}
+
+.g-pitchcount {
+ font-size:11px;
+ font-weight:normal;
+}
+
+.g-bat-chart {
+}
+
+.g-bat-chart .g-legend{
+  top: 15px;
+  background: none;
+}
+
+.g-anno-container {
+  font-family: arial;
+  width: 70px;
+  position: absolute;
+  font-size: 11px;
+  line-height: 1.3em;
+}
+
+.g-anno-container strong {
+  display:block;
+}
+
+.col-group {
+}
+.col1 {
+  width: 290px;
+}
+.col2 {
+  width: 290px;
+}
+
+.g-related {
+  border-top: solid 1px #ddd;
+  padding: 20px 0 10px;
+  margin: 90px 0 0;
+  display: block;
+  line-height: 1.5em;
+  clear: both;
+}
+
+.g-related img {
+  width: 220px;
+  margin: -10px 20px 0 0;
+  float: left;
+}
+
+.g-related .g-refer {
+  color: #999;
+  font-family: Arial;
+  text-transform: uppercase;
+  font-size: 9px;
+  margin-bottom: 0px;
+}
+
+.g-related .g-head {
+  font-size: 16px;
+  line-height: 1.3em;
+  margin-bottom: 4px;
+  font-weight: bold;
+  color: #004276;
+}
+
+.g-related .g-summary {
+  font-size: 12px;
+  line-height: 1.4em;
+  color: #666;
+}
+
+.g-related:hover {
+  text-decoration: none;
+}
+
+.g-related:hover .g-head {
+  text-decoration: underline;
+}
+
+.g-hide-hover {
+  -webkit-transition: opacity 0.5s;
+  -moz-transition: opacity 0.5s;
+  transition: opacity 0.5s;
+}

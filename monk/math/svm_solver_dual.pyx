@@ -13,6 +13,7 @@ from __future__ import division
 cimport cython
 from libc.stdlib cimport malloc, free, calloc, rand
 from monk.math.flexible_vector import FlexibleVector
+from monk.utils.utils import encodeMetric
 import logging
 logger = logging.getLogger('monk.svm_solver_dual')
 
@@ -125,7 +126,7 @@ cdef class SVMDual(object):
             yj = self.y[j]
             l = max(0, 1 - self.w.dot(xj) * yj) 
             loss += l * l
-        logger.debug('objective = {0}'.format(loss))
+        return loss
         
     def setData(self, x, y, c, ind):
         cdef int j = ind

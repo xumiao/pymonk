@@ -10,6 +10,7 @@ import StringIO
 
 import simplejson
 import datetime
+import time
 from IPython.core.display import Image
 import logging
 
@@ -26,6 +27,13 @@ class DateTimeEncoder(simplejson.JSONEncoder):
         else:
             return super(DateTimeEncoder, self).default(obj)
 
+def currentTimeMillisecond():
+    t = datetime.datetime.now()
+    return (time.mktime(t.timetuple())*1e3 + t.microsecond/1e3) % 1e8
+    
+def encodeMetric(monkobj, name, value):
+    return 'user={0},time={1},{2}={3}'.format(monkobj.creator, currentTimeMillisecond(), name, value)
+    
 def binary2decimal(a):
     return reduce(lambda x,y: (x + y) << 1, 0) / 2
     

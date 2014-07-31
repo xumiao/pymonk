@@ -10,8 +10,11 @@ from numpy import sqrt
 from ..math.svm_solver_dual import SVMDual
 from ..math.flexible_vector import FlexibleVector
 from bson.objectid import ObjectId
+from ..utils.utils import encodeMetric
 import logging
+
 logger = logging.getLogger("monk.mantis")
+metricLog = logging.getLogger("metric")
 
 class Mantis(base.MONKObject):
     FEPS   = 'eps'
@@ -105,9 +108,13 @@ class Mantis(base.MONKObject):
         
         # update w
         self.solver.setModel(z, self.mu)
-        self.solver.status()
+        loss = self.solver.status()
+        logger.debug('objective = {0}'.format(loss))
+        metricLog.info(encodeMetric(self, 'loss', loss))
         self.solver.trainModel()
-        self.solver.status()
+        loss = self.solver.status()
+        logger.debug('objective = {0}'.format(loss))
+        metricLog.info(encodeMetric(self, 'loss', loss))
         
         # update q
         r = self.rho / float(self.rho + self.gamma)
@@ -118,8 +125,10 @@ class Mantis(base.MONKObject):
         self.q.add(self.mu, -r)
         self.dq.add(self.q, -1)
         del z
-
-        logger.debug('relative difference of q {0}'.format(sqrt(self.dq.norm2() / (self.q.norm2() + 1e-12))))
+        
+        rd = sqrt(self.dq.norm2() / (self.q.norm2() + 1e-12))
+        logger.debug('relative difference of q {0}'.format(rd))
+        metricLog.info(encodeMetric(self, '|dq|/|q|', rd))
     
     def checkout(self, leader):
         if leader:
@@ -140,7 +149,9 @@ class Mantis(base.MONKObject):
             self.panda.z.add(fdq, - 1.0 / (m + 1 / self.rho))
             logger.debug('m = {0}'.format(m))
             logger.debug('update z {0}'.format(self.panda.z))
-            logger.debug('relative difference of z {0}'.format(sqrt(fdq.norm2() / (self.panda.z.norm2() + 1e-12))))
+            rd = sqrt(fdq.norm2() / (self.panda.z.norm2() + 1e-12))
+            logger.debug('relative difference of z {0}'.format(rd))
+            metricLog.info(encodeMetric(self, '|dz|/|z|', rd))
             del fdq
         else:
             self.panda.z.add(self.dq,  - 1.0 / (m + 1 / self.rho))

@@ -32,7 +32,6 @@ consumer = None
 
 def print_help():
     print 'remote_trainer.py -c <configFile> -p <kafkaPartitions, e.g., range(1,8)>'
-
     
 def onexit():
     closeKafka()
