@@ -246,6 +246,28 @@ def reset():
     print producer.send('monk', encodedMessage)
     producer.stop(1)
     kafka.close()
+    
+def reset_all_data():
+    global users
+    checkUserPartitionMapping()
+    kafka = KafkaClient(kafkaHost, timeout=None)
+    producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
+                      req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
+                      ack_timeout=200)
+
+    for user, partitionId in users.iteritems():            
+        encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                           'user':user,
+                                           'operation':'reset_all_data'})
+        print producer.send(user, encodedMessage)
+    
+    users['monk'] = 8
+    encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                       'user':'monk',
+                                       'operation':'reset_all_data'})
+    print producer.send('monk', encodedMessage)
+    producer.stop(1)
+    kafka.close()    
                                       
 #========================================== Data Preparation ======================================
 
@@ -475,6 +497,9 @@ def plotCurveFromFile(fileNames):
     #print '{0}\t{1}\t{2}\t{3}'.format(float(th[-1]), float(precision[-1]), float(recall[-1]), float(fpRate[-1]))      
     plot(groupTH, groupTP, groupFP, groupPrecision)    
 
+
+#reset()
+    
 if __name__=='__main__':
     
     #reset()
@@ -485,19 +510,19 @@ if __name__=='__main__':
 ##    add_users()
 ##    print "add_data"
 ##    add_data()
-    print "train"
-    train(10)
-#    
-#    print "test"
-#    isPersonalized = True
-#    resGTs = centralizedTest(isPersonalized)
-#    destfile = open("resGTs", 'w')       # save result and gt
-#    pickle.dump(resGTs, destfile)
-#    destfile.close()
+#    print "train"
+#    train(10)
     
-#    print "evaluate"
-#    file = open("resGTs_consensus", 'r')
-#    resGTs_consensus = pickle.load(file)
-#    file.close()
-#    evaluate(resGTs_consensus, "acc.curve")
+    print "test"
+    isPersonalized = False
+    resGTs = centralizedTest(isPersonalized)
+    destfile = open("resGTs_consensus", 'w')       # save result and gt
+    pickle.dump(resGTs, destfile)
+    destfile.close()
+    
+    print "evaluate"
+    file = open("resGTs_consensus", 'r')
+    resGTs_consensus = pickle.load(file)
+    file.close()
+    evaluate(resGTs_consensus, "acc.curve")
 

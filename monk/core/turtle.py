@@ -212,7 +212,10 @@ class Turtle(base.MONKObject):
         [panda.merge(follower) for panda in self.pandas]
     
     def reset(self):
-        [panda.reset() for panda in self.pandas]       
+        [panda.reset() for panda in self.pandas]    
+        
+    def reset_data(self):
+        [panda.reset_data() for panda in self.pandas]                   
         
 class SingleTurtle(Turtle):
     

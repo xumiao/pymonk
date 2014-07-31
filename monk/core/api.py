@@ -296,6 +296,16 @@ def reset(turtleName, user):
     else:
         logger.warning('can not find turtle by {0}@{1} to reset'.format(user, turtleName))
         return False
+        
+def reset_all_data(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        _turtle.reset()
+        _turtle.reset_data()
+        return True
+    else:
+        logger.warning('can not find turtle by {0}@{1} to reset_all_data'.format(user, turtleName))
+        return False        
                
 # meta query APIs
 def find_type(typeName):

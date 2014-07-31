@@ -152,6 +152,9 @@ def server(configFile, partitions):
                 elif op == 'reset':
                     logger.debug('reset turtle {0} of user {1} '.format(turtleName, user))
                     monkapi.reset(turtleName, user)
+                elif op == 'reset_all_data':
+                    logger.debug('reset_all_data turtle {0} of user {1} '.format(turtleName, user))
+                    monkapi.reset_all_data(turtleName, user)    
                 elif op == 'offsetCommit':
                     consumer.commit()
                 else:
