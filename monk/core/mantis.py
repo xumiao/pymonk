@@ -52,7 +52,7 @@ class Mantis(base.MONKObject):
             self.q  = FlexibleVector(generic=self.q)
             self.dq = FlexibleVector(generic=self.dq)
             self.data = {ObjectId(k) : v for k,v in self.data.iteritems()}
-            self.gamma = 0.1
+            #self.gamma = 0.00001
             return True
         except Exception as e:
             logger.error('error {0}'.format(e.message))
@@ -178,5 +178,10 @@ class Mantis(base.MONKObject):
         logger.debug('q  {0}'.format(self.q))
         logger.debug('dq {0}'.format(self.dq))
         self.commit()
+        
+    def reset_data(self):
+        self.data = {}
+        logger.debug('data {0}'.format(self.data))
+        self.update_fields({self.FDATA : {}})
     
 base.register(Mantis)

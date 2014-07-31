@@ -239,6 +239,14 @@ class LinearPanda(Panda):
             crane.mantisStore.update_in_fields({Mantis.NAME:self.name, Mantis.CREATOR:self.creator}, 
                                                {Mantis.FDUALS : [], Mantis.FQ : [], Mantis.FDQ : []})
 
+    def reset_data(self):        
+        logger.debug('resetting data in mantis')
+        try:
+            self.mantis.reset_data()
+        except:
+            crane.mantisStore.update_in_fields({Mantis.NAME:self.name, Mantis.CREATOR:self.creator}, 
+                                               {Mantis.FDATA : {}})                                               
+                                       
 base.register(Panda)
 base.register(ExistPanda)
 base.register(RegexPanda)
