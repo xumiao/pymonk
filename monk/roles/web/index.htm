@@ -23,7 +23,27 @@ Last season, teams struck out at a rate never before seen: 7.5 times for each te
 <svg></svg>
 <script>
 //setInterval(function(){window.monitor()}, 5000);
-window.monitor();
+function getParameterByNameInFloat(name, defaultValue) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results == null ? defaultValue : parseFloat(decodeURIComponent(results[1].replace(/\+/g, " ")), 10);
+}
+
+function getParameterByName(name, defaultValue) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results == null ? defaultValue : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+window.monitor(getParameterByNameInFloat("xmin", -600),
+               getParameterByNameInFloat("xmax", 0),
+               getParameterByNameInFloat("ymin", -0.3),
+               getParameterByNameInFloat("ymax", 2.0),
+               getParameterByName("topic", "exprmetric"),
+               getParameterByName("metricName", "|dq|/|q|"));
+
 </script>
 <!--<![endif]-->
 </div>
