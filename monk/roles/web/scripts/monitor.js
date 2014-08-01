@@ -65,6 +65,7 @@ var svg = d3.select(".g-main-chart").select("svg")
 	
 queue()
     .defer(d3.json, "http://localhost/users")
+    .defer(d3.json, "http://monkzookeeper.cloudapp.net/users")
     .defer(d3.json, "http://localhost/metrics?topic="+topic+"&metricName="+metricName)
     .await(ready)
 

@@ -115,7 +115,7 @@ def monitoring():
     #monkMetrics.retrieve_metrics('expr2')
 
 lc = LoopingCall(monitoring)
-lc.start(1200)
+lc.start(120)
 
 class Users(DefferedResource):
     isLeaf = True
@@ -160,7 +160,9 @@ class  Metrics(DefferedResource):
         simplejson.dump(results, request)
         request.finish()
     
-root = File('web/MonkMonitor.html')
+root = DefferedResource()
+indexpage = File('./web/')
+root.putChild("monitor", indexpage)
 root.putChild("users", Users())
 root.putChild("metrics", Metrics())
 
