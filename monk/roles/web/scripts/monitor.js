@@ -1,8 +1,10 @@
-function monitor() {
-var xmax = 0
-var xmin = -600
-var ymax = 2.0
-var ymin = -0.2
+function monitor(xmin, xmax, ymin, ymax, topic, metricName) {
+xmax = typeof xmax !== "undefined" ? xmax : 0;
+xmin = typeof xmin !== "undefined" ? xmin : -600;
+ymax = typeof ymax !== "undefined" ? ymax : 2.0;
+ymin = typeof ymin !== "undefined" ? ymin : -0.3;
+topic = typeof topic !== "undefined" ? topic : "exprmetric";
+metricName = typeof metricName !== "undefined" ? metricName : "|dq|/|q|";
 
 var formatTime = function(d) { return d; },
     format = d3.format(".2f"),
@@ -63,7 +65,7 @@ var svg = d3.select(".g-main-chart").select("svg")
 	
 queue()
     .defer(d3.json, "http://localhost/users")
-    .defer(d3.json, "http://localhost/metrics")
+    .defer(d3.json, "http://localhost/metrics?topic="+topic+"&metricName="+metricName)
     .await(ready)
 
 function ready(err, users, metrics) {
