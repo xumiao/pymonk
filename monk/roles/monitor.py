@@ -29,7 +29,7 @@ class MonkMetrics(object):
         self.metrics = {}
         self.users = {}
     
-    def parseUser(self, user, t, topic):
+    def parseUser(self, user, t, topic, metricName):
         if topic in self.users:
             users = self.users[topic]
         else:
@@ -39,12 +39,15 @@ class MonkMetrics(object):
         if user in users:
             userProfile = users[user]
             userProfile['lastSeen'] = t
+            if metricName not in userProfile['metricNames']:
+                userProfile['metricNames'].append(metricName)
         else:
             userProfile = {'name':user,
                            'userId':len(users) + 1,
                            'firstSeen':t,
                            'lastSeen':t,
-                           'topic':topic}
+                           'topic':topic,
+                           'metricNames':[metricName]}
             users[user] = userProfile
         return userProfile['userId']
         
@@ -64,7 +67,6 @@ class MonkMetrics(object):
             t = float(body[1].split('=')[1])
             minTime = min(minTime, t)
             maxTime = max(maxTime, t)
-            userId = self.parseUser(user, t, topic)
             # metric
             name = body[2].split('=')[0]
             value = float(body[2].split('=')[1])
@@ -73,8 +75,8 @@ class MonkMetrics(object):
             else:
                 metric = []
                 metrics[name] = metric
+            userId = self.parseUser(user, t, topic, name)
             metric.append({'time':t, 'userId':userId, 'value':value})
-            print user, userId, t, name, value
         return minTime, maxTime
     
     def normalize_metrics(self):
@@ -111,6 +113,7 @@ monkMetrics = MonkMetrics('monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:90
 
 def monitoring():
     global monkMetrics
+    print 'retrieving metrics'
     monkMetrics.retrieve_metrics('exprmetric')
     #monkMetrics.retrieve_metrics('expr2')
 
@@ -125,8 +128,10 @@ class Users(DefferedResource):
     def _get_users(self, args):
         global monkMetrics
         topic = args.get('topic',['exprmetric'])[0]
-        users = monkMetrics.users.get(topic, {})         
-        return users.values()
+        metricName = args.get('metricName', ['|dq|/|q|'])[0]
+        users = monkMetrics.users.get(topic, {})
+        print 'return users for ', topic, metricName
+        return [user for user in users.values() if metricName in user['metricNames']]
         
     def _delayedRender_GET(self, request):
         results = self._get_users(request.args)
@@ -148,6 +153,7 @@ class  Metrics(DefferedResource):
         topic = args.get('topic', ['exprmetric'])[0]
         metricName = args.get('metricName', ['|dq|/|q|'])[0]
         metrics = monkMetrics.metrics.get(topic, {}).get(metricName, [])
+        print 'return metrics for ', topic, metricName
         return metrics
         
     def _delayedRender_GET(self, request):

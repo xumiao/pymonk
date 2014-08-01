@@ -64,7 +64,7 @@ var svg = d3.select(".g-main-chart").select("svg")
 	.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 	
 queue()
-    .defer(d3.json, "http://monkzookeeper.cloudapp.net/users")
+    .defer(d3.json, "http://monkzookeeper.cloudapp.net/users?topic="+topic+"&metricName="+metricName)
     .defer(d3.json, "http://monkzookeeper.cloudapp.net/metrics?topic="+topic+"&metricName="+metricName)
     .await(ready)
 
