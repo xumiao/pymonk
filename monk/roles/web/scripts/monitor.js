@@ -62,8 +62,8 @@ var svg = d3.select(".g-main-chart").select("svg")
 	.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 	
 queue()
-    .defer(d3.json, "http://localhost:8080/users")
-    .defer(d3.json, "http://localhost:8080/metrics")
+    .defer(d3.json, "http://localhost/users")
+    .defer(d3.json, "http://localhost/metrics")
     .await(ready)
 
 function ready(err, users, metrics) {

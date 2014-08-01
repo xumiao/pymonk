@@ -9,8 +9,8 @@ import simplejson
 import logging
 from kafka.client import KafkaClient
 from kafka.consumer import SimpleConsumer
-from bson.objectid import ObjectId
-from twisted.web import server
+from twisted.web.server import Site
+from twisted.web.static import File
 from twisted.internet import reactor
 from deffered_resource import DefferedResource
 from twisted.internet.task import LoopingCall
@@ -117,10 +117,6 @@ def monitoring():
 lc = LoopingCall(monitoring)
 lc.start(1200)
 
-class MonkMonitor(server.Site):
-    def stopFactory(self):
-        server.Site.stopFactory(self)
-
 class Users(DefferedResource):
     isLeaf = True
     def __init__(self, delayTime=0.0):
@@ -164,10 +160,10 @@ class  Metrics(DefferedResource):
         simplejson.dump(results, request)
         request.finish()
     
-root = DefferedResource()
+root = File('web/MonkMonitor.html')
 root.putChild("users", Users())
 root.putChild("metrics", Metrics())
 
-site = MonkMonitor(root, "monkmonitor.log")
-reactor.listenTCP(8080, site)
+site = Site(root, "monkmonitor.log")
+reactor.listenTCP(80, site)
 reactor.run()
