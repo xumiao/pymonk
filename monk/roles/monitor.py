@@ -19,17 +19,17 @@ import traceback
 class MonkMetrics(object):
     group = 'metrics'
     bigNumber = 1000000000
-    def __init__(self, hosts, timeSpan=1000, timeInterval=10, timeTick=1000, offsetInterval=100):
+    def __init__(self, hosts, timeSpan=1000, timeInterval=10, timeTick=1000, offsetInterval=1000):
         self.kafkaHosts = hosts
         self.timeInterval = timeInterval
         self.timeTick = timeTick
         self.timeSpan = timeSpan
         self.offsetInterval = offsetInterval
-        self.maxOffset = 2000
+        self.maxOffset = 20000
         self.metrics = {}
         self.users = {}
     
-    def parseUser(self, user, t, topic):
+    def parseUser(self, user, t, topic, metricName):
         if topic in self.users:
             users = self.users[topic]
         else:
@@ -39,12 +39,15 @@ class MonkMetrics(object):
         if user in users:
             userProfile = users[user]
             userProfile['lastSeen'] = t
+            if metricName not in userProfile['metricNames']:
+                userProfile['metricNames'].append(metricName)
         else:
             userProfile = {'name':user,
                            'userId':len(users) + 1,
                            'firstSeen':t,
                            'lastSeen':t,
-                           'topic':topic}
+                           'topic':topic,
+                           'metricNames':[metricName]}
             users[user] = userProfile
         return userProfile['userId']
         
@@ -64,7 +67,6 @@ class MonkMetrics(object):
             t = float(body[1].split('=')[1])
             minTime = min(minTime, t)
             maxTime = max(maxTime, t)
-            userId = self.parseUser(user, t, topic)
             # metric
             name = body[2].split('=')[0]
             value = float(body[2].split('=')[1])
@@ -73,8 +75,9 @@ class MonkMetrics(object):
             else:
                 metric = []
                 metrics[name] = metric
+            userId = self.parseUser(user, t, topic, name)
             metric.append({'time':t, 'userId':userId, 'value':value})
-            print user, userId, t, name, value
+            print userId, t, value, name, user
         return minTime, maxTime
     
     def normalize_metrics(self):
@@ -87,13 +90,13 @@ class MonkMetrics(object):
                     
     def retrieve_metrics(self, topic):
         try:
-            kafkaClient = KafkaClient(self.kafkaHosts, timeout=0.2)
+            kafkaClient = KafkaClient(self.kafkaHosts)
             consumer = SimpleConsumer(kafkaClient, self.group, topic, partitions=[0])
             offset = 0
             timeSpan = 0
             timeNow = 0
             timePast = self.bigNumber
-            while timeSpan < self.timeSpan * self.timeTick and offset < self.maxOffset:
+            while offset < self.maxOffset:
                 offset += self.offsetInterval
                 consumer.seek(-offset, 2)
                 messages = consumer.get_messages(count=self.offsetInterval)
@@ -111,11 +114,12 @@ monkMetrics = MonkMetrics('monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:90
 
 def monitoring():
     global monkMetrics
+    print 'retrieving metrics'
     monkMetrics.retrieve_metrics('exprmetric')
-    #monkMetrics.retrieve_metrics('expr2metric')
+    #monkMetrics.retrieve_metrics('expr2')
 
-lc = LoopingCall(monitoring)
-lc.start(20)
+#lc = LoopingCall(monitoring)
+#lc.start(120)
 
 class Users(DefferedResource):
     isLeaf = True
@@ -125,8 +129,10 @@ class Users(DefferedResource):
     def _get_users(self, args):
         global monkMetrics
         topic = args.get('topic',['exprmetric'])[0]
-        users = monkMetrics.users.get(topic, {})         
-        return users.values()
+        metricName = args.get('metricName', ['|dq|/|q|'])[0]
+        users = monkMetrics.users.get(topic, {})
+        print 'return users for ', topic, metricName
+        return [user for user in users.values() if metricName in user['metricNames']]
         
     def _delayedRender_GET(self, request):
         results = self._get_users(request.args)
@@ -147,7 +153,9 @@ class  Metrics(DefferedResource):
         global monkMetrics
         topic = args.get('topic', ['exprmetric'])[0]
         metricName = args.get('metricName', ['|dq|/|q|'])[0]
+        monkMetrics.retrieve_metrics(topic)
         metrics = monkMetrics.metrics.get(topic, {}).get(metricName, [])
+        print 'return metrics for ', topic, metricName
         return metrics
         
     def _delayedRender_GET(self, request):
@@ -161,9 +169,11 @@ class  Metrics(DefferedResource):
         request.finish()
     
 root = DefferedResource()
-root.putChild("web", File('./web'))
+indexpage = File('./web/')
+root.putChild("monitor", indexpage)
 root.putChild("users", Users())
 root.putChild("metrics", Metrics())
+
 site = Site(root, "monkmonitor.log")
 reactor.listenTCP(80, site)
 reactor.run()
