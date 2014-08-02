@@ -19,13 +19,13 @@ import traceback
 class MonkMetrics(object):
     group = 'metrics'
     bigNumber = 1000000000
-    def __init__(self, hosts, timeSpan=1000, timeInterval=10, timeTick=1000, offsetInterval=100):
+    def __init__(self, hosts, timeSpan=1000, timeInterval=10, timeTick=1000, offsetInterval=1000):
         self.kafkaHosts = hosts
         self.timeInterval = timeInterval
         self.timeTick = timeTick
         self.timeSpan = timeSpan
         self.offsetInterval = offsetInterval
-        self.maxOffset = 2000
+        self.maxOffset = 20000
         self.metrics = {}
         self.users = {}
     
@@ -77,6 +77,7 @@ class MonkMetrics(object):
                 metrics[name] = metric
             userId = self.parseUser(user, t, topic, name)
             metric.append({'time':t, 'userId':userId, 'value':value})
+            print userId, t, value, name, user
         return minTime, maxTime
     
     def normalize_metrics(self):
@@ -95,7 +96,7 @@ class MonkMetrics(object):
             timeSpan = 0
             timeNow = 0
             timePast = self.bigNumber
-            while timeSpan < self.timeSpan * self.timeTick and offset < self.maxOffset:
+            while offset < self.maxOffset:
                 offset += self.offsetInterval
                 consumer.seek(-offset, 2)
                 messages = consumer.get_messages(count=self.offsetInterval)
@@ -117,8 +118,8 @@ def monitoring():
     monkMetrics.retrieve_metrics('exprmetric')
     #monkMetrics.retrieve_metrics('expr2')
 
-lc = LoopingCall(monitoring)
-lc.start(120)
+#lc = LoopingCall(monitoring)
+#lc.start(120)
 
 class Users(DefferedResource):
     isLeaf = True
@@ -152,6 +153,7 @@ class  Metrics(DefferedResource):
         global monkMetrics
         topic = args.get('topic', ['exprmetric'])[0]
         metricName = args.get('metricName', ['|dq|/|q|'])[0]
+        monkMetrics.retrieve_metrics(topic)
         metrics = monkMetrics.metrics.get(topic, {}).get(metricName, [])
         print 'return metrics for ', topic, metricName
         return metrics
