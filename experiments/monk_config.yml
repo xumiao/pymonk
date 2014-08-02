@@ -38,7 +38,7 @@ loggingConfig:
             level : DEBUG
             propagate : True
         kafka :
-            level : DEBUG
+            level : WARNING
             propagate : True
         metric :
             level : DEBUG

@@ -29,9 +29,10 @@ logger = logging.getLogger("monk.remote_trainer")
 kafkaClient = None
 producer = None
 consumer = None
+offsetToEnd = False
 
 def print_help():
-    print 'remote_trainer.py -c <configFile> -p <kafkaPartitions, e.g., range(1,8)>'
+    print 'remote_trainer.py -c <configFile> -p <kafkaPartitions, e.g., range(1,8)> -o'
     
 def onexit():
     closeKafka()
@@ -45,7 +46,7 @@ def handler(sig, hook = thread.interrupt_main):
     exit(1)
 
 def initKafka(config, partitions):
-    global kafkaClient, producer, consumer
+    global kafkaClient, producer, consumer, offsetToEnd
     kafkaClient = KafkaClient(config.kafkaConnectionString)
     producer = KeyedProducer(kafkaClient, async=False,
                              req_acks=KeyedProducer.ACK_NOT_REQUIRED,
@@ -53,6 +54,9 @@ def initKafka(config, partitions):
     consumer = SimpleConsumer(kafkaClient, config.kafkaGroup,
                               config.kafkaTopic,
                               partitions=partitions)
+    if offsetToEnd:
+        consumer.seek(0,2)
+        offsetToEnd = False
 
 def closeKafka():
     global kafkaClient, producer, consumer
@@ -67,8 +71,9 @@ def closeKafka():
         kafkaClient.close()
         kafkaClient = None
         
-def server(configFile, partitions):
-    global kafkaClient, producer, consumer
+def server(configFile, partitions, ote):
+    global kafkaClient, producer, consumer, offsetToEnd
+    offsetToEnd = ote
     config = Configuration(configFile, "remote_trainer", str(os.getpid()))
     monkapi.initialize(config)
     if platform.system() == 'Windows':
@@ -177,18 +182,20 @@ if __name__=='__main__':
     configFile = 'monk_config.yml'
     kafkaPartitions = [0]
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hc:p:',['configFile=', 'kafkaPartitions='])
+        opts, args = getopt.getopt(sys.argv[1:], 'hoc:p:',['configFile=', 'kafkaPartitions='])
     except getopt.GetoptError:
         print_help()
         sys.exit(2)
-    
+    offsetToEnd = False
     for opt, arg in opts:
         if opt == '-h':
             print_help()
             sys.exit()
+        elif opt == '-o':
+            offsetToEnd = True
         elif opt in ('-c', '--configFile'):
             configFile = arg
         elif opt in ('-p', '--kafkaPartitions'):
             kafkaPartitions = eval(arg)
 
-    server(configFile, kafkaPartitions)
+    server(configFile, kafkaPartitions, offsetToEnd)
