@@ -87,7 +87,7 @@ class MonkMetrics(object):
                     
     def retrieve_metrics(self, topic):
         try:
-            kafkaClient = KafkaClient(self.kafkaHosts)
+            kafkaClient = KafkaClient(self.kafkaHosts, timeout=0.2)
             consumer = SimpleConsumer(kafkaClient, self.group, topic, partitions=[0])
             offset = 0
             timeSpan = 0
@@ -112,10 +112,10 @@ monkMetrics = MonkMetrics('monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:90
 def monitoring():
     global monkMetrics
     monkMetrics.retrieve_metrics('exprmetric')
-    #monkMetrics.retrieve_metrics('expr2')
+    #monkMetrics.retrieve_metrics('expr2metric')
 
 lc = LoopingCall(monitoring)
-lc.start(1200)
+lc.start(20)
 
 class Users(DefferedResource):
     isLeaf = True
@@ -160,10 +160,10 @@ class  Metrics(DefferedResource):
         simplejson.dump(results, request)
         request.finish()
     
-root = File('web/MonkMonitor.html')
+root = DefferedResource()
+root.putChild("web", File('./web'))
 root.putChild("users", Users())
 root.putChild("metrics", Metrics())
-
 site = Site(root, "monkmonitor.log")
 reactor.listenTCP(80, site)
 reactor.run()
