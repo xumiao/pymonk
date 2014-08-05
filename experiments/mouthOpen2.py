@@ -345,17 +345,17 @@ def checkUserPartitionMapping():
 def buildMetric(resGT, curvefile = None):
     totalP = 0.0
     totalN = 0.0
-    for data in resGT:            # remove the wrong values
-        if data[0] > 100000:
-           resGT.remove(data)
-        elif data[0] < -100000:
-           resGT.remove(data)
-    for data in resGT:       
-        if data[1] > 0:
-           totalP += 1
+    for i in reversed(range(len(resGT))):            # remove the wrong values
+        if resGT[i][0] > 100000:
+           del resGT[i]
+        elif resGT[i][0] < -100000:
+           del resGT[i]
         else:
-           totalN += 1
-    resGT.sort()    
+           if resGT[i][1] > 0:
+               totalP += 1
+           else:
+               totalN += 1 
+    resGT.sort()       
     logging.debug("totalP = {0}".format(totalP))
     logging.debug("totalN = {0}".format(totalN))    
     totalFP = totalN
@@ -508,21 +508,21 @@ if __name__=='__main__':
 #
 ##    print "add_users"
 ##    add_users()
-##    print "add_data"
-##    add_data()
-#    print "train"
-#    train(10)
+#    print "add_data"
+#    add_data()
+    print "train"
+    train(30)
     
-    print "test"
-    isPersonalized = False
-    resGTs = centralizedTest(isPersonalized)
-    destfile = open("resGTs_consensus", 'w')       # save result and gt
-    pickle.dump(resGTs, destfile)
-    destfile.close()
-    
-    print "evaluate"
-    file = open("resGTs_consensus", 'r')
-    resGTs_consensus = pickle.load(file)
-    file.close()
-    evaluate(resGTs_consensus, "acc.curve")
+#    print "test"
+#    isPersonalized = False
+#    resGTs = centralizedTest(isPersonalized)
+#    destfile = open("resGTs_consensus", 'w')       # save result and gt
+#    pickle.dump(resGTs, destfile)
+#    destfile.close()
+#    
+#    print "evaluate"
+#    file = open("resGTs_consensus", 'r')
+#    resGTs_consensus = pickle.load(file)
+#    file.close()
+#    evaluate(resGTs_consensus, "acc.curve")
 
