@@ -215,7 +215,10 @@ class Turtle(base.MONKObject):
         [panda.reset() for panda in self.pandas]    
         
     def reset_data(self):
-        [panda.reset_data() for panda in self.pandas]                   
+        [panda.reset_data() for panda in self.pandas] 
+
+    def set_mantis_parameter(self, para, value):
+        [panda.set_mantis_parameter(para, value) for panda in self.pandas]                   
         
 class SingleTurtle(Turtle):
     
