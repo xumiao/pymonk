@@ -162,7 +162,7 @@ class Mantis(base.MONKObject):
             fdq = self.dq
 
         rd = sqrt(fdq.norm2() / (self.panda.z.norm2() + 1e-12))
-        if rd < 0.001:
+        if rd < 0.001 and self.panda.z.norm2() > 0:
             logger.debug('no need to merge')
         else:
             self.panda.z.add(fdq, - 1.0 / (m + 1 / self.rho))
