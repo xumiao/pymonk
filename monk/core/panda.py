@@ -246,7 +246,14 @@ class LinearPanda(Panda):
         except:
             crane.mantisStore.update_in_fields({Mantis.NAME:self.name, Mantis.CREATOR:self.creator}, 
                                                {Mantis.FDATA : {}})                                               
-                                       
+
+    def set_mantis_parameter(self, para, value):                                               
+        try:
+            self.mantis.set_mantis_parameter(para, value)
+        except:
+            self.load_mantis()
+            self.mantis.set_mantis_parameter(para, value)
+                                   
 base.register(Panda)
 base.register(ExistPanda)
 base.register(RegexPanda)

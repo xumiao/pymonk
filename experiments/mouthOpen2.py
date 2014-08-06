@@ -189,6 +189,7 @@ def centralizedTest(isPersonalized):
             else:
                 resGT.append((float(wei.dot(fea)), 0.0))
         resGTs[user] = resGT
+    mcl.close()
     return resGTs              
   
 def evaluate(resGTs, curvefile=None):    
@@ -268,7 +269,44 @@ def reset_all_data():
     print producer.send('monk', encodedMessage)
     producer.stop(1)
     kafka.close()    
-                                      
+
+def set_mantis_parameter(para, value):
+    global users
+    checkUserPartitionMapping()
+    kafka = KafkaClient(kafkaHost, timeout=None)
+    producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
+                      req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
+                      ack_timeout=200)
+    for user, partitionId in users.iteritems():
+#        if not partitionId == 4:
+#            continue
+        encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                           'user':user,
+                                           'operation':'set_mantis_parameter',
+                                           'para':para,
+                                           'value':value})
+        print producer.send(user, encodedMessage)
+    
+    producer.stop(1)
+    kafka.close()
+    
+def changeParameters():
+    global users
+    checkUserPartitionMapping()
+
+    mcl = pm.MongoClient('10.137.168.196:27017')
+    MONKModelTurtleStore = mcl.MONKModel['TurtleStore']
+    MONKModelPandaStore = mcl.MONKModel['PandaStore']
+    MONKModelMantisStore = mcl.MONKModel['MantisStore']
+    #MONKModelPandaStore.update({'creator': 'monk2', 'name': pandaName}, {'$set':{'z':[]}}, timeout=False)
+    #{'name':{$exists: true}}
+    for user, partitionId in users.iteritems():  
+        #MONKModelTurtleStore.update({'creator': user, 'name': turtleName}, {'$set':{'leader':'monk'}}, timeout=False)
+        MONKModelMantisStore.update({'creator': user, 'name': pandaName}, {'$set':{'gamma':1}}, timeout=False)
+
+    mcl.close()
+
+                                     
 #========================================== Data Preparation ======================================
 
 def retrieveData():
@@ -500,8 +538,7 @@ def plotCurveFromFile(fileNames):
 
 #reset()
     
-if __name__=='__main__':
-    
+if __name__=='__main__':    
     #reset()
     #prepareData()
     loadPreparedData("trainData", "testData")
@@ -510,19 +547,19 @@ if __name__=='__main__':
 ##    add_users()
 #    print "add_data"
 #    add_data()
-    print "train"
-    train(30)
+#    print "train"
+#    train(30)
     
-#    print "test"
-#    isPersonalized = False
-#    resGTs = centralizedTest(isPersonalized)
-#    destfile = open("resGTs_consensus", 'w')       # save result and gt
-#    pickle.dump(resGTs, destfile)
-#    destfile.close()
-#    
-#    print "evaluate"
-#    file = open("resGTs_consensus", 'r')
-#    resGTs_consensus = pickle.load(file)
-#    file.close()
-#    evaluate(resGTs_consensus, "acc.curve")
+    print "test"
+    isPersonalized = False
+    resGTs = centralizedTest(isPersonalized)
+    destfile = open("resGTs_consensus", 'w')       # save result and gt
+    pickle.dump(resGTs, destfile)
+    destfile.close()
+    
+    print "evaluate"
+    file = open("resGTs_consensus", 'r')
+    resGTs_consensus = pickle.load(file)
+    file.close()
+    evaluate(resGTs_consensus, "acc.curve")
 

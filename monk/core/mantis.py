@@ -55,7 +55,6 @@ class Mantis(base.MONKObject):
             self.q  = FlexibleVector(generic=self.q)
             self.dq = FlexibleVector(generic=self.dq)
             self.data = {ObjectId(k) : v for k,v in self.data.iteritems()}
-            #self.gamma = 0.00001
             return True
         except Exception as e:
             logger.error('error {0}'.format(e.message))
@@ -194,5 +193,13 @@ class Mantis(base.MONKObject):
         self.data = {}
         logger.debug('data {0}'.format(self.data))
         self.update_fields({self.FDATA : {}})
+        
+    def set_mantis_parameter(self, para, value):
+        if (para == 'gamma'):
+            self.gamma = value
+            self.solver.gamma = value
+            logger.debug('gamma is {0}'.format(self.gamma))
+            logger.debug('gamma of solver is {0}'.format(self.solver.gamma))
+            self.update_fields({self.FGAMMA : self.gamma})
     
 base.register(Mantis)
