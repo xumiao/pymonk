@@ -37,12 +37,12 @@ def print_help():
 def onexit():
     closeKafka()
     monkapi.exits()
-    logger.info('remote_rainter {0} is shutting down'.format(os.getpid()))
+    logger.info('remote_trainter {0} is shutting down'.format(os.getpid()))
 
 def handler(sig, hook = thread.interrupt_main):
     closeKafka()
     monkapi.exits()
-    logger.info('remote_rainter {0} is shutting down'.format(os.getpid()))
+    logger.info('remote_trainter {0} is shutting down'.format(os.getpid()))
     exit(1)
 
 def initKafka(config, partitions):
