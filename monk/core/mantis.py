@@ -45,11 +45,7 @@ class Mantis(base.MONKObject):
     def __restore__(self):
         super(Mantis, self).__restore__()
         self.solver = None
-        if self.gamma < 1e-8:
-            self.gamma = 1
-        if self.rho < 1e-8:
-            self.rho = 1
-            
+        
         try:
             self.mu = FlexibleVector(generic=self.mu)
             self.q  = FlexibleVector(generic=self.q)
@@ -104,6 +100,16 @@ class Mantis(base.MONKObject):
     def train(self, leader):
         # check out z
         z = self.checkout(leader)
+        
+        # check if updates are needed
+        self.dq.copyUpdate(self.q)
+        self.dq.add(z, -1)
+        rd = sqrt(self.dq.norm2()) / (self.q.norm2() + 1e-12)
+        logger.debug('relative difference of q {0}'.format(rd))
+        metricLog.info(encodeMetric(self, '|z-q|/|q|', rd))
+        if rd < 0.001:
+            return
+            
         # update mu
         self.mu.add(self.q, 1)
         self.mu.add(z, -1)
@@ -120,7 +126,7 @@ class Mantis(base.MONKObject):
         
         # update q
         r = self.rho / float(self.rho + self.gamma)
-        self.dq.copyUpdate(self.q)        
+        self.dq.copyUpdate(self.q)    
         self.q.clear()
         self.q.add(z, r)
         self.q.add(self.panda.weights, 1 - r)
@@ -128,9 +134,13 @@ class Mantis(base.MONKObject):
         self.dq.add(self.q, -1)
         del z
         
+        # measure convergence
         rd = sqrt(self.dq.norm2() / (self.q.norm2() + 1e-12))
         logger.debug('relative difference of q {0}'.format(rd))
         metricLog.info(encodeMetric(self, '|dq|/|q|', rd))
+        
+        # commit changes
+        self.commit()
     
     def checkout(self, leader):
         if leader:
@@ -148,17 +158,22 @@ class Mantis(base.MONKObject):
                                               'creator':follower},
                                              {'dq':True}).get('dq',[])
             fdq = FlexibleVector(generic=fdq)
+        else:
+            fdq = self.dq
+
+        rd = sqrt(fdq.norm2() / (self.panda.z.norm2() + 1e-12))
+        if rd < 0.001:
+            logger.debug('no need to merge')
+        else:
             self.panda.z.add(fdq, - 1.0 / (m + 1 / self.rho))
             logger.debug('m = {0}'.format(m))
             logger.debug('update z {0}'.format(self.panda.z))
-            rd = sqrt(fdq.norm2() / (self.panda.z.norm2() + 1e-12))
             logger.debug('relative difference of z {0}'.format(rd))
             metricLog.info(encodeMetric(self, '|dz|/|z|', rd))
-            del fdq
-        else:
-            self.panda.z.add(self.dq,  - 1.0 / (m + 1 / self.rho))
+            self.panda.update_fields({self.panda.FCONSENSUS:self.panda.z.generic()})
         
-        self.panda.update_fields({self.panda.FCONSENSUS:self.panda.z.generic()})
+        if fdq is not self.dq:
+            del fdq
             
     def commit(self):
         self.update_fields({self.FDUALS : self.mu.generic(),

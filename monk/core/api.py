@@ -233,7 +233,6 @@ def train(turtleName, user):
     _turtle = load_turtle(turtleName, user)
     if _turtle:
         _turtle.train()
-        _turtle.commit()
         return True
     else:
         logger.warning('can not find turtle by {0}@{1} to train'.format(user, turtleName))
