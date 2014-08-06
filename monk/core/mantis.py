@@ -107,7 +107,7 @@ class Mantis(base.MONKObject):
         rd = sqrt(self.dq.norm2()) / (self.q.norm2() + 1e-12)
         logger.debug('relative difference of q {0}'.format(rd))
         metricLog.info(encodeMetric(self, '|z-q|/|q|', rd))
-        if rd < 0.001:
+        if rd < 0.001 and self.q.norm2() > 0:
             return
             
         # update mu
