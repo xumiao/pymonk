@@ -206,6 +206,7 @@ class Mantis(base.MONKObject):
         
     def reset_data(self):
         self.data = {}
+        self.solver.num_instances = 0
         logger.debug('data {0}'.format(self.data))
         self.update_fields({self.FDATA : {}})
         
