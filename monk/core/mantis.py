@@ -104,10 +104,10 @@ class Mantis(base.MONKObject):
         # check if updates are needed
         self.dq.copyUpdate(self.q)
         self.dq.add(z, -1)
-        rd = sqrt(self.dq.norm2()) / (self.q.norm2() + 1e-12)
-        logger.debug('relative difference of q {0}'.format(rd))
-        metricLog.info(encodeMetric(self, '|z-q|/|q|', rd))
-        if rd < 0.001 and self.q.norm2() > 0:
+        z_q = sqrt(self.dq.norm2()) / (self.q.norm2() + 1e-12)
+        logger.debug('difference between z and q {0}'.format(z_q))
+        metricLog.info(encodeMetric(self, '|z-q|/|q|', z_q))
+        if z_q < 0.001 and self.q.norm2() > 0:
             return
             
         # update mu
@@ -139,7 +139,8 @@ class Mantis(base.MONKObject):
         logger.debug('relative difference of q {0}'.format(rd))
         metricLog.info(encodeMetric(self, '|dq|/|q|', rd))
         
-        # commit changes
+        # commit changes  
+        self.panda.update_fields({self.panda.FWEIGHTS:self.panda.weights.generic()})                            
         self.commit()
     
     def checkout(self, leader):
@@ -178,7 +179,7 @@ class Mantis(base.MONKObject):
     def commit(self):
         self.update_fields({self.FDUALS : self.mu.generic(),
                             self.FQ     : self.q.generic(),
-                            self.FDQ    : self.dq.generic()})
+                            self.FDQ    : self.dq.generic()})        
     
     def add_data(self, entity, y, c):
         da = self.data

@@ -128,6 +128,8 @@ def train(numIters):
                       ack_timeout=200)
     for i in range(numIters):
         for user, partitionId in users.iteritems():
+            if user == '':
+                continue
             encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                'user':user,
                                                'operation':'train',
@@ -170,6 +172,7 @@ def centralizedTest(isPersonalized):
     coll = mcl.DataSet['PMLExpression']
     MONKModelPandaStore = mcl.MONKModel['PandaStore']
     monkpa = MONKModelPandaStore.find_one({'creator': 'monk', 'name': pandaName}, {'_id':True, 'weights':True, 'z':True}, timeout=False)
+    z = FlexibleVector(generic=monkpa['z'])        
     resGTs = {}
     for user in testData.keys():
         if user == '':
@@ -180,7 +183,7 @@ def centralizedTest(isPersonalized):
         if isPersonalized == True:
             wei = FlexibleVector(generic=pa['weights'])
         else:            
-            wei = FlexibleVector(generic=monkpa['z'])
+            wei = z
         resGT = []
         for ent in coll.find({'_id': {'$in':testData[user]}}, {'_features':True, 'labels':True}, timeout=False):     
             fea = FlexibleVector(generic=ent['_features'])   
@@ -189,6 +192,7 @@ def centralizedTest(isPersonalized):
             else:
                 resGT.append((float(wei.dot(fea)), 0.0))
         resGTs[user] = resGT
+        del wei
     mcl.close()
     return resGTs              
   
@@ -547,19 +551,19 @@ if __name__=='__main__':
 ##    add_users()
 #    print "add_data"
 #    add_data()
-#    print "train"
-#    train(30)
+    print "train"
+    train(1)
     
-    print "test"
-    isPersonalized = False
-    resGTs = centralizedTest(isPersonalized)
-    destfile = open("resGTs_consensus", 'w')       # save result and gt
-    pickle.dump(resGTs, destfile)
-    destfile.close()
-    
-    print "evaluate"
-    file = open("resGTs_consensus", 'r')
-    resGTs_consensus = pickle.load(file)
-    file.close()
-    evaluate(resGTs_consensus, "acc.curve")
+#    print "test"
+#    isPersonalized = False
+#    resGTs = centralizedTest(isPersonalized)
+#    destfile = open("resGTs_consensus", 'w')       # save result and gt
+#    pickle.dump(resGTs, destfile)
+#    destfile.close()
+#    
+#    print "evaluate"
+#    file = open("resGTs_consensus", 'r')
+#    resGTs_consensus = pickle.load(file)
+#    file.close()
+#    evaluate(resGTs_consensus, "acc.curve")
 
