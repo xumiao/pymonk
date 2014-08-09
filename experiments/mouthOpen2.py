@@ -133,7 +133,8 @@ def train(numIters):
             encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                'user':user,
                                                'operation':'train',
-                                               'iteration':i})
+                                               'iteration':i,
+                                               'partition':partitionId})
             print i, producer.send(user, encodedMessage)
     
     producer.stop(1)
@@ -196,7 +197,10 @@ def centralizedTest(isPersonalized):
     mcl.close()
     return resGTs              
   
-def evaluate(resGTs, curvefile=None):    
+def evaluate(resGTs, curvefile=None):  
+    global users
+    checkUserPartitionMapping()
+
     overallResGT = []
     thres = {}
     precisions = {}
@@ -551,19 +555,19 @@ if __name__=='__main__':
 ##    add_users()
 #    print "add_data"
 #    add_data()
-    print "train"
-    train(1)
+#    print "train"
+#    train(50)
     
-#    print "test"
-#    isPersonalized = False
-#    resGTs = centralizedTest(isPersonalized)
-#    destfile = open("resGTs_consensus", 'w')       # save result and gt
-#    pickle.dump(resGTs, destfile)
-#    destfile.close()
-#    
-#    print "evaluate"
-#    file = open("resGTs_consensus", 'r')
-#    resGTs_consensus = pickle.load(file)
-#    file.close()
-#    evaluate(resGTs_consensus, "acc.curve")
+    print "test"
+    isPersonalized = False
+    resGTs = centralizedTest(isPersonalized)
+    destfile = open("resGTs_consensus", 'w')       # save result and gt
+    pickle.dump(resGTs, destfile)
+    destfile.close()
+    
+    print "evaluate"
+    file = open("resGTs_consensus", 'r')
+    resGTs_consensus = pickle.load(file)
+    file.close()
+    evaluate(resGTs_consensus, "acc.curve")
 

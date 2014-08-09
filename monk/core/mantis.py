@@ -108,6 +108,7 @@ class Mantis(base.MONKObject):
         logger.debug('difference between z and q {0}'.format(z_q))
         metricLog.info(encodeMetric(self, '|z-q|/|q|', z_q))
         if z_q < 0.001 and self.q.norm2() > 0:
+            logger.debug('no need to train')
             return
             
         # update mu
