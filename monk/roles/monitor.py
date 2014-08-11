@@ -146,7 +146,7 @@ class  Metrics(DefferedResource):
         global monkMetrics
         topic = args.get('topic', ['exprmetric'])[0]
         metricName = args.get('metricName', ['|dq|/|q|'])[0]
-        metricStartPosition = args.get('metricStartPosition', [0])[0]
+        metricStartPosition = args.get('start', [0])[0]
         monkMetrics.retrieve_metrics(topic, metricStartPosition)
         metrics = monkMetrics.metrics.get(topic, {}).get(metricName, [])
         print 'return metrics for ', topic, metricName
