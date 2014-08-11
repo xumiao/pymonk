@@ -105,6 +105,8 @@ class Mantis(base.MONKObject):
         self.dq.copyUpdate(self.q)
         self.dq.add(z, -1)
         z_q = sqrt(self.dq.norm2()) / (self.q.norm2() + 1e-12)
+        logger.debug('|z|={0}'.format(z.norm2()))
+        logger.debug('|q|={0}'.format(self.q.norm2()))
         logger.debug('difference between z and q {0}'.format(z_q))
         metricLog.info(encodeMetric(self, '|z-q|/|q|', z_q))
         if z_q < 0.001 and self.q.norm2() > 0:
