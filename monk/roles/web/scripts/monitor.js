@@ -484,7 +484,11 @@ function ready(err, users, metrics) {
         .attr("class", "g-overlay")
         .selectAll(".voronoi")
         .data(d3.geom.voronoi(data.map(function(d) { return [x(d.rtime), y(d[attributeY]) + Math.random() - .5]; })).map(bounds.clip).map(function(d, i) {
-          d.path = "M" + d.join("L") + "Z";
+          if (d.length === 0){
+            d.path = "M 0 0";
+          }else{
+            d.path = "M" + d.join("L") + "Z";
+          }
           d.data = data[i];
           return d;
          }))
