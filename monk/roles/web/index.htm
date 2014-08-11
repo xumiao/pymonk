@@ -42,8 +42,8 @@ var ymin = getParameterByNameInFloat("ymin", -0.3);
 var ymax = getParameterByNameInFloat("ymax", 2.0);
 var topic = getParameterByName("topic", "exprmetric");
 var metricName = getParameterByName("metricName", "|dq|/|q|");
-var metricWindowSize = getParameterInFloat("metricWindowSize", 10000);
-var metricStartPosition = getParameterInFloat("start", 0);
+var metricWindowSize = getParameterByNameInFloat("metricWindowSize", 10000);
+var metricStartPosition = getParameterByNameInFloat("start", 0);
 
 function delayPos(){
 	var result = window.metricStartPosition;
