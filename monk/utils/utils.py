@@ -29,7 +29,7 @@ class DateTimeEncoder(simplejson.JSONEncoder):
 
 def currentTimeMillisecond():
     t = datetime.datetime.now()
-    return (time.mktime(t.timetuple())*1e3 + t.microsecond/1e3) % 1e8
+    return time.mktime(t.timetuple()) * 1e3 + t.microsecond / 1e3
     
 def encodeMetric(monkobj, name, value):
     return 'user={0},time={1},{2}={3}'.format(monkobj.creator, currentTimeMillisecond(), name, value)

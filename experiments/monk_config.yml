@@ -6,8 +6,8 @@ entityCollectionName : PMLExpression
 uidConnectionString : 10.137.168.196:27017
 uidDataBaseName : uidDB
 kafkaConnectionString : monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9094
-kafkaGroup : expr
-kafkaTopic : expr
+kafkaGroup : monk
+kafkaTopic : *kafkatopic expr
 loggingConfig:
     version : 1
     disable_existing_loggers : True
@@ -31,19 +31,20 @@ loggingConfig:
             formatter : verbose
             class : monk.utils.kafka_log_handler.KafkaLoggingHandler
             hosts : monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9094
-            topic : expr
+            topic : *kafkatopic
             partition : 0
     loggers :
         monk :
             level : DEBUG
             propagate : True
+            handlers : [console, files]
         kafka :
             level : WARNING
             propagate : True
-        metric :
+            handlers : [console, files]
+    metric :
             level : DEBUG
             propagate : True
-            handlers : [console, kafka]
+            handlers : [console, files, kafka]
     root :
         level : DEBUG
-        handlers : [console, files]
