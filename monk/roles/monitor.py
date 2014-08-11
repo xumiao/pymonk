@@ -163,7 +163,7 @@ class  Metrics(DefferedResource):
         request.finish()
     
 root = DefferedResource()
-indexpage = File('./web/')
+indexpage = File('./monk/roles/web/')
 root.putChild("monitor", indexpage)
 root.putChild("users", Users())
 root.putChild("metrics", Metrics())

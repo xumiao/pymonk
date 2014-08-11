@@ -42,8 +42,8 @@ var ymin = getParameterByNameInFloat("ymin", -0.3);
 var ymax = getParameterByNameInFloat("ymax", 2.0);
 var topic = getParameterByName("topic", "exprmetric");
 var metricName = getParameterByName("metricName", "|dq|/|q|");
-var metricWindowSize = getParameterByName("metricWindowSize", 10000);
-var metricStartPosition = getParameterByName("start",0);
+var metricWindowSize = getParameterInFloat("metricWindowSize", 10000);
+var metricStartPosition = getParameterInFloat("start", 0);
 
 function delayPos(){
 	var result = window.metricStartPosition;
@@ -51,7 +51,7 @@ function delayPos(){
 	return result;
 }
 
-window.monitor(xmin, xmax, ymin, ymax, topic, metricName, metricWindowSize, delayPos());
+window.monitor(xmin, xmax, ymin, ymax, topic, metricName, metricWindowSize, metricStartPosition);
 
 //setInterval(function(){window.monitor(xmin, xmax, ymin, ymax, topic, metricName, metricWindowSize, delayPos())}, 5000);
 
