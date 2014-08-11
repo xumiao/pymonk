@@ -7,7 +7,7 @@ uidConnectionString : 10.137.168.196:27017
 uidDataBaseName : uidDB
 kafkaConnectionString : monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9094
 kafkaGroup : monk
-kafkaTopic : *kafkatopic expr
+kafkaTopic : &kafkatopic expr
 loggingConfig:
     version : 1
     disable_existing_loggers : True
