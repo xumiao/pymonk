@@ -32,23 +32,19 @@ def currentTimeMillisecond():
     return time.mktime(t.timetuple()) * 1e3 + t.microsecond / 1e3
     
 def encodeMetric(monkobj, name, value):
-    return 'type={0},name={1},user={2},time={3},{4}={5}'.format(
-            monkobj.monkType, monkobj.name, monkobj.creator, currentTimeMillisecond(), name, value)
+    return 'user={0},time={1},{2}={3}'.format(
+            monkobj.creator, currentTimeMillisecond(), name, value)
 
 def decodeMetric(message):
     body = message.split(',')
-    # type
-    monktype = body[0].split('=')[1]
-    # name
-    monkname = body[1].split('=')[1]
     # user 
-    monkuser = body[2].split('=')[1]
+    monkuser = body[0].split('=')[1]
     # time
-    t = float(body[3].split('=')[1])
+    t = float(body[1].split('=')[1])
     # metric
-    name = body[4].split('=')[0]
-    value = float(body[4].split('=')[1])
-    return monktype, monkname, monkuser, t, name, value
+    name = body[2].split('=')[0]
+    value = float(body[2].split('=')[1])
+    return monkuser, t, name, value
 
 def binary2decimal(a):
     return reduce(lambda x,y: (x + y) << 1, 0) / 2
