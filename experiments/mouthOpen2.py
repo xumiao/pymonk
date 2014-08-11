@@ -128,10 +128,13 @@ def train(numIters):
                       ack_timeout=200)
     for i in range(numIters):
         for user, partitionId in users.iteritems():
+            if user == '':
+                continue
             encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                'user':user,
                                                'operation':'train',
-                                               'iteration':i})
+                                               'iteration':i,
+                                               'partition':partitionId})
             print i, producer.send(user, encodedMessage)
     
     producer.stop(1)
@@ -170,6 +173,7 @@ def centralizedTest(isPersonalized):
     coll = mcl.DataSet['PMLExpression']
     MONKModelPandaStore = mcl.MONKModel['PandaStore']
     monkpa = MONKModelPandaStore.find_one({'creator': 'monk', 'name': pandaName}, {'_id':True, 'weights':True, 'z':True}, timeout=False)
+    z = FlexibleVector(generic=monkpa['z'])        
     resGTs = {}
     for user in testData.keys():
         if user == '':
@@ -180,7 +184,7 @@ def centralizedTest(isPersonalized):
         if isPersonalized == True:
             wei = FlexibleVector(generic=pa['weights'])
         else:            
-            wei = FlexibleVector(generic=monkpa['z'])
+            wei = z
         resGT = []
         for ent in coll.find({'_id': {'$in':testData[user]}}, {'_features':True, 'labels':True}, timeout=False):     
             fea = FlexibleVector(generic=ent['_features'])   
@@ -189,9 +193,14 @@ def centralizedTest(isPersonalized):
             else:
                 resGT.append((float(wei.dot(fea)), 0.0))
         resGTs[user] = resGT
+        del wei
+    mcl.close()
     return resGTs              
   
-def evaluate(resGTs, curvefile=None):    
+def evaluate(resGTs, curvefile=None):  
+    global users
+    checkUserPartitionMapping()
+
     overallResGT = []
     thres = {}
     precisions = {}
@@ -268,7 +277,44 @@ def reset_all_data():
     print producer.send('monk', encodedMessage)
     producer.stop(1)
     kafka.close()    
-                                      
+
+def set_mantis_parameter(para, value):
+    global users
+    checkUserPartitionMapping()
+    kafka = KafkaClient(kafkaHost, timeout=None)
+    producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
+                      req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
+                      ack_timeout=200)
+    for user, partitionId in users.iteritems():
+#        if not partitionId == 4:
+#            continue
+        encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                           'user':user,
+                                           'operation':'set_mantis_parameter',
+                                           'para':para,
+                                           'value':value})
+        print producer.send(user, encodedMessage)
+    
+    producer.stop(1)
+    kafka.close()
+    
+def changeParameters():
+    global users
+    checkUserPartitionMapping()
+
+    mcl = pm.MongoClient('10.137.168.196:27017')
+    MONKModelTurtleStore = mcl.MONKModel['TurtleStore']
+    MONKModelPandaStore = mcl.MONKModel['PandaStore']
+    MONKModelMantisStore = mcl.MONKModel['MantisStore']
+    #MONKModelPandaStore.update({'creator': 'monk2', 'name': pandaName}, {'$set':{'z':[]}}, timeout=False)
+    #{'name':{$exists: true}}
+    for user, partitionId in users.iteritems():  
+        #MONKModelTurtleStore.update({'creator': user, 'name': turtleName}, {'$set':{'leader':'monk'}}, timeout=False)
+        MONKModelMantisStore.update({'creator': user, 'name': pandaName}, {'$set':{'gamma':1}}, timeout=False)
+
+    mcl.close()
+
+                                     
 #========================================== Data Preparation ======================================
 
 def retrieveData():
@@ -345,17 +391,17 @@ def checkUserPartitionMapping():
 def buildMetric(resGT, curvefile = None):
     totalP = 0.0
     totalN = 0.0
-    for data in resGT:            # remove the wrong values
-        if data[0] > 100000:
-           resGT.remove(data)
-        elif data[0] < -100000:
-           resGT.remove(data)
-    for data in resGT:       
-        if data[1] > 0:
-           totalP += 1
+    for i in reversed(range(len(resGT))):            # remove the wrong values
+        if resGT[i][0] > 100000:
+           del resGT[i]
+        elif resGT[i][0] < -100000:
+           del resGT[i]
         else:
-           totalN += 1
-    resGT.sort()    
+           if resGT[i][1] > 0:
+               totalP += 1
+           else:
+               totalN += 1 
+    resGT.sort()       
     logging.debug("totalP = {0}".format(totalP))
     logging.debug("totalN = {0}".format(totalN))    
     totalFP = totalN
@@ -500,18 +546,17 @@ def plotCurveFromFile(fileNames):
 
 #reset()
     
-if __name__=='__main__':
-    
+if __name__=='__main__':    
     #reset()
     #prepareData()
     loadPreparedData("trainData", "testData")
 #
 ##    print "add_users"
 ##    add_users()
-##    print "add_data"
-##    add_data()
+#    print "add_data"
+#    add_data()
 #    print "train"
-#    train(10)
+#    train(50)
     
     print "test"
     isPersonalized = False

@@ -37,12 +37,12 @@ def print_help():
 def onexit():
     closeKafka()
     monkapi.exits()
-    logger.info('remote_rainter {0} is shutting down'.format(os.getpid()))
+    logger.info('remote_trainter {0} is shutting down'.format(os.getpid()))
 
 def handler(sig, hook = thread.interrupt_main):
     closeKafka()
     monkapi.exits()
-    logger.info('remote_rainter {0} is shutting down'.format(os.getpid()))
+    logger.info('remote_trainter {0} is shutting down'.format(os.getpid()))
     exit(1)
 
 def initKafka(config, partitions):
@@ -134,19 +134,22 @@ def server(configFile, partitions, ote):
                 elif op == 'merge':
                     follower = decodedMessage.get('follower')
                     iteration = decodedMessage.get('iteration', 0)
-                    logger.debug('merging for interation {0}'.format(iteration))
+                    partition = decodedMessage.get('partition', 0)
+                    logger.debug('merging for interation {0} from partition {1}'.format(iteration, partition))
                     if follower:
                         monkapi.merge(turtleName, user, follower)
                 elif op == 'train':
-                    iteration = decodedMessage.get('iteration',0)
-                    logger.debug('training iteration {0}'.format(iteration))
+                    iteration = decodedMessage.get('iteration', 0)
+                    partition = decodedMessage.get('partition', 0)
+                    logger.debug('training iteration {0} in partition {1}'.format(iteration, partition))
                     monkapi.train(turtleName, user)
                     leader = monkapi.get_leader(turtleName, user)
                     encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                         'user':leader,
                                                         'follower':user,
                                                         'operation':'merge',
-                                                        'iteration':iteration})
+                                                        'iteration':iteration,
+                                                        'partition':partition})
                     producer.send(config.kafkaTopic, 8, encodedMessage)
                 elif op == 'test_data':
                     logger.debug('test on the data of {0}'.format(user))
@@ -162,6 +165,11 @@ def server(configFile, partitions, ote):
                     monkapi.reset_all_data(turtleName, user)    
                 elif op == 'offsetCommit':
                     consumer.commit()
+                elif op == 'set_mantis_parameter':
+                    para = decodedMessage.get('para', '')
+                    value = decodedMessage.get('value', 0)
+                    logger.debug('set_mantis_parameter {0} to {1}'.format(para, value))
+                    monkapi.set_mantis_parameter(turtleName, user, para, value)    
                 else:
                     logger.error('Operation not recognized {0}'.format(op))
         except simplejson.JSONDecodeError as e:

@@ -233,7 +233,6 @@ def train(turtleName, user):
     _turtle = load_turtle(turtleName, user)
     if _turtle:
         _turtle.train()
-        _turtle.commit()
         return True
     else:
         logger.warning('can not find turtle by {0}@{1} to train'.format(user, turtleName))
@@ -265,6 +264,15 @@ def merge(turtleName, user, follower):
         return _turtle.merge(follower)
     else:
         logger.warning('can not find turtle by {0}@{1} to merge {2}'.format(user, turtleName, follower))
+        return False
+
+def set_mantis_parameter(turtleName, user, para, value):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        _turtle.set_mantis_parameter(para, value)
+        return True
+    else:
+        logger.warning('can not find turtle by {0}@{1} to set parameter'.format(user, turtleName))
         return False
     
 # testing APIs
