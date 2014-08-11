@@ -22,7 +22,6 @@ Last season, teams struck out at a rate never before seen: 7.5 times for each te
 <script src="./scripts/monitor.js"></script>
 <svg></svg>
 <script>
-//setInterval(function(){window.monitor()}, 5000);
 function getParameterByNameInFloat(name, defaultValue) {
     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
@@ -37,12 +36,24 @@ function getParameterByName(name, defaultValue) {
     return results == null ? defaultValue : decodeURIComponent(results[1].replace(/\+/g, " "));
 }
 
-window.monitor(getParameterByNameInFloat("xmin", -600),
-               getParameterByNameInFloat("xmax", 0),
-               getParameterByNameInFloat("ymin", -0.3),
-               getParameterByNameInFloat("ymax", 2.0),
-               getParameterByName("topic", "exprmetric"),
-               getParameterByName("metricName", "|dq|/|q|"));
+var xmin = getParameterByNameInFloat("xmin", -600);
+var xmax = getParameterByNameInFloat("xmax", 0);
+var ymin = getParameterByNameInFloat("ymin", -0.3);
+var ymax = getParameterByNameInFloat("ymax", 2.0);
+var topic = getParameterByName("topic", "exprmetric");
+var metricName = getParameterByName("metricName", "|dq|/|q|");
+var metricWindowSize = getParameterByName("metricWindowSize", 10000);
+var metricStartPosition = getParameterByName("start",0);
+
+function delayPos(){
+	var result = window.metricStartPosition;
+	window.metricStartPosition = new Date().getTime() / 1000;
+	return result;
+}
+
+window.monitor(xmin, xmax, ymin, ymax, topic, metricName, metricWindowSize, delayPos());
+
+//setInterval(function(){window.monitor(xmin, xmax, ymin, ymax, topic, metricName, metricWindowSize, delayPos())}, 5000);
 
 </script>
 <!--<![endif]-->

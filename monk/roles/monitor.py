@@ -15,6 +15,7 @@ from twisted.internet import reactor
 from deffered_resource import DefferedResource
 from twisted.internet.task import LoopingCall
 import traceback
+from monk.utils.utils import decodeMetric
 
 class MonkMetrics(object):
     group = 'metrics'
@@ -60,24 +61,17 @@ class MonkMetrics(object):
             metrics = {}
             self.metrics[topic] = metrics
         for message in reversed(messages):
-            body = message.message.value.split(' : ')[1].split(',')
-            # user 
-            user = body[0].split('=')[1]
-            # time
-            t = float(body[1].split('=')[1])
+            monktype, monkname, monkuser, t, name, value = decodeMetric(message.message.value.split(' : ')[1])
             minTime = min(minTime, t)
             maxTime = max(maxTime, t)
-            # metric
-            name = body[2].split('=')[0]
-            value = float(body[2].split('=')[1])
             if name in metrics:
                 metric = metrics[name]
             else:
                 metric = []
                 metrics[name] = metric
-            userId = self.parseUser(user, t, topic, name)
-            metric.append({'time':t, 'userId':userId, 'value':value})
-            print userId, t, value, name, user
+            userId = self.parseUser(monkuser, t, topic, name)
+            metric.append({'time':t, 'userId':userId, 'value':value, 'monkType':monktype, 'monkName':monkname})
+            print userId, t, value, name, monkuser
         return minTime, maxTime
     
     def normalize_metrics(self):
@@ -88,24 +82,23 @@ class MonkMetrics(object):
                 for m in metric:
                     m['rtime'] = (m['time'] - currtime) / 1000
                     
-    def retrieve_metrics(self, topic):
+    def retrieve_metrics(self, topic, metricStartPosition):
+        if metricStartPosition >= 0:
+            return
+            
         try:
             kafkaClient = KafkaClient(self.kafkaHosts)
             consumer = SimpleConsumer(kafkaClient, self.group, topic, partitions=[0])
-            offset = 0
             timeSpan = 0
             timeNow = 0
             timePast = self.bigNumber
-            while offset < self.maxOffset:
-                offset += self.offsetInterval
-                consumer.seek(-offset, 2)
-                messages = consumer.get_messages(count=self.offsetInterval)
-                minTime, maxTime = self.parseMessages(topic, messages)
-                timeNow = max(maxTime, timeNow)
-                timePast = min(minTime, timePast)
-                timeSpan = max(timeNow - timePast, timeSpan)
+            consumer.seek(metricStartPosition, 2)
+            messages = consumer.get_messages(count=-self.metricStartPosition)
+            minTime, maxTime = self.parseMessages(topic, messages)
+            timeNow = max(maxTime, timeNow)
+            timePast = min(minTime, timePast)
+            timeSpan = max(timeNow - timePast, timeSpan)
             kafkaClient.close()
-            self.normalize_metrics()
         except Exception as e:
             print e
             print traceback.format_exc()
@@ -153,7 +146,8 @@ class  Metrics(DefferedResource):
         global monkMetrics
         topic = args.get('topic', ['exprmetric'])[0]
         metricName = args.get('metricName', ['|dq|/|q|'])[0]
-        monkMetrics.retrieve_metrics(topic)
+        metricStartPosition = args.get('metricStartPosition', [0])[0]
+        monkMetrics.retrieve_metrics(topic, metricStartPosition)
         metrics = monkMetrics.metrics.get(topic, {}).get(metricName, [])
         print 'return metrics for ', topic, metricName
         return metrics

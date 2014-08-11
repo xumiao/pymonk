@@ -1,10 +1,12 @@
-function monitor(xmin, xmax, ymin, ymax, topic, metricName) {
+function monitor(xmin, xmax, ymin, ymax, topic, metricName, metricWindowSize, metricStartPosition) {
 xmax = typeof xmax !== "undefined" ? xmax : 0;
 xmin = typeof xmin !== "undefined" ? xmin : -600;
 ymax = typeof ymax !== "undefined" ? ymax : 2.0;
 ymin = typeof ymin !== "undefined" ? ymin : -0.3;
 topic = typeof topic !== "undefined" ? topic : "exprmetric";
 metricName = typeof metricName !== "undefined" ? metricName : "|dq|/|q|";
+metricWindowSize = typeof metricWindowSize !== "undefined" ? metricWindowSize : 10000;
+metricStartPosition = typeof metricStartPosition !== "undefined" ? metricStartPosition : 0;
 
 var formatTime = function(d) { return d; },
     format = d3.format(".2f"),
@@ -56,6 +58,8 @@ var yAxis = d3.svg.axis()
     .tickPadding(10)
     .tickSize( -width);
 
+d3.select(".g-main-chart").select("svg").selectAll("*").remove()	
+
 var svg = d3.select(".g-main-chart").select("svg")
 	.attr("width", (width + margin.left + margin.right))
 	.attr("height", (height + margin.top + margin.bottom))
@@ -65,12 +69,10 @@ var svg = d3.select(".g-main-chart").select("svg")
 	
 queue()
     .defer(d3.json, "http://monkzookeeper.cloudapp.net/users?topic="+topic+"&metricName="+metricName)
-    .defer(d3.json, "http://monkzookeeper.cloudapp.net/metrics?topic="+topic+"&metricName="+metricName)
+    .defer(d3.json, "http://monkzookeeper.cloudapp.net/metrics?topic="+topic+"&metricName="+metricName+"&start="+metricStartPosition)
     .await(ready)
 
 function ready(err, users, metrics) {
-
-  window.metrics = metrics;
 
   var userById = {};
   users.forEach(function(d) {
@@ -78,12 +80,41 @@ function ready(err, users, metrics) {
   });
 
   metrics.forEach(function(d) {
-      d.rtime = d.rtime;
+      d.time = d.time;
       d.value = +d.value;
 	  d.userId = +d.userId;
       d.user = userById[d.userId].name;
   });
 
+  if (!("metrics" in window)){
+	window.metrics = {};
+  }
+  
+  if (!("users" in window)){
+	window.users = {};
+  }
+  
+  var wmetric = [];
+  var wusers  = [];
+  if (!(metricName in window.metrics) || metricStartPosition < 0){
+	window.metrics[metricName] = metrics;
+	wmetric = window.metrics[metricName];
+  }else{
+    wmetric = window.metrics[metricName];
+	wmetric.push.apply(wmetric, metrics);
+	if (wmetric.length > metricWindowSize){
+		wmetric.splice(0, wmetric.length - metricWindowSize);
+	}
+  }
+  
+  if (!(metricName in window.users) || metricStartPosition < 0){
+	window.users[metricName] = users;
+	wusers = window.users[metricName];
+  }else{
+    wusers = window.users[metricName];
+	users.push.apply(wusers, users);
+  }
+  
   //
   // main scatterplot
   //
@@ -102,7 +133,7 @@ function ready(err, users, metrics) {
 
   var bounds = d3.geom.polygon([[0, 0], [0, height], [width, height], [width, 0]]);
 
-  var avgData = drawLineChart(svg, metrics, "value", x, y, width, height, 3, bounds);
+  var avgData = drawLineChart(svg, wmetric, "value", x, y, width, height, 3, bounds);
 
   drawLegend(d3.select(".g-main-chart"));
 
@@ -362,7 +393,7 @@ function ready(err, users, metrics) {
 
     userChooser.on("change", function() { selectUser(this.value); })
       .selectAll("option")
-        .data(users)
+        .data(wusers)
       .enter().append("option")
         .attr("value", function(d) { return d.name; })
         .text(function(d) { return d.name; });
@@ -374,6 +405,11 @@ function ready(err, users, metrics) {
 
   function drawLineChart(container, data, attributeY, x, y, width, height, r, bounds) {
 
+    var currTime = data[data.length - 1].time;
+    data.forEach(function(d) {
+      d.rtime = d.time - currTime;
+    });
+  
     var userLine = d3.svg.line()
       .x(function(d) { return x(d.rtime); })
       .y(function(d) { return y(d[attributeY]); });

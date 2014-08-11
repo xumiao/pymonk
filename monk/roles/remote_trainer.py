@@ -156,7 +156,7 @@ def server(configFile, partitions, ote):
                     entity = decodedMessage.get('entity')
                     #isPersonalized = decodedMessage.get('isPersonalized',1)
                     if entity:
-                        monkapi.test_data(turtleName, user, entity)
+                        monkapi.predict(turtleName, user, entity)
                 elif op == 'reset':
                     logger.debug('reset turtle {0} of user {1} '.format(turtleName, user))
                     monkapi.reset(turtleName, user)

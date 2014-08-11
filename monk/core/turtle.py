@@ -8,15 +8,16 @@ import base
 import constants as cons
 import crane
 from relation import MatchingRelation
-from ..utils.utils import binary2decimal, translate
-from ..math.cmath import sign0
+from monk.utils.utils import binary2decimal, translate
+from monk.math.cmath import sign0
 #from itertools import izip
 import logging
 import nltk
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
-
+from monk.utils.utils import encodeMetric
 logger = logging.getLogger("monk.turtle")
+metricLog = logging.getLogger("metric")
 
 stopwords_english = set(stopwords.words('english'))
 symbols = {'\'', '\"', '[', ']','{','}','(',')','.','$', '#'}

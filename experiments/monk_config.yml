@@ -42,7 +42,7 @@ loggingConfig:
             level : WARNING
             propagate : True
             handlers : [console, files]
-    metric :
+        metric :
             level : DEBUG
             propagate : True
             handlers : [console, files, kafka]

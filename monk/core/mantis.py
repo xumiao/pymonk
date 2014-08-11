@@ -7,10 +7,10 @@ solving machine learning problems
 """
 import base, crane
 from numpy import sqrt
-from ..math.svm_solver_dual import SVMDual
-from ..math.flexible_vector import FlexibleVector
+from monk.math.svm_solver_dual import SVMDual
+from monk.math.flexible_vector import FlexibleVector
 from bson.objectid import ObjectId
-from ..utils.utils import encodeMetric
+from monk.utils.utils import encodeMetric
 import logging
 
 logger = logging.getLogger("monk.mantis")

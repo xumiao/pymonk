@@ -5,14 +5,16 @@ The basic executor of the machine learning building block,
 i.e., a binary classifier or a linear regressor
 @author: xm
 """
-from ..math.flexible_vector import FlexibleVector
-from ..math.cmath import sigmoid
+from monk.math.flexible_vector import FlexibleVector
+from monk.math.cmath import sigmoid
 from mantis import Mantis
 import constants as cons
 import base, crane
 import re
 import logging
+from monk.utils.utils import encodeMetric
 logger = logging.getLogger('monk.panda')
+metricLog = logging.getLogger("metric")
 
 class Panda(base.MONKObject):
     FUID  = 'uid'
@@ -222,7 +224,9 @@ class LinearPanda(Panda):
             self.mantis.merge(follower, self.m)
     
     def predict(self, entity):
-        entity[self.uid] = sigmoid(self.weights.dot(entity._features))
+        value = self.weights.dot(entity._features)
+        metricLog.info(encodeMetric(self, 'decision', value))
+        entity[self.uid] = sigmoid(value)
         return entity[self.uid]
     
     def reset(self):
