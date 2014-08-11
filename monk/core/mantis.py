@@ -205,6 +205,7 @@ class Mantis(base.MONKObject):
         logger.debug('q  {0}'.format(self.q))
         logger.debug('dq {0}'.format(self.dq))
         self.commit()
+        self.solver.initialize()
         
     def reset_data(self):
         self.data = {}
@@ -215,7 +216,7 @@ class Mantis(base.MONKObject):
     def set_mantis_parameter(self, para, value):
         if (para == 'gamma'):
             self.gamma = value
-            self.solver.gamma = value
+            self.solver.setGamma(value)
             logger.debug('gamma is {0}'.format(self.gamma))
             logger.debug('gamma of solver is {0}'.format(self.solver.gamma))
             self.update_fields({self.FGAMMA : self.gamma})

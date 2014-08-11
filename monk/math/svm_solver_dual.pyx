@@ -142,7 +142,15 @@ cdef class SVMDual(object):
         for j in xrange(self.num_instances):
             self.w.addFast(self.x[j], self.y[j] * self.alpha[j])
         self.w.addFast(mu, -1)
-        
+    
+    def setGamma(self, gamma):
+        self.gamma = gamma
+        self.rho0 = self.rho * self.gamma / (2 * (self.rho + self.gamma))
+                
+    def setRho(self, rho):        
+        self.rho = rho  
+        self.rho0 = self.rho * self.gamma / (2 * (self.rho + self.gamma))
+                
     def trainModel(self):
         cdef int j, k, s, iteration
         cdef float d, G, alpha_old
