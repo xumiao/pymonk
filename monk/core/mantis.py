@@ -104,7 +104,7 @@ class Mantis(base.MONKObject):
         # check if updates are needed
         self.dq.copyUpdate(self.q)
         self.dq.add(z, -1)
-        z_q = sqrt(self.dq.norm2()) / (self.q.norm2() + 1e-12)
+        z_q = sqrt(self.dq.norm2() / (self.q.norm2() + 1e-12))
         logger.debug('|z|={0}'.format(z.norm2()))
         logger.debug('|q|={0}'.format(self.q.norm2()))
         logger.debug('difference between z and q {0}'.format(z_q))
@@ -122,10 +122,18 @@ class Mantis(base.MONKObject):
         loss = self.solver.status()
         logger.debug('objective = {0}'.format(loss))
         metricLog.info(encodeMetric(self, 'loss', loss))
+        wq = FlexibleVector()
+        wq.copyUpdate(self.panda.weights)
+        wq.add(self.q, -1)
+        metricLog.info(encodeMetric(self, '|q-w|/|q|', sqrt(wq.norm2() / (self.q.norm2() + 1e-12))))
         self.solver.trainModel()
         loss = self.solver.status()
         logger.debug('objective = {0}'.format(loss))
         metricLog.info(encodeMetric(self, 'loss', loss))
+        wq.copyUpdate(self.panda.weights)
+        wq.add(self.q, -1)
+        metricLog.info(encodeMetric(self, '|q-w|/|q|', sqrt(wq.norm2() / (self.q.norm2() + 1e-12))))
+        del wq
         
         # update q
         r = self.rho / float(self.rho + self.gamma)
