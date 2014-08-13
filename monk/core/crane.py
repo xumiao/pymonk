@@ -79,6 +79,10 @@ class Crane(object):
     def __erase_all(self, objs):
         map(self.__erase_one, objs)
 
+    def _reload(self):
+        for key in self._cache:
+            self._cache[key] = base.monkFactory.decode(self._cache[key].generic())
+            
     def set_collection_name(self, collectionName):
         if collectionName:
             self._coll = self._database[collectionName]
@@ -338,3 +342,10 @@ def initialize_storage(config):
     Tigress.store = tigressStore
     
     return True
+
+def reload_storage():
+    mantisStore._reload()
+    pandaStore._reload()
+    tigressStore._reload()
+    turtleStore._reload()
+    entityStore._reload()

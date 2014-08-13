@@ -169,7 +169,9 @@ def server(configFile, partitions, ote):
                     para = decodedMessage.get('para', '')
                     value = decodedMessage.get('value', 0)
                     logger.debug('set_mantis_parameter {0} to {1}'.format(para, value))
-                    monkapi.set_mantis_parameter(turtleName, user, para, value)    
+                    monkapi.set_mantis_parameter(turtleName, user, para, value)
+                elif op == 'reload':
+                    monkapi.reloads()
                 else:
                     logger.error('Operation not recognized {0}'.format(op))
         except simplejson.JSONDecodeError as e:

@@ -109,7 +109,7 @@ class Mantis(base.MONKObject):
         logger.debug('|q|={0}'.format(self.q.norm2()))
         logger.debug('difference between z and q {0}'.format(z_q))
         metricLog.info(encodeMetric(self, '|z-q|/|q|', z_q))
-        if z_q < 0.001 and self.q.norm2() > 0:
+        if z_q < 0.0001 and self.q.norm2() > 0:
             logger.debug('no need to train')
             return
             
@@ -117,18 +117,20 @@ class Mantis(base.MONKObject):
         self.mu.add(self.q, 1)
         self.mu.add(z, -1)
         logger.debug('gamma in mantis {0}'.format(self.gamma))
+        metricLog.info(encodeMetric(self, '|mu|', sqrt(self.mu.norm2())))
+        
         # update w
+        wq = FlexibleVector()
         self.solver.setModel(z, self.mu)
         loss = self.solver.status()
-        logger.debug('objective = {0}'.format(loss))
         metricLog.info(encodeMetric(self, 'loss', loss))
-        wq = FlexibleVector()
         wq.copyUpdate(self.panda.weights)
         wq.add(self.q, -1)
         metricLog.info(encodeMetric(self, '|q-w|/|q|', sqrt(wq.norm2() / (self.q.norm2() + 1e-12))))
+
         self.solver.trainModel()
+
         loss = self.solver.status()
-        logger.debug('objective = {0}'.format(loss))
         metricLog.info(encodeMetric(self, 'loss', loss))
         wq.copyUpdate(self.panda.weights)
         wq.add(self.q, -1)
@@ -174,7 +176,7 @@ class Mantis(base.MONKObject):
             fdq = self.dq
 
         rd = sqrt(fdq.norm2() / (self.panda.z.norm2() + 1e-12))
-        if rd < 0.001 and self.panda.z.norm2() > 0:
+        if rd < 0.0001 and self.panda.z.norm2() > 0:
             logger.debug('no need to merge')
         else:
             self.panda.z.add(fdq, - 1.0 / (m + 1 / self.rho))
