@@ -27,6 +27,7 @@ from __future__ import division
 cimport cython
 from libc.stdlib cimport malloc, free, rand, calloc, realloc, RAND_MAX
 from libc.string cimport memset
+from libc.math cimport sqrt
 
 cdef int MAX_HEIGHT = 32
 cdef long MAX_CAPACITY = 2 << 16
@@ -575,7 +576,10 @@ cdef class FlexibleVector(object):
             for i in xrange(currA.length):
                 result += currA.values[i] * currA.values[i]
             currA = currA.nextA[0]
-        return result    
+        return result
+        
+    cpdef float norm(self):
+        return sqrt(self.norm2())
         
     cpdef trim(self, float tol = 0.00001, bint remove = False):
         cdef SkipNodeA* currA = self.head.nextA[0]
