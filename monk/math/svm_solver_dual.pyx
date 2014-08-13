@@ -136,6 +136,14 @@ cdef class SVMDual(object):
         self.c[j] = c
         self.alpha[j] = 0
         self.QD[j] = self.rho0 / c + x.norm2()
+    
+    def setModel0(self, z, mu):
+        cdef int j
+        for j in xrange(self.num_instances):
+            self.alpha[j] = 0
+            self.index[j] = j
+        self.w.copyUpdate(z)
+        self.w.addFast(mu, -1)
         
     def setModel(self, z, mu):
         cdef int j

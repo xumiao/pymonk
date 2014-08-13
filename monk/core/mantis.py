@@ -120,14 +120,15 @@ class Mantis(base.MONKObject):
         
         # update w
         wq = FlexibleVector()
-        self.solver.setModel(z, self.mu)
+        self.solver.setModel0(z, self.mu)
         loss = self.solver.status()
         metricLog.info(encodeMetric(self, 'loss', loss))
         wq.copyUpdate(self.panda.weights)
         wq.add(self.q, -1)
         metricLog.info(encodeMetric(self, '|q-w|/|q|', wq.norm() / (self.q.norm() + 1e-12)))
         metricLog.info(encodeMetric(self, '|q-w|/|w|', wq.norm() / (self.panda.weights.norm() + 1e-12)))
-
+        logger.debug('q = {0}'.format(self.q))
+        logger.debug('w = {0}'.format(self.panda.weights))
         self.solver.trainModel()
 
         loss = self.solver.status()
