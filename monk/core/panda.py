@@ -218,10 +218,10 @@ class LinearPanda(Panda):
     
     def merge(self, follower):
         try:
-            self.mantis.merge(follower, self.m)
+            return self.mantis.merge(follower, self.m)
         except:
             self.load_mantis()
-            self.mantis.merge(follower, self.m)
+            return self.mantis.merge(follower, self.m)
     
     def predict(self, entity):
         value = self.weights.dot(entity._features)

@@ -137,7 +137,13 @@ def server(configFile, partitions, ote):
                     partition = decodedMessage.get('partition', 0)
                     logger.debug('merging for interation {0} from partition {1}'.format(iteration, partition))
                     if follower:
-                        monkapi.merge(turtleName, user, follower)
+                        if (monkapi.merge(turtleName, user, follower)):
+                            encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                                            'user':user,
+                                                            'operation':'train',
+                                                            'iteration':iteration + 1,
+                                                            'partition':partition})
+                            producer.send(config.kafkaTopic, partition, encodedMessage)
                 elif op == 'train':
                     iteration = decodedMessage.get('iteration', 0)
                     partition = decodedMessage.get('partition', 0)

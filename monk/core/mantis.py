@@ -183,6 +183,7 @@ class Mantis(base.MONKObject):
         rd = fdq.norm() / (self.panda.z.norm() + 1e-12)
         if rd < 0.0001 and self.panda.z.norm() > 0:
             logger.debug('no need to merge')
+            return False
         else:
             self.panda.z.add(fdq, - 1.0 / (m + 1 / self.rho))
             logger.debug('m = {0}'.format(m))
@@ -193,7 +194,8 @@ class Mantis(base.MONKObject):
         
         if fdq is not self.dq:
             del fdq
-            
+        return True
+        
     def commit(self):
         self.update_fields({self.FDUALS : self.mu.generic(),
                             self.FQ     : self.q.generic(),
