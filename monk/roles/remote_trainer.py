@@ -139,7 +139,7 @@ def server(configFile, partitions, ote):
                     if follower:
                         if (monkapi.merge(turtleName, user, follower)):
                             encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                            'user':user,
+                                                            'user':follower,
                                                             'operation':'train',
                                                             'iteration':iteration + 1,
                                                             'partition':partition})
