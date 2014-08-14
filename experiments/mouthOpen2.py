@@ -67,7 +67,7 @@ def loadPreparedData(file1, file2 = None):
 def add_users():
     global users
     
-    mcl = pm.MongoClient('10.137.168.196:27017')
+    mcl = pm.MongoClient('10.137.172.201:27017')
     kafka = KafkaClient(kafkaHost, timeout=None)
     producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
                             req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
@@ -95,7 +95,7 @@ def add_data():
     global users
     global trainData
     checkUserPartitionMapping()
-    mcl = pm.MongoClient('10.137.168.196:27017')        
+    mcl = pm.MongoClient('10.137.172.201:27017')        
     kafka = KafkaClient(kafkaHost, timeout=None)
     producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
                       req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
@@ -145,7 +145,7 @@ def test(isPersonalized):
     global users
     global testData
     checkUserPartitionMapping()
-    mcl = pm.MongoClient('10.137.168.196:27017')        
+    mcl = pm.MongoClient('10.137.172.201:27017')        
     kafka = KafkaClient(kafkaHost, timeout=None)
     producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
                       req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
@@ -169,7 +169,7 @@ def centralizedTest(isPersonalized):
     global testData
     checkUserPartitionMapping()
     
-    mcl = pm.MongoClient('10.137.168.196:27017')
+    mcl = pm.MongoClient('10.137.172.201:27017')
     coll = mcl.DataSet['PMLExpression']
     MONKModelPandaStore = mcl.MONKModel['PandaStore']
     monkpa = MONKModelPandaStore.find_one({'creator': 'monk', 'name': pandaName}, {'_id':True, 'weights':True, 'z':True}, timeout=False)
@@ -302,7 +302,7 @@ def changeParameters():
     global users
     checkUserPartitionMapping()
 
-    mcl = pm.MongoClient('10.137.168.196:27017')
+    mcl = pm.MongoClient('10.137.172.201:27017')
     MONKModelTurtleStore = mcl.MONKModel['TurtleStore']
     MONKModelPandaStore = mcl.MONKModel['PandaStore']
     MONKModelMantisStore = mcl.MONKModel['MantisStore']
@@ -319,7 +319,7 @@ def changeParameters():
 
 def retrieveData():
     global UoI
-    mcl = pm.MongoClient('10.137.168.196:27017')        
+    mcl = pm.MongoClient('10.137.172.201:27017')        
     coll = mcl.DataSet['PMLExpression']
     originalData = {}
     for user in UoI.keys():
@@ -381,7 +381,7 @@ def stratifiedSelection(posindex, negindex, fracTrain):
     
 def checkUserPartitionMapping():
     global users
-    mcl = pm.MongoClient('10.137.168.196:27017')
+    mcl = pm.MongoClient('10.137.172.201:27017')
     if not users: 
         userColl = mcl.DataSet['PMLUsers']
         for u in userColl.find(None, {'userId':True, 'partitionId':True}, timeout=False):
@@ -549,25 +549,25 @@ def plotCurveFromFile(fileNames):
 if __name__=='__main__':    
     #reset()
     #prepareData()
-    loadPreparedData("trainData", "testData")
+    #loadPreparedData("trainData", "testData")
 #
 ##    print "add_users"
 ##    add_users()
 #    print "add_data"
 #    add_data()
-#    print "train"
-#    train(50)
+    print "train"
+    train(1)
     
-    print "test"
-    isPersonalized = False
-    resGTs = centralizedTest(isPersonalized)
-    destfile = open("resGTs_consensus", 'w')       # save result and gt
-    pickle.dump(resGTs, destfile)
-    destfile.close()
-    
-    print "evaluate"
-    file = open("resGTs_consensus", 'r')
-    resGTs_consensus = pickle.load(file)
-    file.close()
-    evaluate(resGTs_consensus, "acc.curve")
+#    print "test"
+#    isPersonalized = True
+#    resGTs = centralizedTest(isPersonalized)
+#    destfile = open("resGTs_personalized", 'w')       # save result and gt
+#    pickle.dump(resGTs, destfile)
+#    destfile.close()
+#    
+#    print "evaluate"
+#    file = open("resGTs_personalized", 'r')
+#    resGTs_personalized = pickle.load(file)
+#    file.close()
+#    evaluate(resGTs_personalized, "acc.curve")
 
