@@ -104,10 +104,11 @@ class Mantis(base.MONKObject):
         # check if updates are needed
         self.dq.copyUpdate(self.q)
         self.dq.add(z, -1)
-        z_q = sqrt(self.dq.norm2()) / (self.q.norm2() + 1e-12)
-        logger.debug('difference between z and q {0}'.format(z_q))
+        z_q = self.dq.norm() / (self.q.norm() + 1e-12)
+        metricLog.info(encodeMetric(self, '|z|', z.norm()))
+        metricLog.info(encodeMetric(self, '|q|', self.q.norm()))
         metricLog.info(encodeMetric(self, '|z-q|/|q|', z_q))
-        if z_q < 0.001 and self.q.norm2() > 0:
+        if z_q < 0.0001 and self.q.norm() > 0:
             logger.debug('no need to train')
             return
             
@@ -115,15 +116,27 @@ class Mantis(base.MONKObject):
         self.mu.add(self.q, 1)
         self.mu.add(z, -1)
         logger.debug('gamma in mantis {0}'.format(self.gamma))
+        metricLog.info(encodeMetric(self, '|mu|', self.mu.norm()))
+        
         # update w
-        self.solver.setModel(z, self.mu)
+        wq = FlexibleVector()
+        self.solver.setModel0(z, self.mu)
         loss = self.solver.status()
-        logger.debug('objective = {0}'.format(loss))
         metricLog.info(encodeMetric(self, 'loss', loss))
+        wq.copyUpdate(self.panda.weights)
+        wq.add(self.q, -1)
+        metricLog.info(encodeMetric(self, '|q-w|/|q|', wq.norm() / (self.q.norm() + 1e-12)))
+        metricLog.info(encodeMetric(self, '|q-w|/|w|', wq.norm() / (self.panda.weights.norm() + 1e-12)))
+        logger.debug('q = {0}'.format(self.q))
+        logger.debug('w = {0}'.format(self.panda.weights))
         self.solver.trainModel()
+
         loss = self.solver.status()
-        logger.debug('objective = {0}'.format(loss))
         metricLog.info(encodeMetric(self, 'loss', loss))
+        wq.copyUpdate(self.panda.weights)
+        wq.add(self.q, -1)
+        metricLog.info(encodeMetric(self, '|q-w|/|q|', wq.norm() / (self.q.norm() + 1e-12)))
+        metricLog.info(encodeMetric(self, '|q-w|/|w|', wq.norm() / (self.panda.weights.norm() + 1e-12)))
         
         # update q
         r = self.rho / float(self.rho + self.gamma)
@@ -136,9 +149,13 @@ class Mantis(base.MONKObject):
         del z
         
         # measure convergence
-        rd = sqrt(self.dq.norm2() / (self.q.norm2() + 1e-12))
-        logger.debug('relative difference of q {0}'.format(rd))
+        rd = self.dq.norm() / (self.q.norm() + 1e-12)
         metricLog.info(encodeMetric(self, '|dq|/|q|', rd))
+        wq.copyUpdate(self.panda.weights)
+        wq.add(self.q, -1)
+        metricLog.info(encodeMetric(self, '|q-w|/|q|', wq.norm() / (self.q.norm() + 1e-12)))
+        metricLog.info(encodeMetric(self, '|q-w|/|w|', wq.norm() / (self.panda.weights.norm() + 1e-12)))
+        del wq
         
         # commit changes  
         self.panda.update_fields({self.panda.FWEIGHTS:self.panda.weights.generic()})                            
@@ -163,9 +180,10 @@ class Mantis(base.MONKObject):
         else:
             fdq = self.dq
 
-        rd = sqrt(fdq.norm2() / (self.panda.z.norm2() + 1e-12))
-        if rd < 0.001 and self.panda.z.norm2() > 0:
+        rd = fdq.norm() / (self.panda.z.norm() + 1e-12)
+        if rd < 0.0001 and self.panda.z.norm() > 0:
             logger.debug('no need to merge')
+            return False
         else:
             self.panda.z.add(fdq, - 1.0 / (m + 1 / self.rho))
             logger.debug('m = {0}'.format(m))
@@ -176,7 +194,8 @@ class Mantis(base.MONKObject):
         
         if fdq is not self.dq:
             del fdq
-            
+        return True
+        
     def commit(self):
         self.update_fields({self.FDUALS : self.mu.generic(),
                             self.FQ     : self.q.generic(),
@@ -205,6 +224,7 @@ class Mantis(base.MONKObject):
         logger.debug('q  {0}'.format(self.q))
         logger.debug('dq {0}'.format(self.dq))
         self.commit()
+        self.solver.initialize()
         
     def reset_data(self):
         self.data = {}
@@ -215,7 +235,7 @@ class Mantis(base.MONKObject):
     def set_mantis_parameter(self, para, value):
         if (para == 'gamma'):
             self.gamma = value
-            self.solver.gamma = value
+            self.solver.setGamma(value)
             logger.debug('gamma is {0}'.format(self.gamma))
             logger.debug('gamma of solver is {0}'.format(self.solver.gamma))
             self.update_fields({self.FGAMMA : self.gamma})

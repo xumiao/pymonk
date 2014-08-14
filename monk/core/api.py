@@ -49,31 +49,25 @@ def exits():
     return True
 
 def reloads(config=None):
-    if config is None:
-        if _config is None:
-            print 'configuration is not set'
-            return
-        else:
-            config = _config
-    
-    exits()
+    if config:
+        exits()
+        reload(crane)
+        initialize(config)
+
     reload(base)
-    reload(crane)
-    reload(entity)
-    reload(relation)
     reload(tigress)
     reload(turtle)
     reload(mantis) 
     reload(panda)
-    initialize(config)
-
+    reload(entity)
+    reload(relation)
+    crane.reload_storage()
 
 def dummy(duration):
     crane.entityStore.load_one_in_id({'name':'tests'})
     import time
     time.sleep(duration)
     
-
 # entity APIs
 def load_entities(entities=[], query={}, skip=0, num=100, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)

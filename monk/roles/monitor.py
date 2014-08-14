@@ -60,8 +60,8 @@ class MonkMetrics(object):
         else:
             metrics = {}
             self.metrics[topic] = metrics
-        for message in reversed(messages):
-            monktype, monkname, monkuser, t, name, value = decodeMetric(message.message.value.split(' : ')[1])
+        for message in messages:
+            monkuser, t, name, value = decodeMetric(message.message.value.split(' : ')[1])
             minTime = min(minTime, t)
             maxTime = max(maxTime, t)
             if name in metrics:
@@ -70,7 +70,7 @@ class MonkMetrics(object):
                 metric = []
                 metrics[name] = metric
             userId = self.parseUser(monkuser, t, topic, name)
-            metric.append({'time':t, 'userId':userId, 'value':value, 'monkType':monktype, 'monkName':monkname})
+            metric.append({'time':t, 'userId':userId, 'value':value})
             print userId, t, value, name, monkuser
         return minTime, maxTime
     
@@ -84,7 +84,7 @@ class MonkMetrics(object):
                     
     def retrieve_metrics(self, topic, metricStartPosition):
         if metricStartPosition >= 0:
-            return
+            return 0
             
         try:
             kafkaClient = KafkaClient(self.kafkaHosts)
@@ -93,15 +93,17 @@ class MonkMetrics(object):
             timeNow = 0
             timePast = self.bigNumber
             consumer.seek(metricStartPosition, 2)
-            messages = consumer.get_messages(count=-self.metricStartPosition)
+            messages = consumer.get_messages(count=-metricStartPosition)
             minTime, maxTime = self.parseMessages(topic, messages)
             timeNow = max(maxTime, timeNow)
             timePast = min(minTime, timePast)
             timeSpan = max(timeNow - timePast, timeSpan)
             kafkaClient.close()
+            return len(messages)
         except Exception as e:
             print e
             print traceback.format_exc()
+        return 0
 
 monkMetrics = MonkMetrics('monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9094')
 
@@ -146,10 +148,14 @@ class  Metrics(DefferedResource):
         global monkMetrics
         topic = args.get('topic', ['exprmetric'])[0]
         metricName = args.get('metricName', ['|dq|/|q|'])[0]
-        metricStartPosition = args.get('start', [0])[0]
-        monkMetrics.retrieve_metrics(topic, metricStartPosition)
+        metricStartPosition = int(args.get('start', [0])[0])
+        sz = monkMetrics.retrieve_metrics(topic, metricStartPosition)
         metrics = monkMetrics.metrics.get(topic, {}).get(metricName, [])
-        print 'return metrics for ', topic, metricName
+        #if sz > 0:
+        #    metrics = monkMetrics.metrics.get(topic, {}).get(metricName, [])[-sz:]
+        #else:
+        #    metrics = []
+        print 'return metrics for ', topic, metricName, metricStartPosition
         return metrics
         
     def _delayedRender_GET(self, request):

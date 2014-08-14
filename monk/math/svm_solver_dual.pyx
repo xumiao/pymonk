@@ -16,6 +16,7 @@ from monk.math.flexible_vector import FlexibleVector
 from monk.utils.utils import encodeMetric
 import logging
 logger = logging.getLogger('monk.svm_solver_dual')
+metricLog = logging.getLogger('metric')
 
 cdef inline _MEM_CHECK(void* p):
     if p == NULL:
@@ -135,6 +136,14 @@ cdef class SVMDual(object):
         self.c[j] = c
         self.alpha[j] = 0
         self.QD[j] = self.rho0 / c + x.norm2()
+    
+    def setModel0(self, z, mu):
+        cdef int j
+        for j in xrange(self.num_instances):
+            self.alpha[j] = 0
+            self.index[j] = j
+        self.w.copyUpdate(z)
+        self.w.addFast(mu, -1)
         
     def setModel(self, z, mu):
         cdef int j
@@ -142,7 +151,17 @@ cdef class SVMDual(object):
         for j in xrange(self.num_instances):
             self.w.addFast(self.x[j], self.y[j] * self.alpha[j])
         self.w.addFast(mu, -1)
-        
+    
+    def setGamma(self, gamma):
+        self.gamma = gamma
+        self.rho0 = self.rho * self.gamma / (2 * (self.rho + self.gamma))
+        logger.debug('rho = {0}, gamma = {1}, rho0 = {2}'.format(self.rho, self.gamma, self.rho0))
+                
+    def setRho(self, rho):        
+        self.rho = rho  
+        self.rho0 = self.rho * self.gamma / (2 * (self.rho + self.gamma))
+        logger.debug('rho = {0}, gamma = {1}, rho0 = {2}'.format(self.rho, self.gamma, self.rho0))
+                
     def trainModel(self):
         cdef int j, k, s, iteration
         cdef float d, G, alpha_old
@@ -158,7 +177,8 @@ cdef class SVMDual(object):
         cdef float PGmin_old = -1e10
         cdef float PGmax_new
         cdef float PGmin_new
-        logger.debug('gamma in svm_solver_dual.trainModel {0}'.format(self.gamma))                 
+        logger.debug('rho0 in svm_solver_dual.trainModel {0}'.format(self.rho0))
+        logger.debug('num_instances {0}'.format(self.num_instances))
         iteration = 0
         while iteration < self.max_num_iters:
             PGmax_new = -1e10

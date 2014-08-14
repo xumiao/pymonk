@@ -210,7 +210,7 @@ class Turtle(base.MONKObject):
         if follower not in self.followers and follower != self.creator:
             logger.error('user {0} is not a follower of {1}@{2}'.format(follower, self.creator, self.name))
             return False
-        [panda.merge(follower) for panda in self.pandas]
+        return all([panda.merge(follower) for panda in self.pandas])
     
     def reset(self):
         [panda.reset() for panda in self.pandas]    

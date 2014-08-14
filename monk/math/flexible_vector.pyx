@@ -27,6 +27,7 @@ from __future__ import division
 cimport cython
 from libc.stdlib cimport malloc, free, rand, calloc, realloc, RAND_MAX
 from libc.string cimport memset
+from libc.math cimport sqrt
 
 cdef int MAX_HEIGHT = 32
 cdef long MAX_CAPACITY = 2 << 16
@@ -221,22 +222,34 @@ cdef class FlexibleVector(object):
         cdef SkipNodeA* currA = self.head.nextA[0]
         cdef int height, j
         cdef long i
+        cdef int mini, maxi
+        cdef float minv, maxv
+        cdef float v
+        mini = -1
+        maxi = -1
+        minv =  RAND_MAX
+        maxv = -RAND_MAX
         while currA != NULL:
             b = []
             for height in xrange(currA.height):
                 b.append('*')
             for height in xrange(currA.height, self.height):
                 b.append('|')
-            j = 0
             for i in xrange(currA.length):
-                if currA.values[i] != 0:
-                    b.append('{0}:{1:.4}'.format(currA.index + i, currA.values[i]))
-                    j += 1
-                    if j == 4:
-                        b.append('...')
-                        break
+                v = currA.values[i]
+                if v != 0 and i < 4:
+                    b.append('{0}:{1:.4}'.format(currA.index + i, v))
+                if v > maxv:
+                    maxv = v
+                    maxi = currA.index + i
+                if v < minv:
+                    minv = v
+                    mini = currA.index + i
+            b.append('...')
             a.append(' '.join(b))
             currA = currA.nextA[0]
+        if mini >= 0 and maxi >= 0:
+            a.append('[{0}:{1},{2}:{3}]'.format(mini, minv, maxi, maxv))
         return '\n'.join(a)
         
     def __repr__(self):
@@ -563,7 +576,10 @@ cdef class FlexibleVector(object):
             for i in xrange(currA.length):
                 result += currA.values[i] * currA.values[i]
             currA = currA.nextA[0]
-        return result    
+        return result
+        
+    cpdef float norm(self):
+        return sqrt(self.norm2())
         
     cpdef trim(self, float tol = 0.00001, bint remove = False):
         cdef SkipNodeA* currA = self.head.nextA[0]
