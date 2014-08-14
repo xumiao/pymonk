@@ -9,3 +9,4 @@ DEFAULT_USER    = 'tester'
 DEFAULT_NONE    = 'None'
 DEFAULT_EMPTY   = ''
 DEFAULT_FUNC    = 'lambda x: None'
+EPS             = 1e-12

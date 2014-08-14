@@ -6,7 +6,7 @@ solving machine learning problems
 @author: xm
 """
 import base, crane
-from numpy import sqrt
+from constants import EPS
 from monk.math.svm_solver_dual import SVMDual
 from monk.math.flexible_vector import FlexibleVector
 from bson.objectid import ObjectId
@@ -98,65 +98,69 @@ class Mantis(base.MONKObject):
         return obj
     
     def train(self, leader):
+        logger.debug('gamma in mantis {0}'.format(self.gamma))
+        # for metric computation
+        temp = FlexibleVector()
+        # preprare for updates for z
+        self.dq.clear()
+
         # check out z
         z = self.checkout(leader)
         
         # check if updates are needed
-        self.dq.copyUpdate(self.q)
-        self.dq.add(z, -1)
-        z_q = self.dq.norm() / (self.q.norm() + 1e-12)
+        temp.copyUpdate(self.q)
+        temp.add(z, -1)
+        z_q = temp.norm() / (self.q.norm() + EPS)
         metricLog.info(encodeMetric(self, '|z|', z.norm()))
         metricLog.info(encodeMetric(self, '|q|', self.q.norm()))
         metricLog.info(encodeMetric(self, '|z-q|/|q|', z_q))
-        if z_q < 0.0001 and self.q.norm() > 0:
-            logger.debug('no need to train')
-            return
-            
+        
         # update mu
+        self.dq.add(self.mu, -1)
         self.mu.add(self.q, 1)
         self.mu.add(z, -1)
-        logger.debug('gamma in mantis {0}'.format(self.gamma))
+        self.dq.add(self.mu, 1)
         metricLog.info(encodeMetric(self, '|mu|', self.mu.norm()))
         
         # update w
-        wq = FlexibleVector()
         self.solver.setModel0(z, self.mu)
         loss = self.solver.status()
         metricLog.info(encodeMetric(self, 'loss', loss))
-        wq.copyUpdate(self.panda.weights)
-        wq.add(self.q, -1)
-        metricLog.info(encodeMetric(self, '|q-w|/|q|', wq.norm() / (self.q.norm() + 1e-12)))
-        metricLog.info(encodeMetric(self, '|q-w|/|w|', wq.norm() / (self.panda.weights.norm() + 1e-12)))
+        temp.copyUpdate(self.panda.weights)
+        temp.add(self.q, -1)
+        metricLog.info(encodeMetric(self, '|q-w|/|q|', temp.norm() / (self.q.norm() + EPS)))
+        metricLog.info(encodeMetric(self, '|q-w|/|w|', temp.norm() / (self.panda.weights.norm() + EPS)))
         logger.debug('q = {0}'.format(self.q))
         logger.debug('w = {0}'.format(self.panda.weights))
         self.solver.trainModel()
 
         loss = self.solver.status()
         metricLog.info(encodeMetric(self, 'loss', loss))
-        wq.copyUpdate(self.panda.weights)
-        wq.add(self.q, -1)
-        metricLog.info(encodeMetric(self, '|q-w|/|q|', wq.norm() / (self.q.norm() + 1e-12)))
-        metricLog.info(encodeMetric(self, '|q-w|/|w|', wq.norm() / (self.panda.weights.norm() + 1e-12)))
+        temp.copyUpdate(self.panda.weights)
+        temp.add(self.q, -1)
+        metricLog.info(encodeMetric(self, '|q-w|/|q|', temp.norm() / (self.q.norm() + EPS)))
+        metricLog.info(encodeMetric(self, '|q-w|/|w|', temp.norm() / (self.panda.weights.norm() + EPS)))
         
         # update q
         r = self.rho / float(self.rho + self.gamma)
-        self.dq.copyUpdate(self.q)    
+        self.dq.add(self.q, -1)
         self.q.clear()
         self.q.add(z, r)
         self.q.add(self.panda.weights, 1 - r)
         self.q.add(self.mu, -r)
-        self.dq.add(self.q, -1)
-        del z
+        self.dq.add(self.q, 1)
         
         # measure convergence
         rd = self.dq.norm() / (self.q.norm() + 1e-12)
         metricLog.info(encodeMetric(self, '|dq|/|q|', rd))
-        wq.copyUpdate(self.panda.weights)
-        wq.add(self.q, -1)
-        metricLog.info(encodeMetric(self, '|q-w|/|q|', wq.norm() / (self.q.norm() + 1e-12)))
-        metricLog.info(encodeMetric(self, '|q-w|/|w|', wq.norm() / (self.panda.weights.norm() + 1e-12)))
-        del wq
         
+        temp.copyUpdate(self.panda.weights)
+        temp.add(self.q, -1)
+        metricLog.info(encodeMetric(self, '|q-w|/|q|', temp.norm() / (self.q.norm() + EPS)))
+        metricLog.info(encodeMetric(self, '|q-w|/|w|', temp.norm() / (self.panda.weights.norm() + EPS)))
+
+        del temp
+        del z
         # commit changes  
         self.panda.update_fields({self.panda.FWEIGHTS:self.panda.weights.generic()})                            
         self.commit()
@@ -180,12 +184,12 @@ class Mantis(base.MONKObject):
         else:
             fdq = self.dq
 
-        rd = fdq.norm() / (self.panda.z.norm() + 1e-12)
-        if rd < 0.0001 and self.panda.z.norm() > 0:
+        rd = (fdq.norm() + EPS) / (self.panda.z.norm() + EPS)
+        if rd < self.eps:
             logger.debug('no need to merge')
             return False
         else:
-            self.panda.z.add(fdq, - 1.0 / (m + 1 / self.rho))
+            self.panda.z.add(fdq, 1 / (m + 1 / self.rho))
             logger.debug('m = {0}'.format(m))
             logger.debug('update z {0}'.format(self.panda.z))
             logger.debug('relative difference of z {0}'.format(rd))
