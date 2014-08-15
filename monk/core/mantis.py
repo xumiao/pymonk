@@ -113,7 +113,7 @@ class Mantis(base.MONKObject):
         self.dq.add(self.mu, 1)
         metricAbs(metricLog, self, '|mu|', self.mu)
         metricAbs(metricLog, self, '|dmu|', self.dq)
-        metricAbs(metricLog, self, 'sup(mu)', 2 * self.solver.num_instances * self.solver.maxxnorm() * z.norm())
+        metricValue(metricLog, self, 'sup(mu)', 2 * self.solver.num_instances * self.solver.maxxnorm() * z.norm())
         
         # update w
         self.solver.setModel0(z, self.mu)
