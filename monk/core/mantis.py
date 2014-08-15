@@ -189,7 +189,7 @@ class Mantis(base.MONKObject):
             logger.debug('no need to merge')
             return False
         else:
-            self.panda.z.add(fdq, 1 / (m + 1 / self.rho))
+            self.panda.z.add(fdq, 1.0 / (m + 1 / self.rho))
             logger.debug('m = {0}'.format(m))
             logger.debug('update z {0}'.format(self.panda.z))
             logger.debug('relative difference of z {0}'.format(rd))
