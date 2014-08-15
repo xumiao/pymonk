@@ -128,6 +128,14 @@ cdef class SVMDual(object):
             l = max(0, 1 - self.w.dot(xj) * yj) 
             loss += l * l
         return loss
+    
+    def maxxnorm(self):
+        cdef float result
+        cdef int j
+        result = 0
+        for j in xrange(self.num_instances):
+            result = max(self.x[j].norm2(), result)
+        return result
         
     def setData(self, x, y, c, ind):
         cdef int j = ind

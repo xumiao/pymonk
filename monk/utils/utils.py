@@ -7,12 +7,14 @@ Created on Mon Oct 21 10:44:50 2013
 
 import pickle
 import StringIO
-
 import simplejson
 import datetime
 import time
 from IPython.core.display import Image
 import logging
+from monk.core.constants import EPS
+from monk.math.flexible_vector import difference
+from numpy import sqrt
 
 logger = logging.getLogger('monk.utils')
 
@@ -46,6 +48,17 @@ def decodeMetric(message):
     value = float(body[2].split('=')[1])
     return monkuser, t, name, value
 
+def metricValue(logger, monkobj, name, v):
+    logger.info(encodeMetric(monkobj, name, v))
+    
+def metricAbs(logger, monkobj, name, v):
+    logger.info(encodeMetric(monkobj, name, v.norm()))
+
+def metricRelAbs(logger, monkobj, name, v1, v2):
+    dv = difference(v1, v2)
+    logger.info(encodeMetric(monkobj, name, sqrt((dv.norm2() + EPS) / (v1.norm() * v2.norm() + EPS))))
+    del dv
+    
 def binary2decimal(a):
     return reduce(lambda x,y: (x + y) << 1, 0) / 2
     

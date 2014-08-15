@@ -789,7 +789,7 @@ cdef class FlexibleVector(object):
         self.add(other, -1)
         self.trim(tol, False)
         self.foreach(_MATCH)
-        
+
 cpdef FlexibleVector difference(FlexibleVector a, FlexibleVector b, float tol = 1e-8):
     cdef FlexibleVector c = FlexibleVector()
     c.add(a,  1)
