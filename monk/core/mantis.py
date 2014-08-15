@@ -126,7 +126,7 @@ class Mantis(base.MONKObject):
 
         loss = self.solver.status()
         metricValue(metricLog, self, 'loss', loss)
-        
+        metricValue(metricLog, self, '|x|', self.solver.maxxnorm())
         # update q
         r = self.rho / float(self.rho + self.gamma)
         self.dq.add(self.q, -1)
