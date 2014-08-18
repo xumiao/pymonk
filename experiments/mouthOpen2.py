@@ -373,8 +373,16 @@ def splitData(originalData):
 def stratifiedSelection(posindex, negindex, fracTrain): 
     
     num = int(len(posindex)*fracTrain)
+#    if len(posindex) > 0:
+#        num = 1
+#    else:
+#        num = 0
     selectPosIndex = sample(posindex, num)    
     num = int(len(negindex)*fracTrain)
+#    if len(negindex) > 0:
+#        num = 1
+#    else:
+#        num = 0
     selectNegIndex = sample(negindex, num)    
     
     return selectPosIndex, selectNegIndex
@@ -543,31 +551,61 @@ def plotCurveFromFile(fileNames):
     #print '{0}\t{1}\t{2}\t{3}'.format(float(th[-1]), float(precision[-1]), float(recall[-1]), float(fpRate[-1]))      
     plot(groupTH, groupTP, groupFP, groupPrecision)    
 
+def normalize_data():
+
+    mcl = pm.MongoClient('10.137.172.201:27017')        
+    coll = mcl.DataSet['PMLExpression']
+    collBackup = mcl.DataSet['PMLExpressionBackup']
+
+    dimension = 4275
+    minVal = [1000000000.0] * dimension
+    maxVal = [-1000000000.0] * dimension
+    
+    for ent in collBackup.find(None, {'_id':True, '_features':True}, timeout=False):        
+        feature = ent['_features']
+        for i in range(len(feature)):
+            if feature[i][1] < minVal[i]:
+               minVal[i] = feature[i][1]
+            if feature[i][1] > maxVal[i]:
+               maxVal[i] = feature[i][1]
+
+    for ent in collBackup.find(None, {'_id':True, '_features':True}, timeout=False):
+        feature = ent['_features']
+        dataId = ent['_id']
+        for i in range(len(feature)): 
+            if maxVal[i] == minVal[i]:
+                feature[i][1] = 0.0
+            else:
+                feature[i][1] = 2.0 * (feature[i][1] - minVal[i]) / (maxVal[i] - minVal[i]) - 1.0
+        coll.update({'_id': dataId}, {'$set':{'_features':feature}}, timeout=False)
+            
+    mcl.close()
 
 #reset()
     
 if __name__=='__main__':    
+    #normalize_data()
     #reset()
     #prepareData()
-    #loadPreparedData("trainData", "testData")
+    loadPreparedData("trainData", "testData")
 #
 ##    print "add_users"
 ##    add_users()
 #    print "add_data"
 #    add_data()
-    print "train"
-    train(1)
+#    print "train"
+#    train(1)
     
-#    print "test"
-#    isPersonalized = True
-#    resGTs = centralizedTest(isPersonalized)
-#    destfile = open("resGTs_personalized", 'w')       # save result and gt
-#    pickle.dump(resGTs, destfile)
-#    destfile.close()
-#    
-#    print "evaluate"
-#    file = open("resGTs_personalized", 'r')
-#    resGTs_personalized = pickle.load(file)
-#    file.close()
-#    evaluate(resGTs_personalized, "acc.curve")
+    print "test"
+    isPersonalized = False
+    resGTs = centralizedTest(isPersonalized)
+    destfile = open("resGTs_consensus", 'w')       # save result and gt
+    pickle.dump(resGTs, destfile)
+    destfile.close()
+    
+    print "evaluate"
+    file = open("resGTs_consensus", 'r')
+    resGTs_consensus = pickle.load(file)
+    file.close()
+    evaluate(resGTs_consensus, "acc.curve")
 
