@@ -15,6 +15,7 @@ from random import sample
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -206,18 +207,21 @@ def evaluate(resGTs, curvefile=None):
     precisions = {}
     recalls = {}
     FPrates = {}
+    totalTestSamples = {}
     for user in resGTs.keys():
         overallResGT = overallResGT + resGTs[user]
-        thre, precision, recall, FPrate = buildMetric(resGTs[user])
+        thre, precision, recall, FPrate, totalTestSample = buildMetric(resGTs[user])
         thres[user] = thre
         precisions[user] = precision
         recalls[user] = recall
         FPrates[user] = FPrate
+        totalTestSamples[user] = totalTestSample
         
     buildMetric(overallResGT, curvefile)
     #plotCurveFromFile(curvefile)
     
     plotUserCurve(thres, precisions, recalls, FPrates)
+    plotCombinedUserCurve(totalTestSamples, recalls, FPrates, False)
 
 def offsetCommit():
     global users
@@ -412,6 +416,7 @@ def buildMetric(resGT, curvefile = None):
     resGT.sort()       
     logging.debug("totalP = {0}".format(totalP))
     logging.debug("totalN = {0}".format(totalN))    
+    totalTestSamples = totalP + totalN
     totalFP = totalN
     totalFN = 0.0
     totalTP = totalP
@@ -456,7 +461,7 @@ def buildMetric(resGT, curvefile = None):
             o = '{0:.8f}\t{1:.8f}\t{2:.8f}\t{3:.8f}'.format(thre[i], precisions[i], recalls[i], FPrates[i])            
             fCurve.write(o + '\n')
         fCurve.close()    
-    return thre, precisions, recalls, FPrates
+    return thre, precisions, recalls, FPrates, totalTestSamples
     
     
 def plot(groupTH, groupTP, groupFP, groupPrecision):
@@ -515,6 +520,80 @@ def plotUserCurve(thre, precisions, recalls, FPrates):
     #print '{0}\t{1}\t{2}\t{3}'.format(float(th[-1]), float(precision[-1]), float(recall[-1]), float(fpRate[-1]))      
     plot(groupTH, groupTP, groupFP, groupPrecision)
 
+def plotCombinedUserCurve(totalTestSamples, recalls, FPrates, weighted):
+    combinedTPmean = []
+    combinedTPstd = []
+    combinedFP = []
+    
+    numberOfCurvePoint = 500
+    falsePositiveSet = np.linspace(0.0, 1.0, numberOfCurvePoint)
+    
+    validUsers = []             # remove the users who only have positive or negative test sameples
+    for user in totalTestSamples.keys(): 
+        if recalls[user][0] != 0 and FPrates[user][-1] != 1 :
+            validUsers.append(user)
+    
+    print "number of valid user: {0}".format(len(validUsers))
+
+    weights = {}
+    weightSum = 0.0
+    for user in validUsers: 
+        weights[user] = totalTestSamples[user]
+        weightSum += totalTestSamples[user]
+    
+    if weighted:
+        for user in validUsers: 
+            weights[user] = weights[user] / weightSum
+    else:
+        for user in validUsers: 
+            weights[user] = 1.0 / len(validUsers)        
+    
+    #fig = plt.figure()    
+    #plt.plot(range(len(weights.values())), weights.values())
+    
+    for fp in falsePositiveSet:
+        mean = 0.0
+        std = 0.0
+        weightSum = 0.0
+        #TP = []
+        for user in validUsers: 
+            tp = interpolateTP(fp, FPrates[user], recalls[user]) 
+            #TP.append(tp)
+            mean += weights[user] * tp
+            std += weights[user] * tp * tp
+            weightSum += weights[user]
+                   
+        std = math.sqrt(max(0, std /weightSum - mean * mean))
+        combinedTPstd.append(std)
+        combinedTPmean.append(mean)
+        combinedFP.append(fp)   
+          
+    font = {'family' : 'serif', 'color'  : 'darkred',  'weight' : 'normal',  'size'   : 16 }
+    fig = plt.figure()    
+    fig.patch.set_facecolor('white')   
+    plt.title('Combined ROC curve', fontdict=font)
+    plt.xlabel('FP rate', fontdict=font)
+    plt.xticks(np.linspace(0, 1, 11))
+    plt.yticks(np.linspace(0, 1, 11))
+    plt.ylabel('TP rate (recall)', fontdict=font)
+    plt.grid(True)    
+    
+    plt.errorbar(combinedFP, combinedTPmean, yerr=combinedTPstd)
+
+def interpolateTP(fp, FPrates, recalls):        # values in FPrates and recalls are in decreasing order
+    if fp <= FPrates[-1]:
+        return 0
+    if fp >= FPrates[0]:
+        return 1.0
+    
+    for i in range(len(FPrates)):        
+        if fp <= FPrates[i] and fp >= FPrates[i+1]:
+            if FPrates[i+1] == FPrates[i]:
+                return recalls[i]
+            else:
+                delta = (recalls[i+1] - recalls[i]) * (fp - FPrates[i]) / (FPrates[i+1] - FPrates[i])
+                return recalls[i] + delta
+    
 def plotCurveFromFile(fileNames):
     
     groupTH = []
@@ -596,16 +675,16 @@ if __name__=='__main__':
 #    print "train"
 #    train(1)
     
-    print "test"
-    isPersonalized = False
-    resGTs = centralizedTest(isPersonalized)
-    destfile = open("resGTs_consensus", 'w')       # save result and gt
-    pickle.dump(resGTs, destfile)
-    destfile.close()
+#    print "test"
+#    isPersonalized = True
+#    resGTs = centralizedTest(isPersonalized)
+#    destfile = open("resGTs_personalized", 'w')       # save result and gt
+#    pickle.dump(resGTs, destfile)
+#    destfile.close()
     
     print "evaluate"
-    file = open("resGTs_consensus", 'r')
-    resGTs_consensus = pickle.load(file)
+    file = open("resGTs_personalized", 'r')
+    resGTs_personalized = pickle.load(file)
     file.close()
-    evaluate(resGTs_consensus, "acc.curve")
+    evaluate(resGTs_personalized, "acc.curve")
 
