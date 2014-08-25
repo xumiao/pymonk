@@ -15,7 +15,6 @@ import logging
 import nltk
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
-from monk.utils.utils import encodeMetric
 logger = logging.getLogger("monk.turtle")
 metricLog = logging.getLogger("metric")
 
@@ -31,6 +30,7 @@ class Turtle(base.MONKObject):
     FEPS                  = 'pEPS'
     FMAXPATHLENGTH        = 'pMaxPathLength'
     FMAXINFERENCESTEPS    = 'pMaxInferenceSteps'
+    FPARTIALBARRIER       = 'pPartialBarrier'
     FENTITYCOLLECTIONNAME = 'entityCollectionName'
     FREQUIRES             = 'requires'
     FREQUIRES_UIDS        = 'uids'
@@ -53,6 +53,8 @@ class Turtle(base.MONKObject):
         self.requires = dict()
         self.followers = []
         self.leader = None
+        self.mergeQueue = set()
+        self.pPartialBarrier = 50
         
     def __restore__(self):
         super(Turtle, self).__restore__()
@@ -93,6 +95,7 @@ class Turtle(base.MONKObject):
         # invertedMapping is created from mapping
         del result['invertedMapping']
         del result['pandaUids']
+        del result['mergeQueue']
         return result
     
     def clone(self, user):
@@ -210,7 +213,18 @@ class Turtle(base.MONKObject):
         if follower not in self.followers and follower != self.creator:
             logger.error('user {0} is not a follower of {1}@{2}'.format(follower, self.creator, self.name))
             return False
-        return all([panda.merge(follower) for panda in self.pandas])
+        self.mergeQueue.add(follower)
+        if len(self.mergeQueue) >= self.pPartialBarrier:
+            success = True
+            for follower in self.mergeQueue:
+                success = success & all([panda.merge(follower) for panda in self.pandas])
+                if not success:
+                    break
+            self.mergeQueue.clear()
+            if success:
+                [panda.update_fields({panda.FCONSENSUS:panda.z.generic()}) for panda in self.pandas]
+            return success
+        return False
     
     def reset(self):
         [panda.reset() for panda in self.pandas]    

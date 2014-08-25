@@ -136,7 +136,6 @@ class Mantis(base.MONKObject):
         self.q.add(self.mu, -r)
         self.dq.add(self.q, 1)
 
-        metricRelAbs(metricLog, self, '|q~w|', self.q, self.panda.weights)
         logger.debug('q = {0}'.format(self.q))
         logger.debug('w = {0}'.format(self.panda.weights))
         
@@ -179,7 +178,7 @@ class Mantis(base.MONKObject):
             logger.debug('update z {0}'.format(self.panda.z))
             logger.debug('relative difference of z {0}'.format(rd))
             metricValue(metricLog, self, '|dz|/|z|', rd)
-            self.panda.update_fields({self.panda.FCONSENSUS:self.panda.z.generic()})
+            #self.panda.update_fields({self.panda.FCONSENSUS:self.panda.z.generic()})
         
         if fdq is not self.dq:
             del fdq

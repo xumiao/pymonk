@@ -242,6 +242,13 @@ def get_leader(turtleName, user):
     else:
         logger.warning('can not find turtle by {0}@{1} to get leader'.format(user, turtleName))
         return None
+
+def get_followers(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        return _turtle.followers
+    else:
+        return []
         
 def commit(turtleName, user):
     _turtle = load_turtle(turtleName, user)
