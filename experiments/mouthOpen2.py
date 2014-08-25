@@ -15,6 +15,7 @@ from random import sample
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -206,18 +207,21 @@ def evaluate(resGTs, curvefile=None):
     precisions = {}
     recalls = {}
     FPrates = {}
+    totalTestSamples = {}
     for user in resGTs.keys():
         overallResGT = overallResGT + resGTs[user]
-        thre, precision, recall, FPrate = buildMetric(resGTs[user])
+        thre, precision, recall, FPrate, totalTestSample = buildMetric(resGTs[user])
         thres[user] = thre
         precisions[user] = precision
         recalls[user] = recall
         FPrates[user] = FPrate
+        totalTestSamples[user] = totalTestSample
         
     buildMetric(overallResGT, curvefile)
     #plotCurveFromFile(curvefile)
     
     plotUserCurve(thres, precisions, recalls, FPrates)
+    plotCombinedUserCurve(totalTestSamples, recalls, FPrates, False)
 
 def offsetCommit():
     global users
@@ -373,8 +377,16 @@ def splitData(originalData):
 def stratifiedSelection(posindex, negindex, fracTrain): 
     
     num = int(len(posindex)*fracTrain)
+#    if len(posindex) > 0:
+#        num = 1
+#    else:
+#        num = 0
     selectPosIndex = sample(posindex, num)    
     num = int(len(negindex)*fracTrain)
+#    if len(negindex) > 0:
+#        num = 1
+#    else:
+#        num = 0
     selectNegIndex = sample(negindex, num)    
     
     return selectPosIndex, selectNegIndex
@@ -404,6 +416,7 @@ def buildMetric(resGT, curvefile = None):
     resGT.sort()       
     logging.debug("totalP = {0}".format(totalP))
     logging.debug("totalN = {0}".format(totalN))    
+    totalTestSamples = totalP + totalN
     totalFP = totalN
     totalFN = 0.0
     totalTP = totalP
@@ -448,7 +461,7 @@ def buildMetric(resGT, curvefile = None):
             o = '{0:.8f}\t{1:.8f}\t{2:.8f}\t{3:.8f}'.format(thre[i], precisions[i], recalls[i], FPrates[i])            
             fCurve.write(o + '\n')
         fCurve.close()    
-    return thre, precisions, recalls, FPrates
+    return thre, precisions, recalls, FPrates, totalTestSamples
     
     
 def plot(groupTH, groupTP, groupFP, groupPrecision):
@@ -507,6 +520,80 @@ def plotUserCurve(thre, precisions, recalls, FPrates):
     #print '{0}\t{1}\t{2}\t{3}'.format(float(th[-1]), float(precision[-1]), float(recall[-1]), float(fpRate[-1]))      
     plot(groupTH, groupTP, groupFP, groupPrecision)
 
+def plotCombinedUserCurve(totalTestSamples, recalls, FPrates, weighted):
+    combinedTPmean = []
+    combinedTPstd = []
+    combinedFP = []
+    
+    numberOfCurvePoint = 500
+    falsePositiveSet = np.linspace(0.0, 1.0, numberOfCurvePoint)
+    
+    validUsers = []             # remove the users who only have positive or negative test sameples
+    for user in totalTestSamples.keys(): 
+        if recalls[user][0] != 0 and FPrates[user][-1] != 1 :
+            validUsers.append(user)
+    
+    print "number of valid user: {0}".format(len(validUsers))
+
+    weights = {}
+    weightSum = 0.0
+    for user in validUsers: 
+        weights[user] = totalTestSamples[user]
+        weightSum += totalTestSamples[user]
+    
+    if weighted:
+        for user in validUsers: 
+            weights[user] = weights[user] / weightSum
+    else:
+        for user in validUsers: 
+            weights[user] = 1.0 / len(validUsers)        
+    
+    #fig = plt.figure()    
+    #plt.plot(range(len(weights.values())), weights.values())
+    
+    for fp in falsePositiveSet:
+        mean = 0.0
+        std = 0.0
+        weightSum = 0.0
+        #TP = []
+        for user in validUsers: 
+            tp = interpolateTP(fp, FPrates[user], recalls[user]) 
+            #TP.append(tp)
+            mean += weights[user] * tp
+            std += weights[user] * tp * tp
+            weightSum += weights[user]
+                   
+        std = math.sqrt(max(0, std /weightSum - mean * mean))
+        combinedTPstd.append(std)
+        combinedTPmean.append(mean)
+        combinedFP.append(fp)   
+          
+    font = {'family' : 'serif', 'color'  : 'darkred',  'weight' : 'normal',  'size'   : 16 }
+    fig = plt.figure()    
+    fig.patch.set_facecolor('white')   
+    plt.title('Combined ROC curve', fontdict=font)
+    plt.xlabel('FP rate', fontdict=font)
+    plt.xticks(np.linspace(0, 1, 11))
+    plt.yticks(np.linspace(0, 1, 11))
+    plt.ylabel('TP rate (recall)', fontdict=font)
+    plt.grid(True)    
+    
+    plt.errorbar(combinedFP, combinedTPmean, yerr=combinedTPstd)
+
+def interpolateTP(fp, FPrates, recalls):        # values in FPrates and recalls are in decreasing order
+    if fp <= FPrates[-1]:
+        return 0
+    if fp >= FPrates[0]:
+        return 1.0
+    
+    for i in range(len(FPrates)):        
+        if fp <= FPrates[i] and fp >= FPrates[i+1]:
+            if FPrates[i+1] == FPrates[i]:
+                return recalls[i]
+            else:
+                delta = (recalls[i+1] - recalls[i]) * (fp - FPrates[i]) / (FPrates[i+1] - FPrates[i])
+                return recalls[i] + delta
+    
 def plotCurveFromFile(fileNames):
     
     groupTH = []
@@ -543,20 +630,50 @@ def plotCurveFromFile(fileNames):
     #print '{0}\t{1}\t{2}\t{3}'.format(float(th[-1]), float(precision[-1]), float(recall[-1]), float(fpRate[-1]))      
     plot(groupTH, groupTP, groupFP, groupPrecision)    
 
+def normalize_data():
+
+    mcl = pm.MongoClient('10.137.172.201:27017')        
+    coll = mcl.DataSet['PMLExpression']
+    collBackup = mcl.DataSet['PMLExpressionBackup']
+
+    dimension = 4275
+    minVal = [1000000000.0] * dimension
+    maxVal = [-1000000000.0] * dimension
+    
+    for ent in collBackup.find(None, {'_id':True, '_features':True}, timeout=False):        
+        feature = ent['_features']
+        for i in range(len(feature)):
+            if feature[i][1] < minVal[i]:
+               minVal[i] = feature[i][1]
+            if feature[i][1] > maxVal[i]:
+               maxVal[i] = feature[i][1]
+
+    for ent in collBackup.find(None, {'_id':True, '_features':True}, timeout=False):
+        feature = ent['_features']
+        dataId = ent['_id']
+        for i in range(len(feature)): 
+            if maxVal[i] == minVal[i]:
+                feature[i][1] = 0.0
+            else:
+                feature[i][1] = 2.0 * (feature[i][1] - minVal[i]) / (maxVal[i] - minVal[i]) - 1.0
+        coll.update({'_id': dataId}, {'$set':{'_features':feature}}, timeout=False)
+            
+    mcl.close()
 
 #reset()
     
 if __name__=='__main__':    
+    #normalize_data()
     #reset()
     #prepareData()
-    #loadPreparedData("trainData", "testData")
+    loadPreparedData("trainData", "testData")
 #
 ##    print "add_users"
 ##    add_users()
 #    print "add_data"
 #    add_data()
-    print "train"
-    train(1)
+#    print "train"
+#    train(1)
     
 #    print "test"
 #    isPersonalized = True
@@ -564,10 +681,10 @@ if __name__=='__main__':
 #    destfile = open("resGTs_personalized", 'w')       # save result and gt
 #    pickle.dump(resGTs, destfile)
 #    destfile.close()
-#    
-#    print "evaluate"
-#    file = open("resGTs_personalized", 'r')
-#    resGTs_personalized = pickle.load(file)
-#    file.close()
-#    evaluate(resGTs_personalized, "acc.curve")
+    
+    print "evaluate"
+    file = open("resGTs_personalized", 'r')
+    resGTs_personalized = pickle.load(file)
+    file.close()
+    evaluate(resGTs_personalized, "acc.curve")
 
