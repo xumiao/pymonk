@@ -214,7 +214,7 @@ class Turtle(base.MONKObject):
             logger.error('user {0} is not a follower of {1}@{2}'.format(follower, self.creator, self.name))
             return False
         self.mergeQueue.add(follower)
-        if len(self.mergeQueue) >= self.pPartialBarrier:
+        if len(self.mergeQueue) >= min(len(self.followers), self.pPartialBarrier):
             success = True
             for follower in self.mergeQueue:
                 success = success & all([panda.merge(follower) for panda in self.pandas])

@@ -8,9 +8,10 @@ Training models remotely in cloud
 from monk.core.configuration import Configuration
 import monk.core.api as monkapi
 import logging
+import pymongo as pm
 from kafka.client import KafkaClient
 from kafka.consumer import SimpleConsumer
-from kafka.producer import KeyedProducer
+from kafka.producer import UserProducer
 from kafka.common import KafkaError
 import simplejson
 import sys, getopt
@@ -27,6 +28,7 @@ import traceback
 logger = logging.getLogger("monk.remote_trainer")
 
 kafkaClient = None
+users = None
 producer = None
 consumer = None
 offsetToEnd = False
@@ -46,11 +48,17 @@ def handler(sig, hook = thread.interrupt_main):
     exit(1)
 
 def initKafka(config, partitions):
-    global kafkaClient, producer, consumer, offsetToEnd
+    global kafkaClient, producer, consumer, offsetToEnd, users
     kafkaClient = KafkaClient(config.kafkaConnectionString)
-    producer = KeyedProducer(kafkaClient, async=False,
-                             req_acks=KeyedProducer.ACK_NOT_REQUIRED,
-                             ack_timeout=200)
+    mcl = pm.MongoClient('10.137.172.201:27017')
+    if not users: 
+        userColl = mcl.DataSet['PMLUsers']
+        for u in userColl.find(None, {'userId':True, 'partitionId':True}, timeout=False):
+            users[u['userId']] = u['partitionId']
+    mcl.close()
+    producer = UserProducer(kafkaClient, config.kafkaTopic, users, partitions, async=False,
+                            req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
+                            ack_timeout=200)
     consumer = SimpleConsumer(kafkaClient, config.kafkaGroup,
                               config.kafkaTopic,
                               partitions=partitions)
@@ -124,7 +132,7 @@ def server(configFile, partitions, ote):
                                                        'user':leader,
                                                        'follower':user,
                                                        'operation':'unfollow'})
-                    producer.send(config.kafkaTopic, 8, encodedMessage)
+                    producer.send(leader, encodedMessage)
                 elif op == 'add_data':
                     entity = decodedMessage.get('entity')
                     if entity:
@@ -143,7 +151,7 @@ def server(configFile, partitions, ote):
                                                                'operation':'train',
                                                                'iteration':iteration + 1,
                                                                'partition':partition})
-                            producer.send(config.kafkaTopic, partition, encodedMessage)
+                            producer.send(follower, encodedMessage)
                 elif op == 'train':
                     iteration = decodedMessage.get('iteration', 0)
                     partition = decodedMessage.get('partition', 0)
@@ -156,7 +164,7 @@ def server(configFile, partitions, ote):
                                                         'operation':'merge',
                                                         'iteration':iteration,
                                                         'partition':partition})
-                    producer.send(config.kafkaTopic, 8, encodedMessage)
+                    producer.send(leader, encodedMessage)
                 elif op == 'test_data':
                     logger.debug('test on the data of {0}'.format(user))
                     entity = decodedMessage.get('entity')
