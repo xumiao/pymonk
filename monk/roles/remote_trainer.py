@@ -50,11 +50,11 @@ def handler(sig, hook = thread.interrupt_main):
 def initKafka(config, partitions):
     global kafkaClient, producer, consumer, offsetToEnd, users
     kafkaClient = KafkaClient(config.kafkaConnectionString)
+    users = {}
     mcl = pm.MongoClient('10.137.172.201:27017')
-    if not users: 
-        userColl = mcl.DataSet['PMLUsers']
-        for u in userColl.find(None, {'userId':True, 'partitionId':True}, timeout=False):
-            users[u['userId']] = u['partitionId']
+    userColl = mcl.DataSet['PMLUsers']
+    for u in userColl.find(None, {'userId':True, 'partitionId':True}, timeout=False):
+        users[u['userId']] = u['partitionId']
     mcl.close()
     producer = UserProducer(kafkaClient, config.kafkaTopic, users, partitions, async=False,
                             req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
