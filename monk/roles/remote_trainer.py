@@ -58,12 +58,14 @@ def initKafka(config, partitions):
         users[u['userId']] = u['partitionId']
         allpartitions.add(u['partitionId'])
     mcl.close()
+    logger.info('allpartitions = {0}'.format(allpartitions))
     producer = UserProducer(kafkaClient, config.kafkaTopic, users, list(allpartitions), async=False,
                             req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                             ack_timeout=200)
     consumer = SimpleConsumer(kafkaClient, config.kafkaGroup,
                               config.kafkaTopic,
                               partitions=partitions)
+    logger.info('offsetToEnd {0}'.format(offsetToEnd))
     if offsetToEnd:
         consumer.seek(0,2)
         offsetToEnd = False
@@ -95,7 +97,7 @@ def server(configFile, partitions, ote):
         try:
             closeKafka()
             initKafka(config, partitions)
-            
+            break
             for message in consumer:
                 logger.debug(message)
                 decodedMessage = simplejson.loads(message.message.value)
