@@ -53,10 +53,12 @@ def initKafka(config, partitions):
     users = {}
     mcl = pm.MongoClient('10.137.172.201:27017')
     userColl = mcl.DataSet['PMLUsers']
+    allpartitions = set()
     for u in userColl.find(None, {'userId':True, 'partitionId':True}, timeout=False):
         users[u['userId']] = u['partitionId']
+        allpartitions.add(u['partitionId'])
     mcl.close()
-    producer = UserProducer(kafkaClient, config.kafkaTopic, users, partitions, async=False,
+    producer = UserProducer(kafkaClient, config.kafkaTopic, users, list(allpartitions), async=False,
                             req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                             ack_timeout=200)
     consumer = SimpleConsumer(kafkaClient, config.kafkaGroup,
