@@ -96,6 +96,10 @@ class Mantis(base.MONKObject):
         return obj
     
     def train(self, leader):
+        if not self.data:
+            logger.debug('no data, skip training')
+            return
+            
         logger.debug('gamma in mantis {0}'.format(self.gamma))
 
         # check out z
