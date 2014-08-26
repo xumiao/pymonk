@@ -215,15 +215,11 @@ class Turtle(base.MONKObject):
             return False
         self.mergeQueue.add(follower)
         if len(self.mergeQueue) >= min(len(self.followers), self.pPartialBarrier):
-            success = True
             for follower in self.mergeQueue:
-                success = success & all([panda.merge(follower) for panda in self.pandas])
-                if not success:
-                    break
+                [panda.merge(follower) for panda in self.pandas]               
             self.mergeQueue.clear()
-            if success:
-                [panda.update_fields({panda.FCONSENSUS:panda.z.generic()}) for panda in self.pandas]
-            return success
+            [panda.update_fields({panda.FCONSENSUS:panda.z.generic()}) for panda in self.pandas]
+            return True
         return False
     
     def reset(self):
