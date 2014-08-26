@@ -65,9 +65,9 @@ def initKafka(config, partitions):
     consumer = SimpleConsumer(kafkaClient, config.kafkaGroup,
                               config.kafkaTopic,
                               partitions=partitions)
-    logger.info('offsetToEnd {0}'.format(offsetToEnd))
     if offsetToEnd:
         consumer.seek(0,2)
+        logger.info('offset to end')
         offsetToEnd = False
 
 def closeKafka():
@@ -97,7 +97,6 @@ def server(configFile, partitions, ote):
         try:
             closeKafka()
             initKafka(config, partitions)
-            break
             for message in consumer:
                 logger.debug(message)
                 decodedMessage = simplejson.loads(message.message.value)
