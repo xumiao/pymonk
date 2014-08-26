@@ -48,15 +48,19 @@ def decodeMetric(message):
     value = float(body[2].split('=')[1])
     return monkuser, t, name, value
 
-def metricValue(logger, monkobj, name, v):
-    logger.info(encodeMetric(monkobj, name, v))
+def metricValue(metricLogger, monkobj, name, v):
+    metricLogger.info(encodeMetric(monkobj, name, v))
     
-def metricAbs(logger, monkobj, name, v):
-    logger.info(encodeMetric(monkobj, name, v.norm()))
+def metricAbs(metricLogger, monkobj, name, v):
+    metricLogger.info(encodeMetric(monkobj, name, v.norm()))
 
-def metricRelAbs(logger, monkobj, name, v1, v2):
+def metricRelAbs(metricLogger, monkobj, name, v1, v2):
+    logger.debug('v1 = {0}'.format(v1))
+    logger.debug('v2 = {0}'.format(v2))
     dv = difference(v1, v2)
-    logger.info(encodeMetric(monkobj, name, sqrt((dv.norm2() + EPS) / (v1.norm() * v2.norm() + EPS))))
+    logger.debug('dv = {0}'.format(dv))
+    metricLogger.info(encodeMetric(monkobj, name, sqrt((dv.norm2() + EPS) / (v1.norm() * v2.norm() + EPS))))
+    logger.debug('v1~v2 = {0}'.format(sqrt((dv.norm2() + EPS) / (v1.norm() * v2.norm() + EPS))))
     del dv
     
 def binary2decimal(a):

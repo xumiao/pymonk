@@ -141,29 +141,19 @@ def server(configFile, partitions, ote):
                     monkapi.save_turtle(turtleName, user) 
                 elif op == 'merge':
                     follower = decodedMessage.get('follower')
-                    iteration = decodedMessage.get('iteration', 0)
-                    partition = decodedMessage.get('partition', 0)
-                    logger.debug('merging for interation {0} from partition {1}'.format(iteration, partition))
                     if (monkapi.merge(turtleName, user, follower)):
                         for follower in monkapi.get_followers(turtleName, user):
                             encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                                'user':follower,
-                                                               'operation':'train',
-                                                               'iteration':iteration + 1,
-                                                               'partition':partition})
+                                                               'operation':'train'})
                             producer.send(follower, encodedMessage)
                 elif op == 'train':
-                    iteration = decodedMessage.get('iteration', 0)
-                    partition = decodedMessage.get('partition', 0)
-                    logger.debug('training iteration {0} in partition {1}'.format(iteration, partition))
                     monkapi.train(turtleName, user)
                     leader = monkapi.get_leader(turtleName, user)
                     encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                         'user':leader,
                                                         'follower':user,
-                                                        'operation':'merge',
-                                                        'iteration':iteration,
-                                                        'partition':partition})
+                                                        'operation':'merge'})
                     producer.send(leader, encodedMessage)
                 elif op == 'test_data':
                     logger.debug('test on the data of {0}'.format(user))

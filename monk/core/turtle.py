@@ -31,6 +31,8 @@ class Turtle(base.MONKObject):
     FMAXPATHLENGTH        = 'pMaxPathLength'
     FMAXINFERENCESTEPS    = 'pMaxInferenceSteps'
     FPARTIALBARRIER       = 'pPartialBarrier'
+    FMERGECLOCK           = 'pMergeClock'
+    FTRAINCLOCK           = 'pTrainClock'
     FENTITYCOLLECTIONNAME = 'entityCollectionName'
     FREQUIRES             = 'requires'
     FREQUIRES_UIDS        = 'uids'
@@ -55,6 +57,8 @@ class Turtle(base.MONKObject):
         self.leader = None
         self.mergeQueue = set()
         self.pPartialBarrier = 50
+        self.pMergeClock = 0
+        self.pTrainClock = 0
         
     def __restore__(self):
         super(Turtle, self).__restore__()
@@ -202,6 +206,9 @@ class Turtle(base.MONKObject):
     
     def train(self):
         [panda.train(self.leader) for panda in self.pandas]
+        self.pTrainClock += 1
+        self.update_fields({self.FTRAINCLOCK:self.pTrainClock})
+        logger.debug('training clock {0}'.format(self.pTrainClock))
     
     def checkout(self):
         [panda.checkout(self.leader) for panda in self.pandas]
@@ -219,11 +226,17 @@ class Turtle(base.MONKObject):
                 [panda.merge(follower) for panda in self.pandas]               
             self.mergeQueue.clear()
             [panda.update_fields({panda.FCONSENSUS:panda.z.generic()}) for panda in self.pandas]
+            self.pMergeClock += 1
+            self.update_fields({self.FMERGECLOCK:self.pMergeClock})
+            logger.debug('merge clock {0}'.format(self.pMergeClock))
             return True
         return False
     
     def reset(self):
-        [panda.reset() for panda in self.pandas]    
+        [panda.reset() for panda in self.pandas]
+        self.pTrainClock = 0
+        self.pMergeClock = 0
+        self.update_fields({self.FTRAINCLOCK:self.pTrainClock, self.FMERGECLOCK:self.pMergeClock})
         
     def reset_data(self):
         [panda.reset_data() for panda in self.pandas] 
