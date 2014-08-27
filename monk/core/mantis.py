@@ -123,7 +123,7 @@ class Mantis(base.MONKObject):
         self.dq.clear()
         self.dq.add(self.mu, -1)
         self.mu.add(self.q, 1)
-        self.mu.add(self.lz, -1)
+        self.mu.add(z, -1)
         self.dq.add(self.mu, 1)
         metricAbs(metricLog, self, '|mu|', self.mu)
         metricAbs(metricLog, self, '|dmu|', self.dq)

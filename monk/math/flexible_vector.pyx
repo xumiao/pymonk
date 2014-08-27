@@ -783,7 +783,7 @@ cdef class FlexibleVector(object):
     
     cpdef difference(self, FlexibleVector other, float tol = 1e-8):
         self.add(other, -1)
-        self.trim(tol, True)
+        self.trim(tol, False)
     
     cpdef matching(self, FlexibleVector other, float tol = 0.01):
         self.add(other, -1)
@@ -794,7 +794,7 @@ cpdef FlexibleVector difference(FlexibleVector a, FlexibleVector b, float tol = 
     cdef FlexibleVector c = FlexibleVector()
     c.add(a,  1)
     c.add(b, -1)
-    c.trim(tol, True)
+    c.trim(tol, False)
     return c
     
 cpdef FlexibleVector matching(FlexibleVector a, FlexibleVector b, float tol = 0.01):
