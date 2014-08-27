@@ -15,6 +15,8 @@ import logging
 from monk.core.constants import EPS
 from monk.math.flexible_vector import difference
 from numpy import sqrt
+from json import encoder
+encoder.FLOAT_REPR = lambda o: format(o, '.4f')
 
 logger = logging.getLogger('monk.utils')
 
