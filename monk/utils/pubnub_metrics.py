@@ -22,6 +22,6 @@ class PubnubLog(object):
                                     subscribe_key="sub-c-086b6f4e-2325-11e4-934a-02ee2ddab7fe",
                                     ssl_on=False)
         self.channel = "monkmetrics"
-    
+
     def info(self, message):
         print self.pubnub.publish(self.channel, message)

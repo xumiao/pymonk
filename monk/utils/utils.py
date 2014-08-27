@@ -34,9 +34,9 @@ def currentTimeMillisecond():
     return time.mktime(t.timetuple()) * 1e3 + t.microsecond / 1e3
 
 def jsonMetric(monkobj, name, value):
-    return simplejson.dump({"user":monkobj.creator,
-                            "time":currentTimeMillisecond(),
-                            name:value})
+    return simplejson.dumps({"user":monkobj.creator,
+                             "time":currentTimeMillisecond(),
+                             name:value})
                             
 def encodeMetric(monkobj, name, value):
     return 'user={0},time={1},{2}={3}'.format(
