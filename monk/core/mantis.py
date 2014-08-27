@@ -119,7 +119,7 @@ class Mantis(base.MONKObject):
             
         #metricAbs(metricLog, self, '|z|', z)
         #metricAbs(metricLog, self, '|q|', self.q)
-        metricRelAbs(metricLog, self, '|z~q|', self.q, z)
+        metricRelAbs(metricLog, self, 'z~q', self.q, z)
         
         # update mu
         #self.dq.clear()
@@ -127,7 +127,7 @@ class Mantis(base.MONKObject):
         self.mu.add(self.q, 1)
         self.mu.add(z, -1)
         #self.dq.add(self.mu, 1)
-        metricAbs(metricLog, self, '|mu|', self.mu)
+        metricAbs(metricLog, self, 'mu', self.mu)
         #metricAbs(metricLog, self, '|dmu|', self.dq)
         #metricValue(metricLog, self, 'sup(mu)', 2 * self.solver.num_instances * self.solver.maxxnorm() * z.norm())
         
@@ -141,7 +141,7 @@ class Mantis(base.MONKObject):
         self.solver.trainModel()
         loss = self.solver.status()
         metricValue(metricLog, self, 'loss', loss)
-        metricValue(metricLog, self, '|x|', self.solver.maxxnorm())
+        metricValue(metricLog, self, 'x', self.solver.maxxnorm())
         
         # update q
         r = self.rho / float(self.rho + self.gamma)
@@ -161,7 +161,7 @@ class Mantis(base.MONKObject):
         # measure convergence
         #metricAbs(metricLog, self, '|dq|', self.dq)
         #metricAbs(metricLog, self, '|q|', self.q)
-        metricRelAbs(metricLog, self, '|q~w|', self.q, self.panda.weights)
+        metricRelAbs(metricLog, self, 'q~w', self.q, self.panda.weights)
 
         # commit changes
         self.panda.update_fields({self.panda.FWEIGHTS:self.panda.weights.generic()})
@@ -188,7 +188,7 @@ class Mantis(base.MONKObject):
             logger.debug('m = {0}'.format(m))
             logger.debug('update z {0}'.format(self.panda.z))
             logger.debug('relative difference of z {0}'.format(rd))
-            metricValue(metricLog, self, '|dz|/|z|', rd)
+            metricValue(metricLog, self, 'rz', rd)
             #self.panda.update_fields({self.panda.FCONSENSUS:self.panda.z.generic()})
         
         if fdq is not self.dq:
