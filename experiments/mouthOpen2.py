@@ -129,13 +129,11 @@ def train(numIters):
                       ack_timeout=200)
     for i in range(numIters):
         for user, partitionId in users.iteritems():
-            if user == '':
+            if user == ''  or user == 'monk':
                 continue
             encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                'user':user,
-                                               'operation':'train',
-                                               'iteration':i,
-                                               'partition':partitionId})
+                                               'operation':'train'})
             print i, producer.send(user, encodedMessage)
     
     producer.stop(1)
@@ -252,11 +250,11 @@ def reset():
                                            'operation':'reset'})
         print producer.send(user, encodedMessage)
     
-    users['monk'] = 8
-    encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                       'user':'monk',
-                                       'operation':'reset'})
-    print producer.send('monk', encodedMessage)
+#    users['monk'] = 8
+#    encodedMessage = simplejson.dumps({'turtleName':turtleName,
+#                                       'user':'monk',
+#                                       'operation':'reset'})
+#    print producer.send('monk', encodedMessage)
     producer.stop(1)
     kafka.close()
     
@@ -672,8 +670,8 @@ if __name__=='__main__':
 ##    add_users()
 #    print "add_data"
 #    add_data()
-#    print "train"
-#    train(1)
+    print "train"
+    train(1)
     
 #    print "test"
 #    isPersonalized = True
@@ -682,9 +680,9 @@ if __name__=='__main__':
 #    pickle.dump(resGTs, destfile)
 #    destfile.close()
     
-    print "evaluate"
-    file = open("resGTs_personalized", 'r')
-    resGTs_personalized = pickle.load(file)
-    file.close()
-    evaluate(resGTs_personalized, "acc.curve")
+#    print "evaluate"
+#    file = open("resGTs_personalized", 'r')
+#    resGTs_personalized = pickle.load(file)
+#    file.close()
+#    evaluate(resGTs_personalized, "acc.curve")
 
