@@ -32,7 +32,12 @@ class DateTimeEncoder(simplejson.JSONEncoder):
 def currentTimeMillisecond():
     t = datetime.datetime.now()
     return time.mktime(t.timetuple()) * 1e3 + t.microsecond / 1e3
-    
+
+def jsonMetric(monkobj, name, value):
+    return simplejson.dump({"user":monkobj.creator,
+                            "time":currentTimeMillisecond(),
+                            name:value})
+                            
 def encodeMetric(monkobj, name, value):
     return 'user={0},time={1},{2}={3}'.format(
             monkobj.creator, currentTimeMillisecond(), name, value)
@@ -49,18 +54,17 @@ def decodeMetric(message):
     return monkuser, t, name, value
 
 def metricValue(metricLogger, monkobj, name, v):
-    metricLogger.info(encodeMetric(monkobj, name, v))
+    #metricLogger.info(encodeMetric(monkobj, name, v))
+    metricLogger.info(jsonMetric(monkobj, name, v))
     
 def metricAbs(metricLogger, monkobj, name, v):
-    metricLogger.info(encodeMetric(monkobj, name, v.norm()))
-
+    #metricLogger.info(encodeMetric(monkobj, name, v.norm()))
+    metricLogger.info(jsonMetric(monkobj, name, v.norm()))
+    
 def metricRelAbs(metricLogger, monkobj, name, v1, v2):
-    logger.debug('v1 = {0}'.format(v1))
-    logger.debug('v2 = {0}'.format(v2))
     dv = difference(v1, v2)
-    logger.debug('dv = {0}'.format(dv))
-    metricLogger.info(encodeMetric(monkobj, name, sqrt((dv.norm2() + EPS) / (v1.norm() * v2.norm() + EPS))))
-    logger.debug('v1~v2 = {0}'.format(sqrt((dv.norm2() + EPS) / (v1.norm() * v2.norm() + EPS))))
+    #metricLogger.info(encodeMetric(monkobj, name, sqrt((dv.norm2() + EPS) / (v1.norm() * v2.norm() + EPS))))
+    metricLogger.info(jsonMetric(monkobj, name, sqrt((dv.norm2() + EPS) / (v1.norm() * v2.norm() + EPS))))
     del dv
     
 def binary2decimal(a):
