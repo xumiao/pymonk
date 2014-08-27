@@ -103,8 +103,18 @@ class Mantis(base.MONKObject):
         logger.debug('gamma in mantis {0}'.format(self.gamma))
 
         # check out z
-        z = self.checkout(leader)
+        if leader:
+            z = crane.pandaStore.load_one({'name':self.panda.name,
+                                           'creator':leader},
+                                          {'z':True}).get('z',[])
+            z = FlexibleVector(generic=z)
+        else:
+            z = self.panda.z
         
+        if z is None:
+            logger.debug('no consensus checked out')
+            return
+            
         metricAbs(metricLog, self, '|z|', z)
         metricAbs(metricLog, self, '|q|', self.q)
         metricRelAbs(metricLog, self, '|z~q|', self.q, z)
@@ -113,7 +123,7 @@ class Mantis(base.MONKObject):
         self.dq.clear()
         self.dq.add(self.mu, -1)
         self.mu.add(self.q, 1)
-        self.mu.add(z, -1)
+        self.mu.add(self.lz, -1)
         self.dq.add(self.mu, 1)
         metricAbs(metricLog, self, '|mu|', self.mu)
         metricAbs(metricLog, self, '|dmu|', self.dq)
@@ -127,10 +137,10 @@ class Mantis(base.MONKObject):
         logger.debug('q = {0}'.format(self.q))
         logger.debug('w = {0}'.format(self.panda.weights))
         self.solver.trainModel()
-
         loss = self.solver.status()
         metricValue(metricLog, self, 'loss', loss)
         metricValue(metricLog, self, '|x|', self.solver.maxxnorm())
+        
         # update q
         r = self.rho / float(self.rho + self.gamma)
         self.dq.add(self.q, -1)
@@ -139,7 +149,10 @@ class Mantis(base.MONKObject):
         self.q.add(self.panda.weights, 1 - r)
         self.q.add(self.mu, -r)
         self.dq.add(self.q, 1)
-
+        
+        if z is not self.panda.z:
+            del z
+            
         logger.debug('q = {0}'.format(self.q))
         logger.debug('w = {0}'.format(self.panda.weights))
         
@@ -148,20 +161,12 @@ class Mantis(base.MONKObject):
         metricAbs(metricLog, self, '|q|', self.q)
         metricRelAbs(metricLog, self, '|q~w|', self.q, self.panda.weights)
 
-        del z
-        # commit changes  
-        self.panda.update_fields({self.panda.FWEIGHTS:self.panda.weights.generic()})                            
+        # commit changes
+        self.panda.update_fields({self.panda.FWEIGHTS:self.panda.weights.generic()})
         self.commit()
     
     def checkout(self, leader):
-        if leader:
-            z = crane.pandaStore.load_one({'name':self.panda.name,
-                                           'creator':leader},
-                                          {'z':True}).get('z',[])
-            z = FlexibleVector(generic=z)
-            return z
-        else:
-            return self.panda.z
+        pass
 
     def merge(self, follower, m):
         if follower != self.creator:
@@ -191,7 +196,7 @@ class Mantis(base.MONKObject):
     def commit(self):
         self.update_fields({self.FDUALS : self.mu.generic(),
                             self.FQ     : self.q.generic(),
-                            self.FDQ    : self.dq.generic()})        
+                            self.FDQ    : self.dq.generic()})
     
     def add_data(self, entity, y, c):
         da = self.data
