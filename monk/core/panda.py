@@ -5,25 +5,26 @@ The basic executor of the machine learning building block,
 i.e., a binary classifier or a linear regressor
 @author: xm
 """
-from ..math.flexible_vector import FlexibleVector
-from ..math.cmath import sigmoid
-import base, crane
+from monk.math.flexible_vector import FlexibleVector
+from monk.math.cmath import sigmoid
 from mantis import Mantis
+import constants as cons
+import base, crane
+import re
 import logging
+from monk.utils.utils import encodeMetric
 logger = logging.getLogger('monk.panda')
+metricLog = logging.getLogger("metric")
 
 class Panda(base.MONKObject):
-
-    def __restore__(self):
-        super(Panda, self).__restore__()
-        if "uid" not in self.__dict__:
-            self.uid = crane.uidStore.nextUID()
-        if "name" not in self.__dict__:
-            logger.warning('no name is specified, using default')
-            self.name = 'Var' + str(self.uid)
-
-    def save(self, **kwargs):
-        crane.pandaStore.update_one_in_fields(self, self.generic())
+    FUID  = 'uid'
+    FNAME = 'name'
+    store = crane.pandaStore 
+    
+    def __default__(self):
+        super(Panda, self).__default__()
+        self.uid = crane.uidStore.nextUID()
+        self.name = 'Var' + str(self.uid)
         
     def has_mantis():
         return False
@@ -31,166 +32,232 @@ class Panda(base.MONKObject):
     def add_features(self, uids):
         pass
     
-    def add_one(self, userId):
+    def train(self):
         pass
     
-    def load_one(self, userId):
-        return True
-    
-    def save_one(self, userId):
-        return True
-    
-    def train_one(self, userId):
+    def checkout(self):
         pass
     
-    def predict(self, userId, entity):
+    def merge(self, follower):
+        pass
+    
+    def commit(self):
+        pass
+    
+    def predict(self, entity):
         return 0
-
-    def get_model(self, userId):
-        return None
-
-
-class ExistPanda(Panda):
-
-    def predict(self, userId, entity):
-        def extract(x, y):
-            try:
-                if entity[y].find(self.name) >= 0:
-                    return x + 1
-                else:
-                    return x
-            except:
-                return x
-        return reduce(extract, entity.iterkeys(), 0)
-
-class RegexPanda(Panda):
-
-    def predict(self, userId, entity):
+    
+    def reset(self):
         pass
 
-class LinearPanda(Panda):
-
+class ImmutablePanda(Panda):
+    '''
+    These pandas won't be replicated for different users
+    '''
+    def __default__(self):
+        super(ImmutablePanda, self).__default__()
+        self.creator = cons.DEFAULT_CREATOR
+    
     def __restore__(self):
-        super(LinearPanda, self).__restore__()
-        self.weights = {}
-        if "consensus" not in self.__dict__:
-            self.consensus = FlexibleVector()
-        else:
-            self.consensus = FlexibleVector(generic=self.consensus)
-
-        if "mantis" not in self.__dict__:
-            self.mantis = Mantis()
-        else:
-            self.mantis = crane.mantisStore.load_or_create(self.mantis)
-
-        self.mantis.panda = self
-
-    def generic(self):
-        result = super(LinearPanda, self).generic()
-        result['consensus'] = self.consensus.generic()
-        result['mantis'] = self.mantis._id
-        del result['weights']
-        return result
+        super(ImmutablePanda, self).__restore__()
+        self.creator = cons.DEFAULT_CREATOR
     
-    def save(self, **kwargs):
-        crane.pandaStore.update_one_in_fields(self, self.generic())
-        self.mantis.save()
-            
-    def has_mantis(self):
-        return True
-    
-    def add_features(self, uids):
-        self.consensus.addKeys(uids)
-    
-    def has_user(self, userId):
-        return userId in self.weights
-    
-    def has_user_in_store(self, userId):
-        field = 'weights.{0}'.format(userId)
-        return crane.pandaStore.exists_field(self, field)
+    def clone(self, user):
+        return self
         
-    def add_one(self, userId):
-        if not self.has_user_in_store(userId):
-            self.weights[userId] = self.consensus.clone()
-            field = 'weights.{0}'.format(userId)
-            result = crane.pandaStore.update_one_in_fields(self, {field:self.weights[userId].generic()})
-            return result and self.mantis.add_one(userId)
-        else:
-            logger.error('panda {0} already stores user {1}'.format(self._id, userId))
-            return False
-    
-    def remove_one(self, userId):
-        if self.has_user_in_store(userId):
-            field = 'weights.{0}'.format(userId)
-            result = crane.pandaStore.remove_field(self, field)
-            del self.weights[userId]
-            return result and self.mantis.remove_one(userId)
-        else:
-            logger.error('panda {0} does not store user {1}'.format(self._id, userId))
-            return False            
-        
-    def load_one_weight(self, userId):
-        if self.has_user_in_store(userId):
-            field = 'weights.{0}'.format(userId)
-            genericW = crane.pandaStore.load_one_in_fields(self, [field])['weights'][userId]
-            if userId in self.weights:
-                self.weights[userId].update(genericW)
-            else:
-                self.weights[userId] = FlexibleVector(generic=genericW)
-            return True
-        else:
-            logger.error('panda {0} does not store user {1}'.format(self._id, userId))
-            return False            
-    
-    def update_consensus(self):
-        pa = crane.pandaStore.load_one_in_fields(self,['consensus'])
-        if 'consensus' in pa:
-            self.consensus.update(pa['consensus'])
-        return self.consensus
-    
-    def save_consensus(self):
-        crane.pandaStore.update_one_in_fields(self, {'consensus':self.consensus.generic()})
-        
-    def load_one(self, userId):
-        self.load_one_weight(userId)
-        self.mantis.load_one(userId)
+class ExistPanda(ImmutablePanda):
 
-    def unload_one(self, userId):
-        if self.has_user(userId):
-            field = 'weights.{0}'.format(userId)
-            result = crane.pandaStore.update_one_in_fields(self, {field:self.weights[userId].generic()})
-            del self.weights[userId]
-            return result and self.mantis.unload_one(userId)
-        else:
-            logger.error('panda {0} does not have user {1}'.format(self._id, userId))
-            return False            
-        
-    def save_one(self, userId):
-        if self.has_user(userId):
-            field = 'weights.{0}'.format(userId)
-            crane.pandaStore.update_one_in_fields(self, {field:self.weights[userId].generic()})
-            return self.mantis.save_one(userId)
-        else:
-            logger.error('panda {0} does not have user {1}'.format(self._id, userId))
-            return False            
-
-    def get_model(self, userId=None):
-        if userId is None:
-            return self.consensus
-
-        if userId in self.weights:
-            return self.weights[userId]
-        else:
-            logger.warning('LinearPanda has no model for {0}'.format(userId))
-            return None
-        
-    def predict(self, userId, entity):
-        model = self.get_model(userId)
-        if model:
-            return sigmoid(model.dot(entity._features))
+    def predict(self, entity):
+        if self.name in entity._raws:
+            entity[self.uid] = 1
+            return 1
         else:
             return 0
 
+class RegexPanda(ImmutablePanda):
+
+    def __restore__(self):
+        super(RegexPanda, self).__restore__()
+        self.p = re.compile(self.name)
+    
+    def generic(self):
+        result = super(RegexPanda, self).generic()
+        del result['p']
+        return result
+        
+    def predict(self, entity):
+        if [v for k,v in entity._raws.iteritems() if self.p.match(k)]:
+            entity[self.uid] = 1
+            return 1
+        else:
+            return 0
+
+class LinearPanda(Panda):
+    FWEIGHTS      = 'weights'
+    FMANTIS       = 'mantis'
+    FCONSENSUS    = 'z'
+    FNUMFOLLOWERS = 'm'
+
+    def __default__(self):
+        super(LinearPanda, self).__default__()
+        self.weights = []
+        self.z       = []
+        self.mantis  = None
+        self.m       = 1
+
+    def __restore__(self):
+        super(LinearPanda, self).__restore__()
+        self.weights = FlexibleVector(generic = self.weights)
+        self.z       = FlexibleVector(generic = self.z)
+
+    def generic(self):
+        result = super(LinearPanda, self).generic()
+        if self.mantis_loaded():
+            result[self.FMANTIS] = self.mantis.signature()
+        result[self.FWEIGHTS]   = self.weights.generic()
+        result[self.FCONSENSUS] = self.z.generic()
+        return result
+
+    def clone(self, user):
+        obj = super(LinearPanda, self).clone(user)
+        obj.weights = self.weights.clone()
+        obj.z       = obj.weights.clone()
+        obj.m       = 1
+        self.load_mantis()
+        obj.mantis = self.mantis.clone(user, obj)
+        return obj
+        
+    def save(self):
+        super(LinearPanda, self).save()
+        if self.mantis_loaded():
+            self.mantis.save()
+    
+    def delete(self):
+        result = super(LinearPanda, self).delete()
+        try:
+            result = result & self.mantis.delete()
+        except:
+            self.load_mantis()
+            result = result & self.mantis.delete()
+        return result
+        
+    def has_mantis(self):
+        return True
+    
+    def mantis_loaded(self):
+        return isinstance(self.mantis, Mantis)
+    
+    def load_mantis(self):
+        if self.mantis_loaded():
+            return
+            
+        if self.mantis is None:
+            self.mantis = {Mantis.MONK_TYPE:'Mantis',
+                           Mantis.NAME:self.name}
+
+        try:
+            self.mantis.setdefault(Mantis.CREATOR, self.creator)
+            self.mantis.setdefault(Mantis.FPANDA, self)
+        except:
+            logger.error('mantis should be a dict for loading')
+            logger.error('now is {0}'.format(self.mantis))
+            return
+            
+        self.mantis = crane.mantisStore.load_or_create(self.mantis, True)
+        self.mantis.initialize(self)
+
+    def add_data(self, entity, y, c):
+        try:
+            self.mantis.add_data(entity, y, c)
+        except:
+            self.load_mantis()
+            self.mantis.add_data(entity, y, c)
+    
+    def increment(self):
+        self.m += 1
+        self.update_fields({self.FNUMFOLLOWERS:self.m})
+    
+    def decrease(self):
+        self.m -= 1
+        self.update_fields({self.FNUMFOLLOWERS:self.m})
+        
+    def add_features(self, uids):
+        self.weights.addKeys(uids)
+        self.z.addKeys(uids)
+    
+    def pull_model(self):
+        genericW = self.store.load_one_in_fields(self, [self.FWEIGHTS, self.FCONSENSUS])
+        self.weights.update(genericW.get(self.FWEIGHTS, []))
+        self.z.update(genericW.get(self.FCONSENSUS, []))
+    
+    def push_model(self):
+        self.update_fields({self.FWEIGHTS:self.weights.generic(),
+                            self.FCONSENSUS:self.z.generic()})
+    
+    def train(self, leader):
+        try:
+            self.mantis.train(leader)
+        except:
+            self.load_mantis()
+            self.mantis.train(leader)
+    
+    def checkout(self, leader):
+        try:
+            self.mantis.checkout(leader)
+        except:
+            self.load_mantis()
+            self.mantis.checkout(leader)
+    
+    def commit(self):
+        self.push_model()
+        try:
+            self.mantis.commit()
+        except:
+            self.load_mantis()
+            self.mantis.commit()
+    
+    def merge(self, follower):
+        try:
+            return self.mantis.merge(follower, self.m)
+        except:
+            self.load_mantis()
+            return self.mantis.merge(follower, self.m)
+    
+    def predict(self, entity):
+        value = self.weights.dot(entity._features)
+        metricLog.info(encodeMetric(self, 'decision', value))
+        entity[self.uid] = sigmoid(value)
+        return entity[self.uid]
+    
+    def reset(self):
+        self.weights.clear()
+        self.z.clear()
+        logger.debug('weights {0}'.format(self.weights))
+        logger.debug('z {0}'.format(self.z))
+        self.update_fields({self.FWEIGHTS:[],
+                            self.FCONSENSUS:[]})
+        logger.debug('resetting mantis')
+        try:
+            self.mantis.reset()
+        except:
+            crane.mantisStore.update_in_fields({Mantis.NAME:self.name, Mantis.CREATOR:self.creator}, 
+                                               {Mantis.FDUALS : [], Mantis.FQ : [], Mantis.FDQ : []})
+
+    def reset_data(self):        
+        logger.debug('resetting data in mantis')
+        try:
+            self.mantis.reset_data()
+        except:
+            crane.mantisStore.update_in_fields({Mantis.NAME:self.name, Mantis.CREATOR:self.creator}, 
+                                               {Mantis.FDATA : {}})                                               
+
+    def set_mantis_parameter(self, para, value):                                               
+        try:
+            self.mantis.set_mantis_parameter(para, value)
+        except:
+            self.load_mantis()
+            self.mantis.set_mantis_parameter(para, value)
+                                   
 base.register(Panda)
 base.register(ExistPanda)
 base.register(RegexPanda)

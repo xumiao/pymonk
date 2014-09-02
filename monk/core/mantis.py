@@ -6,160 +6,237 @@ solving machine learning problems
 @author: xm
 """
 import base, crane
-from ..math.svm_solver_dual import SVMDual
+from constants import EPS
+from monk.math.svm_solver_dual import SVMDual
+from monk.math.flexible_vector import FlexibleVector
 from bson.objectid import ObjectId
+from monk.utils.utils import metricValue, metricAbs, metricRelAbs
 import logging
+import monk.utils.pubnub_metrics as pnm
+
 logger = logging.getLogger("monk.mantis")
+#metricLog = logging.getLogger("metric")
+metricLog = pnm.get_pubnub_logger()
 
 class Mantis(base.MONKObject):
-
+    FEPS   = 'eps'
+    FGAMMA = 'gamma'
+    FRHO   = 'rho'
+    FPANDA = 'panda'
+    FDATA  = 'data'
+    FDUALS = 'mu'
+    FQ     = 'q'
+    FDQ    = 'dq'
+    FMAX_NUM_ITERS = 'maxNumIters'
+    FMAX_NUM_INSTANCES = 'maxNumInstances'
+    store = crane.mantisStore
+    
+    def __default__(self):
+        super(Mantis, self).__default__()
+        self.eps = 1e-4
+        self.gamma = 1
+        self.rho = 1
+        self.maxNumIters = 1000
+        self.maxNumInstances = 1000
+        self.panda = None
+        self.data = {}
+        self.mu = []
+        self.q  = []
+        self.dq = []
+        
     def __restore__(self):
         super(Mantis, self).__restore__()
-        if "eps" not in self.__dict__:
-            self.eps = 1e-4
-        if "lam" not in self.__dict__:
-            self.lam = 1
-        if "rho" not in self.__dict__:
-            self.rho = 1
-        if "maxNumIters" not in self.__dict__:
-            self.maxNumIters = 1000
-        if "maxNumInstances" not in self.__dict__:
-            self.maxNumInstances = 1000
-        if "panda" not in self.__dict__:
-            self.panda = None
-        if "data" not in self.__dict__:
-            self.data = {}
-        self.solvers = {}
-
+        self.solver = None
+        
+        try:
+            self.mu = FlexibleVector(generic=self.mu)
+            self.q  = FlexibleVector(generic=self.q)
+            self.dq = FlexibleVector(generic=self.dq)
+            self.data = {ObjectId(k) : v for k,v in self.data.iteritems()}
+            return True
+        except Exception as e:
+            logger.error('error {0}'.format(e.message))
+            logger.error('can not create a solver for {0}'.format(self.panda.name))
+            return False
+            
+    def initialize(self, panda):
+        self.panda = panda
+        self.solver = SVMDual(self.panda.weights, self.eps, self.rho, self.gamma,
+                              self.maxNumIters, self.maxNumInstances)
+        ents = crane.entityStore.load_all_by_ids(self.data.keys())
+        for ent in ents:
+            index, y, c = self.data[ent._id]
+            self.solver.setData(ent._features, y, c, index)
+        self.solver.num_instances = len(ents)
+        keys = self.panda.weights.getKeys()
+        self.q.addKeys(keys)
+        self.dq.addKeys(keys)
+        
     def generic(self):
         result = super(Mantis, self).generic()
         # every mantis should have a panda
-        result['panda'] = self.panda._id
+        result[self.FPANDA] = self.panda._id
+        result[self.FDUALS] = self.mu.generic()
+        result[self.FQ]     = self.q.generic()
+        result[self.FDQ]    = self.dq.generic()
+        result[self.FDATA]  = {str(k) : v for k,v in self.data.iteritems()}
         try:
-            del result['solvers']
+            del result['solver']
         except Exception as e:
-            logger.warning('deleting solvers failed {0}'.format(e.message))
+            logger.warning('deleting solver failed {0}'.format(e.message))
         return result
 
-    def save(self, **kwargs):
-        crane.mantisStore.update_one_in_fields(self, self.generic())
-                
-    def get_solver(self, userId):
-        try:
-            return self.solvers[userId]
-        except KeyError:
-            logger.info('no solver found for {0}'.format(userId))
-            return None
+    def clone(self, user, panda):
+        obj = super(Mantis, self).clone(user)
+        obj.mu = FlexibleVector()
+        obj.dq = FlexibleVector()
+        obj.q  = self.panda.z.clone()
+        obj.panda = panda
+        obj.solver = SVMDual(panda.weights, self.eps, self.rho, self.gamma,
+                             self.maxNumIters, self.maxNumInstances)
+        obj.data = {}
+        return obj
+    
+    def train(self, leader):
+        if not self.data:
+            logger.debug('no data, skip training')
+            return
+            
+        logger.debug('gamma in mantis {0}'.format(self.gamma))
 
-    def train_one(self, userId):
-        solver = self.get_solver(userId)
-        if solver:
-            consensus = self.panda.update_consensus()
-            solver.setModel(consensus)
-            solver.trainModel()
-    
-    def add_data(self, userId, entity, y, c):
-        solver = self.get_solver(userId)
-        if solver:
-            index = solver.setData(entity._features,y,c)
-            self.data[userId][entity._id] = (index, y, c)
-    
-    def aggregate(self, userId):
-        # TODO: incremental aggregation
-        # TODO: ADMM aggregation
-        consensus = self.panda.consensus
-        t = len(self.panda.weights)
-        if userId in self.panda.weights:
-            w = self.panda.weights[userId]
+        # check out z
+        if leader:
+            z = crane.pandaStore.load_one({'name':self.panda.name,
+                                           'creator':leader},
+                                          {'z':True}).get('z',[])
+            z = FlexibleVector(generic=z)
         else:
-            w = consensus
-            t += 1
-        consensus.add(w, -1/t)
-        self.panda.load_one_weight(userId)
-        if userId in self.panda.weights:
-            w = self.panda.weights[userId]
-        else:
-            w = consensus
-        consensus.add(w, 1/t)
-        self.panda.save_consensus()
-    
-    def has_user(self, userId):
-        return userId in self.data
-    
-    def has_user_in_store(self, userId):
-        field = 'data.{0}'.format(userId)
-        return crane.mantisStore.exists_field(self, field)
+            z = self.panda.z
         
-    def add_one(self, userId):
-        if not self.has_user_in_store(userId):
-            try:
-                w = self.panda.get_model(userId)
-                self.solvers[userId] = SVMDual(w, self.eps, self.lam,
-                                                     self.rho, self.maxNumIters,
-                                                     self.maxNumInstances)
-                self.data[userId] = {}
-                fields = {'data.{0}'.format(userId):{}}
-                return crane.mantisStore.update_one_in_fields(self, fields)
-            except Exception as e:
-                logger.error('can not create a solver for {0}'.format(userId))
-                logger.error('error {0}'.format(e.message))
-                return False
-        else:
-            logger.error('mantis {0} already stores user {1}'.format(self._id, userId))
-            return False
-    
-    def remove_one(self, userId):
-        if self.has_user_in_store(userId):
-            field = 'data.{0}'.format(userId)
-            result = crane.mantisStore.remove_field(self, field)
-            del self.solvers[userId]
-            del self.data[userId]
-            return result
-        else:
-            logger.warning('mantis {0} does not store user {1}'.format(self._id, userId))
-            return False            
+        if z is None:
+            logger.debug('no consensus checked out')
+            return
+            
+        #metricAbs(metricLog, self, '|z|', z)
+        #metricAbs(metricLog, self, '|q|', self.q)
+        metricRelAbs(metricLog, self, 'z~q', self.q, z)
         
-    def load_one(self, userId):
-        if self.has_user_in_store(userId):
-            fields = ['data.{0}'.format(userId)]
-            s = crane.mantisStore.load_one_in_fields(self, fields)
-            w = self.panda.get_model(userId)
-            solver = SVMDual(w, self.eps, self.lam,
-                             self.rho, self.maxNumIters,
-                             self.maxNumInstances)
-            self.solvers[userId] = solver
-    
-            #@todo: slow, need to optimize
-            da = s['data'][userId]
-            da = {ObjectId(k) : v for k,v in da.iteritems()}
-            self.data[userId] = da
-            ents = crane.entityStore.load_all_by_ids(da.keys())
-            for ent in ents:
-                index, y, c = da[ent._id]
-                ent._features.setIndex(index)
-                solver.setData(ent._features, y, c)
-            return True
-        else:
-            logger.warning('mantis {0} does not store user {1}'.format(self._id, userId))
-            return False            
-    
-    def unload_one(self, userId):
-        if self.has_user(userId):
-            fields = {'data.{0}'.format(userId):{str(k):v for k,v in self.data[userId].iteritems()}}
-            result = crane.mantisStore.update_one_in_fields(self, fields)
-            del self.solvers[userId]
-            del self.data[userId]
-            return result
-        else:
-            logger.warning('mantis {0} does not have user {1}'.format(self._id, userId))
-            return False
+        # update mu
+        self.dq.clear()
+        self.dq.add(self.mu, -1)
+        self.mu.add(self.q, 1)
+        self.mu.add(z, -1)
+        self.dq.add(self.mu, 1)
+        metricAbs(metricLog, self, 'mu', self.mu)
+        #metricAbs(metricLog, self, '|dmu|', self.dq)
+        #metricValue(metricLog, self, 'sup(mu)', 2 * self.solver.num_instances * self.solver.maxxnorm() * z.norm())
+        
+        # update w
+        self.solver.setModel0(z, self.mu)
+        #loss = self.solver.status()
+        #metricValue(metricLog, self, 'loss', loss)
+        #metricRelAbs(metricLog, self, '|q~w|', self.q, self.panda.weights)
+        #logger.debug('q = {0}'.format(self.q))
+        #logger.debug('w = {0}'.format(self.panda.weights))
+        self.solver.trainModel()
+        loss = self.solver.status()
+        metricValue(metricLog, self, 'loss', loss)
+        metricValue(metricLog, self, 'x', self.solver.maxxnorm())
+        
+        # update q
+        r = self.rho / float(self.rho + self.gamma)
+        self.dq.add(self.q, -1)
+        self.q.clear()
+        self.q.add(z, r)
+        self.q.add(self.panda.weights, 1 - r)
+        self.q.add(self.mu, -r)
+        self.dq.add(self.q, 1)
+        
+        if z is not self.panda.z:
+            del z
             
-    def save_one(self, userId):
-        if self.has_user(userId):
-            fields = {'data.{0}'.format(userId):{str(k):v for k,v in self.data[userId].iteritems()}}
-            return crane.mantisStore.update_one_in_fields(self, fields)
+        logger.debug('q = {0}'.format(self.q))
+        logger.debug('w = {0}'.format(self.panda.weights))
+        
+        # measure convergence
+        #metricAbs(metricLog, self, '|dq|', self.dq)
+        #metricAbs(metricLog, self, '|q|', self.q)
+        metricRelAbs(metricLog, self, 'q~w', self.q, self.panda.weights)
+
+        # commit changes
+        self.panda.update_fields({self.panda.FWEIGHTS:self.panda.weights.generic()})
+        self.commit()
+    
+    def checkout(self, leader):
+        pass
+
+    def merge(self, follower, m):
+        if follower != self.creator:
+            fdq = crane.mantisStore.load_one({'name':self.name,
+                                              'creator':follower},
+                                             {'dq':True}).get('dq',[])
+            fdq = FlexibleVector(generic=fdq)
         else:
-            logger.warning('mantis {0} does not have user {1}'.format(self._id, userId))
+            fdq = self.dq
+
+        rd = (fdq.norm() + EPS) / (self.panda.z.norm() + EPS)
+        if rd < self.eps:
+            logger.debug('Converged, no need to merge')
             return False
-            
+        else:
+            self.panda.z.add(fdq, 1.0 / (m + 1 / self.rho))
+            logger.debug('m = {0}'.format(m))
+            logger.debug('update z {0}'.format(self.panda.z))
+            logger.debug('relative difference of z {0}'.format(rd))
+            metricValue(metricLog, self, 'rz', rd)
+            #self.panda.update_fields({self.panda.FCONSENSUS:self.panda.z.generic()})
+        
+        if fdq is not self.dq:
+            del fdq
+        return True
+        
+    def commit(self):
+        self.update_fields({self.FDUALS : self.mu.generic(),
+                            self.FQ     : self.q.generic(),
+                            self.FDQ    : self.dq.generic()})
+    
+    def add_data(self, entity, y, c):
+        da = self.data
+        uuid = entity._id
+        if uuid in da:
+            ind = da[uuid][0] 
+        elif self.solver.num_instances < self.maxNumInstances:
+            ind = self.solver.num_instances
+            self.solver.num_instances = ind + 1
+        else:
+            # random replacement policy
+            # TODO: should replace the most confident data
+            olduuid, (ind, oldy, oldc)  = da.popitem()
+        self.solver.setData(entity._features, y, c, ind)
+        da[uuid] = (ind, y, c)
+        
+    def reset(self):
+        self.mu.clear()
+        self.q.clear()
+        self.dq.clear()
+        logger.debug('mu {0}'.format(self.mu))
+        logger.debug('q  {0}'.format(self.q))
+        logger.debug('dq {0}'.format(self.dq))
+        self.commit()
+        self.solver.initialize()
+        
+    def reset_data(self):
+        self.data = {}
+        self.solver.num_instances = 0
+        logger.debug('data {0}'.format(self.data))
+        self.update_fields({self.FDATA : {}})
+        
+    def set_mantis_parameter(self, para, value):
+        if (para == 'gamma'):
+            self.gamma = value
+            self.solver.setGamma(value)
+            logger.debug('gamma is {0}'.format(self.gamma))
+            logger.debug('gamma of solver is {0}'.format(self.solver.gamma))
+            self.update_fields({self.FGAMMA : self.gamma})
+    
 base.register(Mantis)

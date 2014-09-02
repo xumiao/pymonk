@@ -1,0 +1,50 @@
+modelConnectionString : 10.137.172.201:27017
+modelDataBaseName : MONKModel
+dataConnectionString : 10.137.172.201:27017
+dataDataBaseName : DataSet
+entityCollectionName : PMLExpression
+uidConnectionString : 10.137.172.201:27017
+uidDataBaseName : uidDB
+kafkaConnectionString : monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9094
+kafkaGroup : monk
+kafkaTopic : &kafkatopic expr
+loggingConfig:
+    version : 1
+    disable_existing_loggers : True
+    formatters : 
+        verbose : 
+            format : '[%(asctime)s][%(process)-5d][%(name)-12s][%(levelname)-8s][%(lineno)-4d][%(filename)-8s] : %(message)s'
+        simple :
+            format : '[%(name)-12s][%(levelname)-8s][%(process)s] : %(message)s'
+    handlers :
+        console :
+            class : logging.StreamHandler
+            formatter : simple
+            stream : ext://sys.stdout
+        files :
+            formatter : verbose
+            class : logging.handlers.RotatingFileHandler
+            filename : logs/monk.log
+            maxBytes : 1000000
+            backupCount: 10
+        kafka :
+            formatter : verbose
+            class : monk.utils.kafka_log_handler.KafkaLoggingHandler
+            hosts : monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9094
+            topic : *kafkatopic
+            partition : 0
+    loggers :
+        monk :
+            level : DEBUG
+            propagate : True
+            handlers : [console, files]
+        kafka :
+            level : WARNING
+            propagate : True
+            handlers : [console, files]
+        metric :
+            level : DEBUG
+            propagate : True
+            handlers : [console, files, kafka]
+    root :
+        level : DEBUG

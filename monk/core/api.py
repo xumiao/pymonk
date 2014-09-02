@@ -11,7 +11,6 @@ from bson.objectid import ObjectId
 import base, crane, entity, relation, tigress, turtle, mantis, panda
 import configuration
 import yaml
-from constants import *
 
 logger = logging.getLogger("monk.api")
 _config = None
@@ -43,168 +42,272 @@ def initialize(config=None):
     return crane.initialize_storage(_config)
 
 def exits():
+    if _config is None:
+        return False
     logger.info('------end-----------')
     crane.exit_storage()
     return True
 
-def reloads():
-    global _config
-    if _config is None:
-        return
-    exits()
+def reloads(config=None):
+    if config:
+        exits()
+        reload(crane)
+        initialize(config)
+
     reload(base)
-    reload(crane)
-    reload(entity)
-    reload(relation)
     reload(tigress)
     reload(turtle)
-    reload(mantis)
+    reload(mantis) 
     reload(panda)
-    initialize()
+    reload(entity)
+    reload(relation)
+    crane.reload_storage()
+
+def dummy(duration):
+    crane.entityStore.load_one_in_id({'name':'tests'})
+    import time
+    time.sleep(duration)
     
 # entity APIs
-def get_entities(query=None, fields=None, collectionName=None):
+def load_entities(entities=[], query={}, skip=0, num=100, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)
-    return crane.entityStore.load_all(query, fields)
-
-def load_entities(entities, collectionName=None):
     if not entities:
-        crane.entityStore.set_collection_name(collectionName)
-        entities = [ent['_id'] for ent in crane.entityStore.load_all_in_ids({})]
+        entities = [ent['_id'] for ent in crane.entityStore.load_all_in_ids(query, skip, num)]
     return crane.entityStore.load_or_create_all(entities)
+
+def save_entities(entities, collectionName=None):
+    crane.entityStore.set_collection_name(collectionName)
+    [crane.entityStore.update_one_in_fields(ent, ent.generic()) for ent in entities]
 
 def load_entity(entity, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)
     return crane.entityStore.load_or_create(entity)
     
 # project(turtle) management APIs
-def find_turtle(turtleScript):
-    _turtle = crane.turtleStore.load_or_create(turtleScript)
+def has_turtle_in_store(turtleName, user):
+    return crane.turtleStore.has_name_user(turtleName, user)
+
+def clone_turtle(turtleName, user, follower):
+    if not has_turtle_in_store(turtleName, follower):
+        _turtle = load_turtle(turtleName, user)
+        if not _turtle:
+            logger.error('turtle {0} with user {1} does not exists'.format(turtleName, user))
+            return None
+        newTurtle = _turtle.clone(follower)
+        newTurtle.leader = user
+        newTurtle.followers = []
+        newTurtle.save()
+        return newTurtle
+    else:
+        follow_turtle_follower(turtleName, follower, user)
+        logger.error('user {0} already has cloned this turtle'.format(user))
+        return None
+
+def remove_turtle(turtleName, user, deep=False):
+    _turtle = load_turtle(turtleName, user)
+    if not _turtle:
+        logger.error('turtle {0} has no user {1}'.format(turtleName, user))
+        return False
+    return _turtle.delete(deep)
+
+def follow_turtle_leader(turtleName, user, follower):
+    try:
+        _turtle = load_turtle(turtleName, user)
+        _turtle.add_follower(follower)
+        return True
+    except Exception as e:
+        logger.error(e)
+        logger.error('can not find turtle {0}@{1}'.format(turtleName, user))
+        return False
+        
+def follow_turtle_follower(turtleName, user, leader):
+    try:
+        _turtle = load_turtle(turtleName, user)
+        _turtle.add_leader(leader)
+        return True
+    except Exception as e:
+        logger.error(e)
+        logger.error('can not find turtle {0}@{1}'.format(turtleName, user))
+        return False
+        
+def unfollow_turtle_leader(turtleName, user, follower):
+    try:
+        _turtle = load_turtle(turtleName, user)
+        _turtle.remove_follower(follower)
+        return True
+    except Exception as e:
+        logger.error(e)
+        logger.error('can not find turtle {0}@{1}'.format(turtleName, user))
+        return False
+        
+def unfollow_turtle_follower(turtleName, user, leader):
+    try:
+        _turtle = load_turtle(turtleName, user)
+        _turtle.remove_leader()
+        return True
+    except Exception as e:
+        logger.error(e)
+        logger.error('can not find turtle {0}@{1}'.format(turtleName, user))
+        return False
+
+def find_turtles(query):
+    ids = [t['_id'] for t in crane.turtleStore.load_all_in_ids(query, 0, 0)]
+    return crane.turtleStore.load_all_by_ids(ids)
+    
+def create_turtle(turtleScript):
+    _turtle = crane.turtleStore.load_or_create(turtleScript, True)
     if _turtle is None:
         logger.error('failed to load or create the turtle {0}'.format(turtleScript))
         return None
-    return _turtle._id
+    return _turtle
+    
+def load_turtle(turtleName, user):
+    return crane.turtleStore.load_or_create({'name':turtleName, 'creator':user})
 
-def save_turtle(turtleId):
-    _turtle = crane.turtleStore.load_one_by_id(turtleId)
-    if _turtle:
-        crane.turtleStore.save_one(_turtle)
-        return True
-    else:
-        logger.error('failed to save turtle {0}'.format(turtleId))
+def save_turtle(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
+    if not _turtle:
+        logger.error('turtle {0} has no user {1}'.format(turtleName, user))
         return False
+    _turtle.save()
+    return True
+        
+def entity_collection(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        return _turtle.entityCollectionName
+    else:
+        logger.warning('can not find turtle {0}@{1} to get entity collection'.format(user, turtleName))
+        return None
 
-def remove_turtle(turtleId):
-    pass
+# pandas
+def create_panda(pandaScript):
+    return crane.pandaStore.load_or_create(pandaScript)
 
+def find_pandas(query, fields=None):
+    return crane.pandaStore.load_all(query, fields)
+
+def add_panda(turtleName, user, panda):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        return _turtle.add_panda(panda)
+    else:
+        logger.warning('can not find turtle {0}@{1} to add panda {2}'.format(user, turtleName, panda.name))
+        return None
+
+def delete_panda(turtleName, user, panda):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        return _turtle.delete_panda(panda)
+    else:
+        logger.warning('can not find turtle {0}@{1} to add panda {2}'.format(user, turtleName, panda.name))
+        return None
+    
 # training APIs
-def add_data(turtleId, userId, ent):
-    _turtle = crane.turtleStore.load_one_by_id(turtleId)
+def add_data(turtleName, user, ent):
+    _turtle = load_turtle(turtleName, user)
     if _turtle:
         crane.entityStore.set_collection_name(_turtle.entityCollectionName)
-        if not _turtle.has_user(userId):
-            if _turtle.has_user_in_store(userId):
-                _turtle.load_one(userId)
-            else:
-                _turtle.add_one(userId)
-                _turtle.save_one(userId)
-        ent = crane.entityStore.load_or_create(ent)
-        return _turtle.add_data(userId, ent)
+        ent = crane.entityStore.load_or_create(ObjectId(ent))
+        return _turtle.add_data(ent)
     else:
-        logger.warning('can not find turtle by {0} to add data'.format(turtleId))
+        logger.warning('can not find turtle {0}@{1} to add data'.format(user, turtleName))
         return False
 
-def train_one(turtleId, userId):
-    _turtle = crane.turtleStore.load_one_by_id(turtleId)
+def checkout(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
     if _turtle:
-        if not _turtle.has_user(userId):
-            if _turtle.has_user_in_store(userId):
-                _turtle.load_one(userId)
-            else:
-                logger.warning('can not find user by {0} in turtle {1}'.format(userId, turtleId))
-                return False
-        _turtle.train_one(userId)
-        _turtle.save_one(userId)
+        _turtle.checkout()
         return True
     else:
-        logger.warning('can not find turtle by {0} to train'.format(turtleId))
+        logger.warning('can not find turtle by {0}@{1} to checkout'.format(user, turtleName))
+        return False
+        
+def train(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        _turtle.train()
+        return True
+    else:
+        logger.warning('can not find turtle by {0}@{1} to train'.format(user, turtleName))
+        return False
+        
+def get_leader(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        if _turtle.leader is None:
+            return user
+        else:
+            return _turtle.leader
+    else:
+        logger.warning('can not find turtle by {0}@{1} to get leader'.format(user, turtleName))
+        return None
+
+def get_followers(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        return _turtle.followers
+    else:
+        return []
+        
+def commit(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        _turtle.commit()
+        return True
+    else:
+        logger.warning('can not find turtle by {0}@{1} to commit'.format(user, turtleName))
+        return False
+        
+def merge(turtleName, user, follower):
+    _turtle = load_turtle(turtleName, user)
+    if _turtle:
+        return _turtle.merge(follower)
+    else:
+        logger.warning('can not find turtle by {0}@{1} to merge {2}'.format(user, turtleName, follower))
         return False
 
-def aggregate(turtleId, userId):
-    _turtle = crane.turtleStore.load_one_by_id(turtleId)
+def set_mantis_parameter(turtleName, user, para, value):
+    _turtle = load_turtle(turtleName, user)
     if _turtle:
-        return _turtle.aggregate(userId)
+        _turtle.set_mantis_parameter(para, value)
+        return True
     else:
-        logger.warning('can not find turtle by {0} to aggregate'.format(turtleId))
+        logger.warning('can not find turtle by {0}@{1} to set parameter'.format(user, turtleName))
         return False
     
 # testing APIs
-def predict(turtleId, userId, entity):
-    _turtle = crane.turtleStore.load_one_by_id(turtleId)
+def predict(turtleName, user, entity, fields=None):
+    _turtle = load_turtle(turtleName, user)
     if _turtle:
-        return _turtle.predict(userId, entity)
+        entity = crane.entityStore.load_or_create(ObjectId(entity))
+        return _turtle.predict(entity, fields)
     else:
-        logger.warning('can not find turtle by {0} to predict'.format(turtleId))
+        logger.warning('can not find turtle by {0}@{1} to predict'.format(user, turtleName))
         return 0
-
-# user APIs
-def has_one_in_store(turtleId, userId):
-    _turtle = crane.turtleStore.load_one_by_id(turtleId)
+        
+def reset(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
     if _turtle:
-        return _turtle.has_user_in_store(userId)
+        _turtle.reset()
+        return True
     else:
-        logger.warning('can not find turtle by {0} to save a user'.format(turtleId))
+        logger.warning('can not find turtle by {0}@{1} to reset'.format(user, turtleName))
         return False
-
-def has_one(turtleId, userId):
-    _turtle = crane.turtleStore.load_one_by_id(turtleId)
+        
+def reset_all_data(turtleName, user):
+    _turtle = load_turtle(turtleName, user)
     if _turtle:
-        return _turtle.has_user(userId)
+        _turtle.reset()
+        _turtle.reset_data()
+        return True
     else:
-        logger.warning('can not find turtle by {0} to save a user'.format(turtleId))
-        return False
-
-def save_one(turtleId, userId):
-    _turtle = crane.turtleStore.load_one_by_id(turtleId)
-    if _turtle:
-        return _turtle.save_one(userId)
-    else:
-        logger.warning('can not find turtle by {0} to save a user'.format(turtleId))
-        return False
-
-def add_one(turtleId, userId):
-    _turtle = crane.turtleStore.load_one_by_id(turtleId)
-    if _turtle:
-        return _turtle.add_one(userId)
-    else:
-        logger.warning('can not find turtle by {0} to add a user'.format(turtleId))
-        return False
-
-def remove_one(turtleId, userId):
-    _turtle = crane.turtleStore.load_one_by_id(turtleId)
-    if _turtle:
-        return _turtle.remove_one(userId)
-    else:
-        logger.warning('can not find turtle by {0} to remove a user'.format(turtleId))
-        return False
-
-def load_one(turtleId, userId):
-    _turtle = crane.turtleStore.load_one_by_id(turtleId)
-    if _turtle:
-        return _turtle.load_one(userId)
-    else:
-        logger.warning('can not find turtle by {0} to load a user'.format(turtleId))
-        return False
-
-def unload_one(turtleId, userId):
-    _turtle = crane.turtleStore.load_one_by_id(turtleId)
-    if _turtle:
-        return _turtle.unload_one(userId)
-    else:
-        logger.warning('can not find turtle by {0} to unload a user'.format(turtleId))
-        return False
-                
+        logger.warning('can not find turtle by {0}@{1} to reset_all_data'.format(user, turtleName))
+        return False        
+               
 # meta query APIs
 def find_type(typeName):
     return base.monkFactory.find(typeName)
 
+def show_help():
+    return {'help':'hello'}

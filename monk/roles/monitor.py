@@ -1,0 +1,184 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Feb 11 09:09:06 2014
+Build a report page to monitor different MONK services
+@author: xm
+"""
+import os
+import simplejson
+import logging
+from kafka.client import KafkaClient
+from kafka.consumer import SimpleConsumer
+from twisted.web.server import Site
+from twisted.web.static import File
+from twisted.internet import reactor
+from deffered_resource import DefferedResource
+from twisted.internet.task import LoopingCall
+import traceback
+from monk.utils.utils import decodeMetric
+
+class MonkMetrics(object):
+    group = 'metrics'
+    bigNumber = 1000000000
+    def __init__(self, hosts, timeSpan=1000, timeInterval=10, timeTick=1000, offsetInterval=1000):
+        self.kafkaHosts = hosts
+        self.timeInterval = timeInterval
+        self.timeTick = timeTick
+        self.timeSpan = timeSpan
+        self.offsetInterval = offsetInterval
+        self.maxOffset = 20000
+        self.metrics = {}
+        self.users = {}
+    
+    def parseUser(self, user, t, topic, metricName):
+        if topic in self.users:
+            users = self.users[topic]
+        else:
+            users = {}
+            self.users[topic] = users
+            
+        if user in users:
+            userProfile = users[user]
+            userProfile['lastSeen'] = t
+            if metricName not in userProfile['metricNames']:
+                userProfile['metricNames'].append(metricName)
+        else:
+            userProfile = {'name':user,
+                           'userId':len(users) + 1,
+                           'firstSeen':t,
+                           'lastSeen':t,
+                           'topic':topic,
+                           'metricNames':[metricName]}
+            users[user] = userProfile
+        return userProfile['userId']
+        
+    def parseMessages(self, topic, messages):
+        minTime = self.bigNumber
+        maxTime = 0
+        if topic in self.metrics:
+            metrics = self.metrics[topic]
+        else:
+            metrics = {}
+            self.metrics[topic] = metrics
+        for message in messages:
+            monkuser, t, name, value = decodeMetric(message.message.value.split(' : ')[1])
+            minTime = min(minTime, t)
+            maxTime = max(maxTime, t)
+            if name in metrics:
+                metric = metrics[name]
+            else:
+                metric = []
+                metrics[name] = metric
+            userId = self.parseUser(monkuser, t, topic, name)
+            metric.append({'time':t, 'userId':userId, 'value':value})
+            print userId, t, value, name, monkuser
+        return minTime, maxTime
+    
+    def normalize_metrics(self):
+        for metrics in self.metrics.itervalues():
+            for metric in metrics.itervalues():
+                metric.sort(key=lambda x:x['time'])
+                currtime = metric[-1]['time']
+                for m in metric:
+                    m['rtime'] = (m['time'] - currtime) / 1000
+                    
+    def retrieve_metrics(self, topic, metricStartPosition):
+        if metricStartPosition >= 0:
+            return 0
+            
+        try:
+            kafkaClient = KafkaClient(self.kafkaHosts)
+            consumer = SimpleConsumer(kafkaClient, self.group, topic, partitions=[0])
+            timeSpan = 0
+            timeNow = 0
+            timePast = self.bigNumber
+            consumer.seek(metricStartPosition, 2)
+            messages = consumer.get_messages(count=-metricStartPosition)
+            minTime, maxTime = self.parseMessages(topic, messages)
+            timeNow = max(maxTime, timeNow)
+            timePast = min(minTime, timePast)
+            timeSpan = max(timeNow - timePast, timeSpan)
+            kafkaClient.close()
+            return len(messages)
+        except Exception as e:
+            print e
+            print traceback.format_exc()
+        return 0
+
+monkMetrics = MonkMetrics('monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9094')
+
+def monitoring():
+    global monkMetrics
+    print 'retrieving metrics'
+    monkMetrics.retrieve_metrics('exprmetric')
+    #monkMetrics.retrieve_metrics('expr2')
+
+#lc = LoopingCall(monitoring)
+#lc.start(120)
+
+class Users(DefferedResource):
+    isLeaf = True
+    def __init__(self, delayTime=0.0):
+        DefferedResource.__init__(self, delayTime)
+    
+    def _get_users(self, args):
+        global monkMetrics
+        topic = args.get('topic',['exprmetric'])[0]
+        metricName = args.get('metricName', ['|dq|/|q|'])[0]
+        users = monkMetrics.users.get(topic, {})
+        print 'return users for ', topic, metricName
+        return [user for user in users.values() if metricName in user['metricNames']]
+        
+    def _delayedRender_GET(self, request):
+        results = self._get_users(request.args)
+        simplejson.dump(results, request)
+        request.finish()
+        
+    def _delayedRender_POST(self, request):
+        results = self._get_users(request.args)
+        simplejson.dump(results, request)
+        request.finish()
+
+class  Metrics(DefferedResource):
+    isLeaf = True
+    def __init__(self, delayTime=0.0):
+        DefferedResource.__init__(self, delayTime)
+    
+    def _get_metrics(self, args):
+        global monkMetrics
+        topic = args.get('topic', ['exprmetric'])[0]
+        metricName = args.get('metricName', ['z2q'])[0]
+        metricStartPosition = int(args.get('start', [0])[0])
+        sz = monkMetrics.retrieve_metrics(topic, metricStartPosition)
+        metrics = monkMetrics.metrics.get(topic, {}).get(metricName, [])
+        #if sz > 0:
+        #    metrics = monkMetrics.metrics.get(topic, {}).get(metricName, [])[-sz:]
+        #else:
+        #    metrics = []
+        print 'return metrics for ', topic, metricName, metricStartPosition
+        return metrics
+        
+    def _delayedRender_GET(self, request):
+        results = self._get_metrics(request.args)
+        simplejson.dump(results, request)
+        request.finish()
+        
+    def _delayedRender_POST(self, request):
+        results = self._get_metrics(request.args)
+        simplejson.dump(results, request)
+        request.finish()
+        
+#TODO: read in configuration file
+def main():
+    root = DefferedResource()
+    indexpage = File('./web/')
+    root.putChild("monitor", indexpage)
+    root.putChild("users", Users())
+    root.putChild("metrics", Metrics())
+    
+    site = Site(root, "monkmonitor.log")
+    reactor.listenTCP(80, site)
+    reactor.run()
+
+if __name__=='__main__':
+    main()

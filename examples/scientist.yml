@@ -1,7 +1,7 @@
 modelConnectionString : flydragon.cloudapp.net:27017
 modelDataBaseName : MONKModel
 dataConnectionString : flydragon.cloudapp.net:27017
-dataDataBaseName : MONKData
+dataDataBaseName : ZeroDB
 uidConnectionString : flydragon.cloudapp.net:27017
 uidDataBaseName : uidDB
 loggingConfig:

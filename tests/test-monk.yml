@@ -1,8 +1,8 @@
-modelConnectionString : localhost:27017
+modelConnectionString : mozo.cloudapp.net:27017
 modelDataBaseName : TestMONKModel
-dataConnectionString : localhost:27017
+dataConnectionString : mozo.cloudapp.net:27017
 dataDataBaseName : TestMONKData
-uidConnectionString : localhost:27017
+uidConnectionString : mozo.cloudapp.net:27017
 uidDataBaseName : uidDB
 kafkaConnectionString : localhost:9092
 kafkaGroup : Test
@@ -15,7 +15,7 @@ loggingConfig:
         verbose : 
             format : '[%(asctime)s][%(process)-5d][%(name)-12s][%(levelname)-8s][%(lineno)-4d] : %(message)s'
         simple :
-            format : '[%(name)-12s][%(levelname)-8s][%(pid)s] : %(message)s'
+            format : '[%(name)-12s][%(levelname)-8s] : %(message)s'
     handlers :
         console :
             class : logging.StreamHandler

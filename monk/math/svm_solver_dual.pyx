@@ -13,6 +13,10 @@ from __future__ import division
 cimport cython
 from libc.stdlib cimport malloc, free, calloc, rand
 from monk.math.flexible_vector import FlexibleVector
+from monk.utils.utils import encodeMetric
+import logging
+logger = logging.getLogger('monk.svm_solver_dual')
+metricLog = logging.getLogger('metric')
 
 cdef inline _MEM_CHECK(void* p):
     if p == NULL:
@@ -49,6 +53,8 @@ cdef class SVMDual(object):
     cpdef public int max_num_instances
     cpdef public int num_instances
     cpdef public float rho
+    cpdef public float gamma
+    cdef public float rho0
     cdef int active_size
     cdef list x # features
     cdef int* y # target array
@@ -59,17 +65,18 @@ cdef class SVMDual(object):
     cdef float highest_score
     cdef object w
     
-    def __init__(self, w, eps, lam, rho, max_num_iters, max_num_instances):
+    def __init__(self, w, eps, rho, gamma, max_num_iters, max_num_instances):
         # @todo: check x, y, w not None
         # @todo: validate the parameters
         cdef int j
         self.eps = eps
-        self.lam = lam
         self.rho = rho
+        self.gamma = gamma
         self.w = w
         self.max_num_iters = max_num_iters
         self.max_num_instances = max_num_instances
         self.num_instances = 0
+        self.rho0 = rho * gamma / (2 * (rho + gamma))
         
         self.x     = [None for j in xrange(self.max_num_instances)]
         self.y     = <int*>calloc(self.max_num_instances, cython.sizeof(int))
@@ -103,50 +110,69 @@ cdef class SVMDual(object):
         index[j] = index[k]
         index[k] = tmp
 
-    def initialization(self):
+    def initialize(self):
         cdef int j
         for j in xrange(self.num_instances):
             self.alpha[j] = 0
             self.index[j] = j
-            self.QD[j] = 0.5 * self.rho / self.c[j] + self.x[j].norm2()
-    
-    def setData(self, x, y, c):
+            self.QD[j] = self.rho0 / self.c[j] + self.x[j].norm2()
+
+    def status(self):
         cdef int j
-        j = x.getIndex()
-        if j >= 0 and j < self.max_num_instances:
-            # x is set, use its index, and modify label
-            if y == self.y[j]:
-                return j
-            # TODO: rewind the alpha and weight to remove the old data
-            # for now, assume it is just forgotten
-        elif self.num_instances < self.max_num_instances:
-            # add the data to the end of the arrays
-            j = self.num_instances
-            self.num_instances += 1
-            x.setIndex(j)
-        else:
-            # pick the last one in the index
-            # it is possibly the one far away from the decision boundary
-            j = self.index[self.max_num_instances - 1]
-            x.setIndex(j)
-            
+        cdef float loss
+        cdef float l
+        loss = 0
+        for j in xrange(self.num_instances):
+            xj = self.x[j]
+            yj = self.y[j]
+            l = max(0, 1 - self.w.dot(xj) * yj) 
+            loss += l * l
+        return loss
+    
+    def maxxnorm(self):
+        cdef float result
+        cdef int j
+        result = 0
+        for j in xrange(self.num_instances):
+            result = max(self.x[j].norm2(), result)
+        return result
+        
+    def setData(self, x, y, c, ind):
+        cdef int j = ind
         self.x[j] = x
         self.y[j] = y
         self.c[j] = c
         self.alpha[j] = 0
-        self.QD[j] = 0.5 * self.rho / c + x.norm2()
-        return x.getIndex()
-        
-    def setModel(self, z):
+        self.QD[j] = self.rho0 / c + x.norm2()
+    
+    def setModel0(self, z, mu):
         cdef int j
-        cdef float ya
+        for j in xrange(self.num_instances):
+            self.alpha[j] = 0
+            self.index[j] = j
+        self.w.copyUpdate(z)
+        self.w.addFast(mu, -1)
+        
+    def setModel(self, z, mu):
+        cdef int j
         self.w.copyUpdate(z)
         for j in xrange(self.num_instances):
-            self.w.add(self.x[j], self.y[j] * self.alpha[j])
-        
+            self.w.addFast(self.x[j], self.y[j] * self.alpha[j])
+        self.w.addFast(mu, -1)
+    
+    def setGamma(self, gamma):
+        self.gamma = gamma
+        self.rho0 = self.rho * self.gamma / (2 * (self.rho + self.gamma))
+        logger.debug('rho = {0}, gamma = {1}, rho0 = {2}'.format(self.rho, self.gamma, self.rho0))
+                
+    def setRho(self, rho):        
+        self.rho = rho  
+        self.rho0 = self.rho * self.gamma / (2 * (self.rho + self.gamma))
+        logger.debug('rho = {0}, gamma = {1}, rho0 = {2}'.format(self.rho, self.gamma, self.rho0))
+                
     def trainModel(self):
         cdef int j, k, s, iteration
-        cdef float ya, d, G, alpha_old
+        cdef float d, G, alpha_old
         cdef int active_size = self.num_instances
         cdef int* index = self.index
         cdef float* alpha = self.alpha
@@ -159,12 +185,12 @@ cdef class SVMDual(object):
         cdef float PGmin_old = -1e10
         cdef float PGmax_new
         cdef float PGmin_new
-                 
+        logger.debug('rho0 in svm_solver_dual.trainModel {0}'.format(self.rho0))
+        logger.debug('num_instances {0}'.format(self.num_instances))
         iteration = 0
         while iteration < self.max_num_iters:
             PGmax_new = -1e10
             PGmin_new = 1e10
-            
             for j in xrange(active_size):
                 k = j + rand() % (active_size - j)
                 self.swap(index, j, k)
@@ -175,7 +201,7 @@ cdef class SVMDual(object):
                 xj = self.x[j]
                 
                 G = self.w.dot(xj) * yj - 1
-                G += alpha[j] * 0.5 * self.rho / self.c[j]
+                G += alpha[j] * self.rho0 / self.c[j]
                 
                 PG = 0
                 if alpha[j] <= 0:
@@ -196,18 +222,15 @@ cdef class SVMDual(object):
                     alpha_old = alpha[j]
                     alpha[j] = max(alpha[j] - G / QD[j], 0)
                     d = (alpha[j] - alpha_old) * yj
-                    self.w.add(xj, d)
+                    self.w.addFast(xj, d)
                         
             iteration += 1
-#            if iteration % 10 == 0:
-#                print '.',
 
             if PGmax_new - PGmin_new <= self.eps:
                 if active_size == self.num_instances:
                     break
                 else:
                     active_size = self.num_instances
-#                    self.status(i)
                     PGmax_old = 1e10
                     PGmin_old = -1e10
                     continue
@@ -218,4 +241,3 @@ cdef class SVMDual(object):
                 PGmax_old = 1e10
             if PGmin_old >= 0:
                 PGmin_old = -1e10
-    

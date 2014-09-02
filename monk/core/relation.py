@@ -4,55 +4,65 @@ Created on Thu Dec 12 07:27:15 2013
 
 @author: xm
 """
-from ..math.flexible_vector import matching, difference
-import base,crane
-import constants
+import base, crane
 from entity import Entity
+import logging
+logger = logging.getLogger('monk.relation')
 
 class Relation(Entity):
-
+    ARGUMENTS = '_arguments'
+    
+    def __default__(self):
+        super(Relation, self).__default__()
+        self._arguments = []
+        
     def __restore__(self):
         super(Relation, self).__restore__()
-        if constants.ARGUMENTS not in self.__dict__:
-            self._arguments = []
-        else:
-            self._arguments = crane.entityStore.load_or_create_all(self._arguments)
-
+        self._arguments = crane.entityStore.load_or_create_all(self._arguments)
+    
+    def set_argument(self, position, entity):
+        self._arguments[position] = entity
+        
     def generic(self):
         result = super(Relation, self).generic()
-        result[constants.ARGUMENTS] = [x._id for x in self._arguments]
+        result[self.ARGUMENTS] = [x._id for x in self._arguments]
         return result
 
-    def save(self, **kwargs):
-        if kwargs and 'fields' in kwargs:
-            fields = kwargs['fields']
-        else:
-            fields = {constants.FEATURES: self._features.generic(),
-                      constants.RAWS: self._raws,
-                      constants.ARGUMENTS: [x._id for x in self._arguments]}
+    def save(self):
+        fields = {self.FEATURES: self._features.generic(),
+                  self.RAWS: self._raws,
+                  self.ARGUMENTS: [x._id for x in self._arguments]}
         crane.entityStore.update_one_in_fields(self, fields)
         
     def arity(self):
         return len(self._arguments)
-
+        
+    def compute(self):
+        pass
 
 class DifferenceRelation(Relation):
 
-    def __restore__(self):
-        super(DifferenceRelation, self).__restore__()
-        if constants.FEATURES not in self.__dict__:
+    def compute(self):
+        try:
             ent1 = self._arguments[0]
             ent2 = self._arguments[1]
-            self._features = difference(ent1._features, ent2._features)
+            self._features.copyUpdate(ent1._features)
+            self._features.difference(ent2._features)
+        except Exception as e:
+            logger.error(e.message)
+            logger.error('failed to compute the difference relation')
 
 class MatchingRelation(Relation):
 
-    def __restore__(self):
-        super(MatchingRelation, self).__restore__()
-        if constants.FEATURES in self.__dict__:
+    def compute(self):
+        try:
             ent1 = self._arguments[0]
             ent2 = self._arguments[1]
-            self._features = matching(ent1._features, ent2._features)
+            self._features.copyUpdate(ent1._features)
+            self._features.matching(ent2._features)
+        except Exception as e:
+            logger.error(e.message)
+            logger.error('failed to compute the matching relation')
         
 base.register(Relation)
 base.register(DifferenceRelation)

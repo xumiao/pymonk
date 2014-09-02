@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Monk Monitoring</title>
+<link rel="stylesheet" type="text/css" href="./styles/monkmonitor.css">
+</head>
+<body id="interactiveABC" class="interactiveABC">
+<div id="shell">
+<div id="main">
+<div id="interactiveShell">
+<div id="interactiveFreeFormMain">
+<div class="g-shell">
+<div class="g-chart g-main-chart">
+<h4>Monk Realtime Metric</h4>
+<!--div class="g-analysis">
+<div class="g-copy">
+Last season, teams struck out at a rate never before seen: 7.5 times for each team every game, an increase of nearly 20 percent from 2005. Ten of the 30 major league teams set franchise records for strikeouts last season and most came close.
+</div>
+</div-->
+<!--[if gt IE 8]><!-->
+<script src="./scripts/d3.v3.min.js"></script>
+<script src="./scripts/queue.v1.min.js"></script>
+<script src="./scripts/monitor.js"></script>
+<svg></svg>
+<script>
+function getParameterByNameInFloat(name, defaultValue) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results == null ? defaultValue : parseFloat(decodeURIComponent(results[1].replace(/\+/g, " ")), 10);
+}
+
+function getParameterByName(name, defaultValue) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results == null ? defaultValue : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+var xmin = getParameterByNameInFloat("xmin", -600);
+var xmax = getParameterByNameInFloat("xmax", 0);
+var ymin = getParameterByNameInFloat("ymin", -0.3);
+var ymax = getParameterByNameInFloat("ymax", 2.0);
+var topic = getParameterByName("topic", "exprmetric");
+var metricName = getParameterByName("metricName", "|dq|/|q|");
+var metricWindowSize = getParameterByNameInFloat("metricWindowSize", 10000);
+var metricStartPosition = getParameterByNameInFloat("start", 0);
+
+function delayPos(){
+	var result = window.metricStartPosition;
+	window.metricStartPosition = new Date().getTime() / 1000;
+	return result;
+}
+
+window.monitor(xmin, xmax, ymin, ymax, topic, metricName, metricWindowSize, metricStartPosition);
+
+//setInterval(function(){window.monitor(xmin, xmax, ymin, ymax, topic, metricName, metricWindowSize, delayPos())}, 5000);
+
+</script>
+<!--<![endif]-->
+</div>
+</div><!--close main free form -->
+</div><!--close inset -->
+</div><!--close #page -->
+</div><!--close #shell -->
+</body></html>

@@ -94,19 +94,22 @@ Status
 
 **MONK** is under development. If anyone is interested in joining us, please let me know <pacificxumiao@gmail.com>. I am more than happy to share what I know and what I envision.
 
+Features will be supported
+=======
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+1. Featurization
+- Distributed feature extraction
+- NLP pipeline with NLTK (optional)
+- OpenCV pipeline with pycv (optional)
+2. Classification and regression
+- L2 and L1 regularization
+- Continuous ADMM for distributed continuous optimization
+- Active learning
+- Personalization
+3. Recommendation with exploration
+- Contextual-based recommendation
+- Bandit for exploration
+- Different cost function
+4. Structured prediction
+- Automatic or manual structure learning to improve indexing for faster inference
+- Learning reduction to improve the accuracy 

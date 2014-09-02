@@ -6,11 +6,10 @@ Created on Sun Mar 16 23:42:45 2014
 """
 import yaml
 import socket
-import constants
 
 class Configuration(object):
 
-    def __init__(self, configurationFileName=None):
+    def __init__(self, configurationFileName=None, logFileMidName='', pid=''):
         self.uidConnectionString = 'localhost'
         self.uidDataBaseName = 'uidDB'
         self.modelConnectionString = 'localhost'
@@ -29,28 +28,20 @@ class Configuration(object):
         self.entityCollectionName = 'EntityStore'
         self.entityFields = None
         
-        self.kafkaConnectionString = "mozo.cloudapp.net:9092"
+        self.kafkaConnectionString = "monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9093"
         self.kafkaGroup = 'test'
         self.kafkaTopic = 'test_topic'
         self.kafkaMasterPartition = 0
         self.kafkaPartitions = [1]
         self.monkHost = socket.gethostbyname(socket.gethostname())
         self.monkPort = 8887
-                
+        
+        self.logFileNameStub = 'logs/monk'
         if configurationFileName:
             with open(configurationFileName, 'r') as conf:
                 self.__dict__.update(yaml.load(conf))
         
-        # TODO: factor it better
-        if self.pandaFields is None:
-            self.pandaFields = {}
-        self.pandaFields[constants.WEIGHTS] = False
-        if self.mantisFields is None:
-            self.mantisFields = {}
-        self.mantisFields[constants.DATA] = False
-        if self.entityFields is None:
-            self.entityFields = {}
-        self.entityFields[constants.MONK_TYPE] = True
-        self.entityFields[constants.FEATURES] = True
-        self.entityFields[constants.RAWS] = True
-        
+        if logFileMidName:
+            self.loggingConfig['handlers']['files']['filename'] = \
+            '.'.join([self.logFileNameStub, logFileMidName, pid, 'log'])
+                

@@ -26,6 +26,8 @@ from __future__ import division
 
 cimport cython
 from libc.stdlib cimport malloc, free, rand, calloc, realloc, RAND_MAX
+from libc.string cimport memset
+from libc.math cimport sqrt
 
 cdef int MAX_HEIGHT = 32
 cdef long MAX_CAPACITY = 2 << 16
@@ -218,6 +220,44 @@ cdef class FlexibleVector(object):
     def __str__(self):
         a = []
         cdef SkipNodeA* currA = self.head.nextA[0]
+        cdef int height, j
+        cdef long i
+        cdef int mini, maxi
+        cdef float minv, maxv
+        cdef float v
+        mini = -1
+        maxi = -1
+        minv =  RAND_MAX
+        maxv = -RAND_MAX
+        while currA != NULL:
+            b = []
+            for height in xrange(currA.height):
+                b.append('*')
+            for height in xrange(currA.height, self.height):
+                b.append('|')
+            for i in xrange(currA.length):
+                v = currA.values[i]
+                if v != 0 and i < 4:
+                    b.append('{0}:{1:.4}'.format(currA.index + i, v))
+                if v > maxv:
+                    maxv = v
+                    maxi = currA.index + i
+                if v < minv:
+                    minv = v
+                    mini = currA.index + i
+            b.append('...')
+            a.append(' '.join(b))
+            currA = currA.nextA[0]
+        if mini >= 0 and maxi >= 0:
+            a.append('[{0}:{1},{2}:{3}]'.format(mini, minv, maxi, maxv))
+        return '\n'.join(a)
+        
+    def __repr__(self):
+        return str(self)
+
+    def all_str(self):
+        a = []
+        cdef SkipNodeA* currA = self.head.nextA[0]
         cdef int height
         cdef long i
         while currA != NULL:
@@ -227,14 +267,10 @@ cdef class FlexibleVector(object):
             for height in xrange(currA.height, self.height):
                 b.append('|')
             for i in xrange(currA.length):
-                if currA.values[i] != 0:
-                    b.append('{0}:{1:.4}'.format(currA.index + i, currA.values[i]))
+                b.append('{0}:{1:.4}'.format(currA.index + i, currA.values[i]))
             a.append(' '.join(b))
             currA = currA.nextA[0]
         return '\n'.join(a)
-        
-    def __repr__(self):
-        return str(self)
 
     cpdef setIndex(self, int index):
         self.__index = index
@@ -276,14 +312,26 @@ cdef class FlexibleVector(object):
                     a.append((i + currA.index, currA.values[i]))
             currA = currA.nextA[0]
         return a
-
-    cpdef copyUpdate(self, FlexibleVector other):
-        cdef SkipNodeA* currA = other.head.nextA[0]
+    
+    cpdef clear(self):
+        cdef SkipNodeA* currA = self.head.nextA[0]
         cdef long i
         while currA != NULL:
             for i in xrange(currA.length):
-                if currA.values[i] != 0:
-                    self.upsert(i + currA.index, currA.values[i])
+                currA.values[i] = 0
+            currA = currA.nextA[0]
+        
+    cpdef copyUpdate(self, FlexibleVector other):
+        cdef SkipNodeA* currA = self.head.nextA[0]
+        cdef long i
+        while currA != NULL:
+            for i in xrange(currA.length):
+                currA.values[i] = 0
+            currA = currA.nextA[0]
+        currA = other.head.nextA[0]
+        while currA != NULL:
+            for i in xrange(currA.length):
+                self.upsert(i + currA.index, currA.values[i])
             currA = currA.nextA[0]
         
     def update(self, list f):
@@ -296,15 +344,32 @@ cdef class FlexibleVector(object):
         cdef long sz = len(f)
         cdef long i
         for i in xrange(sz):
-            self.upsert(f[i], 0)
+            if self.find(f[i]) == 0:
+                self.upsert(f[i], 0)
     
+    def getKeys(self):
+        cdef SkipNodeA* currA = self.head.nextA[0]
+        cdef long i
+        cdef list keys = []
+        while currA != NULL:
+            for i in xrange(currA.length):
+                keys.append(currA.index + i)
+            currA = currA.nextA[0]
+        return keys
+        
     def queryStats(self):
         print self.queryLength / self.queries
         print self.queryLength / self.queries, self._numOfNodes()
     
     def clone(self):
         cdef FlexibleVector c = FlexibleVector()
-        c.add(self,  1)
+        cdef SkipNodeA* currA = self.head.nextA[0]
+        cdef int height
+        cdef long i
+        while currA != NULL:
+            for i in xrange(currA.length):
+                c[currA.index + i] = currA.values[i]
+            currA = currA.nextA[0]
         return c
     
     cdef foreach(self, funcA func):
@@ -511,7 +576,10 @@ cdef class FlexibleVector(object):
             for i in xrange(currA.length):
                 result += currA.values[i] * currA.values[i]
             currA = currA.nextA[0]
-        return result    
+        return result
+        
+    cpdef float norm(self):
+        return sqrt(self.norm2())
         
     cpdef trim(self, float tol = 0.00001, bint remove = False):
         cdef SkipNodeA* currA = self.head.nextA[0]
@@ -712,12 +780,21 @@ cdef class FlexibleVector(object):
                 self.found[height].nextA[height] = currA1
                 self.found[height] = currA1
             currA2 = currA2.nextA[0]
+    
+    cpdef difference(self, FlexibleVector other, float tol = 1e-8):
+        self.add(other, -1)
+        self.trim(tol, False)
+    
+    cpdef matching(self, FlexibleVector other, float tol = 0.01):
+        self.add(other, -1)
+        self.trim(tol, False)
+        self.foreach(_MATCH)
 
 cpdef FlexibleVector difference(FlexibleVector a, FlexibleVector b, float tol = 1e-8):
     cdef FlexibleVector c = FlexibleVector()
     c.add(a,  1)
     c.add(b, -1)
-    c.trim(tol, True)
+    c.trim(tol, False)
     return c
     
 cpdef FlexibleVector matching(FlexibleVector a, FlexibleVector b, float tol = 0.01):
