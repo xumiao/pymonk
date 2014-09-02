@@ -147,7 +147,7 @@ class  Metrics(DefferedResource):
     def _get_metrics(self, args):
         global monkMetrics
         topic = args.get('topic', ['exprmetric'])[0]
-        metricName = args.get('metricName', ['|dq|/|q|'])[0]
+        metricName = args.get('metricName', ['z2q'])[0]
         metricStartPosition = int(args.get('start', [0])[0])
         sz = monkMetrics.retrieve_metrics(topic, metricStartPosition)
         metrics = monkMetrics.metrics.get(topic, {}).get(metricName, [])
@@ -167,13 +167,18 @@ class  Metrics(DefferedResource):
         results = self._get_metrics(request.args)
         simplejson.dump(results, request)
         request.finish()
+        
+#TODO: read in configuration file
+def main():
+    root = DefferedResource()
+    indexpage = File('./web/')
+    root.putChild("monitor", indexpage)
+    root.putChild("users", Users())
+    root.putChild("metrics", Metrics())
     
-root = DefferedResource()
-indexpage = File('./monk/roles/web/')
-root.putChild("monitor", indexpage)
-root.putChild("users", Users())
-root.putChild("metrics", Metrics())
+    site = Site(root, "monkmonitor.log")
+    reactor.listenTCP(80, site)
+    reactor.run()
 
-site = Site(root, "monkmonitor.log")
-reactor.listenTCP(80, site)
-reactor.run()
+if __name__=='__main__':
+    main()

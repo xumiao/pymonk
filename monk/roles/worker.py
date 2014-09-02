@@ -25,7 +25,7 @@ else:
 import thread
 import traceback
 
-logger = logging.getLogger("monk.remote_trainer")
+logger = logging.getLogger("monk.worker")
 
 kafkaClient = None
 users = None
@@ -34,7 +34,7 @@ consumer = None
 offsetToEnd = False
 
 def print_help():
-    print 'remote_trainer.py -c <configFile> -p <kafkaPartitions, e.g., range(1,8)> -o'
+    print 'monkworker.py -c <configFile> -p <kafkaPartitions, e.g., range(1,8)> -o <to start from the last message'
     
 def onexit():
     closeKafka()
@@ -86,7 +86,7 @@ def closeKafka():
 def server(configFile, partitions, ote):
     global kafkaClient, producer, consumer, offsetToEnd
     offsetToEnd = ote
-    config = Configuration(configFile, "remote_trainer", str(os.getpid()))
+    config = Configuration(configFile, "worker", str(os.getpid()))
     monkapi.initialize(config)
     if platform.system() == 'Windows':
         win32api.SetConsoleCtrlHandler(handler, 1)
@@ -195,7 +195,7 @@ def server(configFile, partitions, ote):
         logger.debug(traceback.format_exc())
         logger.warning('Restart Kafka....\n')
 
-if __name__=='__main__':
+def main():
     configFile = 'monk_config.yml'
     kafkaPartitions = [0]
     try:
@@ -216,3 +216,6 @@ if __name__=='__main__':
             kafkaPartitions = eval(arg)
 
     server(configFile, kafkaPartitions, offsetToEnd)
+    
+if __name__=='__main__':
+    main()

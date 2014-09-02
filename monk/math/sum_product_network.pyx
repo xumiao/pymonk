@@ -6,10 +6,10 @@ A Sum-Product Network for organizing Pandas
 @author: pacif_000
 """
 
+"""
 from ..core.base import MONKObject
 import ..core.panda as ppanda
 
-"""
 An example of SPN
 {
 'children':[
@@ -30,7 +30,6 @@ An example of SPN
         }
     }
 ]}
-"""
 
 
 class PNode(MONKObject):
@@ -78,4 +77,5 @@ class SNode(MONKObject):
         self.appendType(result)
         result["panda"] = self.panda._id
         result["children"] = map(lambda x: x._id, self.children)
+"""
         
