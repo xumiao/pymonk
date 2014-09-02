@@ -3,7 +3,7 @@ from codecs import open  # To use a consistent encoding
 from os import path
 from Cython.Build import cythonize
 
-here = path.abspath(path.dirname(__file__))
+#here = path.abspath(path.dirname(__file__))
 
 setup(
     name='monk',
@@ -37,6 +37,7 @@ setup(
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
         'Topic :: Machine Learning:: Platform',
+        'Topic :: Software Development :: Libraries :: Python Modules',
 
         # Pick your license as you wish (should match "license" above)
         'License :: OSI Approved :: MIT License',
@@ -63,7 +64,7 @@ setup(
     # project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/technical.html#install-requires-vs-requirements-files
-    install_requires=['peppercorn','nltk','pymongo','simplejson'],
+    install_requires=['peppercorn','nltk','pymongo','simplejson','pubnub==3.5.2'],
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
