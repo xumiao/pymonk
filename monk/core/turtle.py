@@ -102,11 +102,11 @@ class Turtle(base.MONKObject):
         del result['mergeQueue']
         return result
     
-    def clone(self, user):
-        obj = super(Turtle, self).clone(user)
+    def clone(self, userName):
+        obj = super(Turtle, self).clone(userName)
         obj.pandaUids = set(self.pandaUids)
-        obj.tigress   = self.tigress.clone(user)
-        obj.pandas    = [p.clone(user) for p in self.pandas]
+        obj.tigress   = self.tigress.clone(userName)
+        obj.pandas    = [p.clone(userName) for p in self.pandas]
         obj.requires  = dict(self.requires)
         return obj
         
@@ -294,8 +294,8 @@ class RankingTurtle(Turtle):
         del result[self.FTARGET_STORE]
         return result
     
-    def clone(self, user):
-        obj = super(RankingTurtle, self).clone(user)
+    def clone(self, userName):
+        obj = super(RankingTurtle, self).clone(userName)
         return obj
         
     def predict(self, entity, fields=None):
@@ -344,8 +344,8 @@ class DictionaryTurtle(Turtle):
         del result['dictionary']
         return result
     
-    def clone(self, user):
-        obj = super(DictionaryTurtle, self).clone(user)
+    def clone(self, userName):
+        obj = super(DictionaryTurtle, self).clone(userName)
         obj.dictionary = dict(self.dictionary)
         return obj
         

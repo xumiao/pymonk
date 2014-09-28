@@ -14,9 +14,6 @@ class UID:
 
     def __init__(self, connectionString=None, databaseName=None):
         if not connectionString or not databaseName:
-            logger.error(connectionString)
-            logger.error(databaseName)
-            logger.error('no uid store initialized')
             return
             
         try:

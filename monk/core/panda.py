@@ -62,7 +62,7 @@ class ImmutablePanda(Panda):
         super(ImmutablePanda, self).__restore__()
         self.creator = cons.DEFAULT_CREATOR
     
-    def clone(self, user):
+    def clone(self, userName):
         return self
         
 class ExistPanda(ImmutablePanda):
@@ -118,13 +118,13 @@ class LinearPanda(Panda):
         result[self.FCONSENSUS] = self.z.generic()
         return result
 
-    def clone(self, user):
-        obj = super(LinearPanda, self).clone(user)
+    def clone(self, userName):
+        obj = super(LinearPanda, self).clone(userName)
         obj.weights = self.weights.clone()
         obj.z       = obj.weights.clone()
         obj.m       = 1
         self.load_mantis()
-        obj.mantis = self.mantis.clone(user, obj)
+        obj.mantis = self.mantis.clone(userName, obj)
         return obj
         
     def save(self):

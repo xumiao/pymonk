@@ -28,7 +28,7 @@ class Entity(base.MONKObject):
         result[self.FEATURES] = self._features.generic()
         return result
     
-    def clone(self, user):
+    def clone(self, userName):
         logger.error('entity can not be cloned')
         return None
         

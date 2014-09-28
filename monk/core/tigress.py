@@ -97,8 +97,8 @@ class PatternTigress(Tigress):
         del result['p']
         return result
 
-    def clone(self, user):
-        obj = super(PatternTigress, self).clone(user)
+    def clone(self, userName):
+        obj = super(PatternTigress, self).clone(userName)
         obj.patterns = dict(self.patterns)
         obj.p = {re.compile(pattern) : target for target, pattern in self.patterns.iteritems()}
         obj.fields = list(self.fields)

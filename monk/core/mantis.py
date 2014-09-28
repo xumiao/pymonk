@@ -86,8 +86,8 @@ class Mantis(base.MONKObject):
             logger.warning('deleting solver failed {0}'.format(e.message))
         return result
 
-    def clone(self, user, panda):
-        obj = super(Mantis, self).clone(user)
+    def clone(self, userName, panda):
+        obj = super(Mantis, self).clone(userName)
         obj.mu = FlexibleVector()
         obj.dq = FlexibleVector()
         obj.q  = self.panda.z.clone()

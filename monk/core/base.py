@@ -86,10 +86,10 @@ class MONKObject(object):
             logger.warning('no store for abstract MONKObject')
             return False
             
-    def clone(self, user):
+    def clone(self, userName):
         """ Reuse the object in store """
         if self.store:
-            obj = self.store.load_or_create({'name':self.name, 'creator':user})
+            obj = self.store.load_or_create({'name':self.name, 'creator':userName})
             if obj:
                 return obj
                 
@@ -97,7 +97,7 @@ class MONKObject(object):
             obj = self.create()
             for key in self._allattr([self.ID, self.CREATOR, self.CREATED_TIME, self.LAST_MODIFIED]):
                 obj._setattr(key, self._getattr(key))
-            obj.creator = user
+            obj.creator = userName
             return obj
         except Exception as e:
             logger.error(e.message)

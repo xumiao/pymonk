@@ -10,29 +10,28 @@ import socket
 class Configuration(object):
 
     def __init__(self, configurationFileName=None, logFileMidName='', pid=''):
-        self.uidConnectionString = 'localhost'
-        self.uidDataBaseName = 'uidDB'
+        self.uidConnectionString   = 'localhost'
+        self.uidDataBaseName       = 'UIDDB'
+        
         self.modelConnectionString = 'localhost'
-        self.modelDataBaseName = 'TestMONKModel'
-        self.pandaCollectionName = 'PandaStore'
-        self.pandaFields = None
-        self.turtleCollectionName = 'TurtleStore'
-        self.turtleFields = None
-        self.mantisCollectionName = 'MantisStore'
-        self.mantisFields = None
+        self.modelDataBaseName     = 'MONKModelTest'
+        self.userCollectionName    = 'UserStore'
+        self.pandaCollectionName   = 'PandaStore'
+        self.turtleCollectionName  = 'TurtleStore'
+        self.mantisCollectionName  = 'MantisStore'
         self.tigressCollectionName = 'TigressStore'
-        self.tigressFields = None
         
-        self.dataConnectionString = 'localhost'
-        self.dataDataBaseName = 'TestMONKData'
-        self.entityCollectionName = 'EntityStore'
-        self.entityFields = None
+        self.dataConnectionString  = 'localhost'
+        self.dataDataBaseName      = 'MONKDataTest'
+        self.entityCollectionName  = 'EntityStore'
         
-        self.kafkaConnectionString = "monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9093"
+        self.sysConnectionString   = 'localhost'
+        self.sysDataBaseName       = 'MONKSysTest'
+        self.workerCollectionName  = 'WorkerStore'
+        
+        self.kafkaConnectionString = 'localhost'
         self.kafkaGroup = 'test'
         self.kafkaTopic = 'test_topic'
-        self.kafkaMasterPartition = 0
-        self.kafkaPartitions = [1]
         self.monkHost = socket.gethostbyname(socket.gethostname())
         self.monkPort = 8887
         

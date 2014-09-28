@@ -31,7 +31,6 @@ kafkaClient = None
 users = None
 producer = None
 consumer = None
-offsetToEnd = False
 
 def print_help():
     print 'monkworker.py -c <configFile> -p <kafkaPartitions, e.g., range(1,8)> -o <to start from the last message'
@@ -39,16 +38,16 @@ def print_help():
 def onexit():
     closeKafka()
     monkapi.exits()
-    logger.info('remote_trainter {0} is shutting down'.format(os.getpid()))
+    logger.info('worker {0} is shutting down'.format(os.getpid()))
 
 def handler(sig, hook = thread.interrupt_main):
     closeKafka()
     monkapi.exits()
-    logger.info('remote_trainter {0} is shutting down'.format(os.getpid()))
+    logger.info('worker {0} is shutting down'.format(os.getpid()))
     exit(1)
 
 def initKafka(config, partitions):
-    global kafkaClient, producer, consumer, offsetToEnd, users
+    global kafkaClient, producer, consumer, users
     kafkaClient = KafkaClient(config.kafkaConnectionString)
     users = {}
     mcl = pm.MongoClient('10.137.172.201:27017')
@@ -65,10 +64,6 @@ def initKafka(config, partitions):
     consumer = SimpleConsumer(kafkaClient, config.kafkaGroup,
                               config.kafkaTopic,
                               partitions=partitions)
-    if offsetToEnd:
-        consumer.seek(0,2)
-        logger.info('offset to end')
-        offsetToEnd = False
 
 def closeKafka():
     global kafkaClient, producer, consumer
@@ -84,8 +79,7 @@ def closeKafka():
         kafkaClient = None
         
 def server(configFile, partitions, ote):
-    global kafkaClient, producer, consumer, offsetToEnd
-    offsetToEnd = ote
+    global kafkaClient, producer, consumer
     config = Configuration(configFile, "worker", str(os.getpid()))
     monkapi.initialize(config)
     if platform.system() == 'Windows':
@@ -97,86 +91,91 @@ def server(configFile, partitions, ote):
         try:
             closeKafka()
             initKafka(config, partitions)
+            if ote:
+                consumer.seek(0,2)
+                logger.info('offset to end')
+                ote = False
+                
             for message in consumer:
                 logger.debug(message)
                 decodedMessage = simplejson.loads(message.message.value)
                 
                 op         = decodedMessage.get('operation')
-                user       = decodedMessage.get('user')
+                userName   = decodedMessage.get('userName')
                 turtleName = decodedMessage.get('turtleName')
                 
-                if user is None or turtleName is None:
+                if userName is None or turtleName is None:
                     logger.error('needs turtleId and userId')
                     continue
     
                 if op == 'add_user':
                     follower = decodedMessage.get('follower')
                     if follower:
-                        monkapi.clone_turtle(turtleName, user, follower)
-                        monkapi.follow_turtle_leader(turtleName, user, follower)
+                        monkapi.clone_turtle(turtleName, userName, follower)
+                        monkapi.follow_turtle_leader(turtleName, userName, follower)
                 elif op == 'follow':
                     leader = decodedMessage.get('leader')
                     if leader:
-                        monkapi.follow_turtle_follower(turtleName, user, leader)
+                        monkapi.follow_turtle_follower(turtleName, userName, leader)
                     follower = decodedMessage.get('follower')
                     if follower:
-                        monkapi.follow_turtle_leader(turtleName, user, follower)
+                        monkapi.follow_turtle_leader(turtleName, userName, follower)
                 elif op == 'unfollow':
                     leader = decodedMessage.get('leader')
                     if leader:
-                        monkapi.unfollow_turtle_follower(turtleName, user, leader)
+                        monkapi.unfollow_turtle_follower(turtleName, userName, leader)
                     follower = decodedMessage.get('follower')
                     if follower:
-                        monkapi.unfollow_turtle_leader(turtleName, user, follower)
+                        monkapi.unfollow_turtle_leader(turtleName, userName, follower)
                 elif op == 'remove_user':
-                    leader = monkapi.get_leader(turtleName, user)
-                    monkapi.remove_turtle(turtleName, user)
+                    leader = monkapi.get_leader(turtleName, userName)
+                    monkapi.remove_turtle(turtleName, userName)
                     encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                        'user':leader,
-                                                       'follower':user,
+                                                       'follower':userName,
                                                        'operation':'unfollow'})
                     producer.send(leader, encodedMessage)
                 elif op == 'add_data':
                     entity = decodedMessage.get('entity')
                     if entity:
-                        monkapi.add_data(turtleName, user, entity)
+                        monkapi.add_data(turtleName, userName, entity)
                 elif op == 'save_turtle':
-                    monkapi.save_turtle(turtleName, user) 
+                    monkapi.save_turtle(turtleName, userName) 
                 elif op == 'merge':
                     follower = decodedMessage.get('follower')
-                    if (monkapi.merge(turtleName, user, follower)):
-                        for follower in monkapi.get_followers(turtleName, user):
+                    if (monkapi.merge(turtleName, userName, follower)):
+                        for follower in monkapi.get_followers(turtleName, userName):
                             encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                                'user':follower,
                                                                'operation':'train'})
                             producer.send(follower, encodedMessage)
                 elif op == 'train':
-                    monkapi.train(turtleName, user)
-                    leader = monkapi.get_leader(turtleName, user)
+                    monkapi.train(turtleName, userName)
+                    leader = monkapi.get_leader(turtleName, userName)
                     encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                                         'user':leader,
-                                                        'follower':user,
+                                                        'follower':userName,
                                                         'operation':'merge'})
                     producer.send(leader, encodedMessage)
                 elif op == 'test_data':
-                    logger.debug('test on the data of {0}'.format(user))
+                    logger.debug('test on the data of {0}'.format(userName))
                     entity = decodedMessage.get('entity')
                     #isPersonalized = decodedMessage.get('isPersonalized',1)
                     if entity:
-                        monkapi.predict(turtleName, user, entity)
+                        monkapi.predict(turtleName, userName, entity)
                 elif op == 'reset':
-                    logger.debug('reset turtle {0} of user {1} '.format(turtleName, user))
-                    monkapi.reset(turtleName, user)
+                    logger.debug('reset turtle {0} of user {1} '.format(turtleName, userName))
+                    monkapi.reset(turtleName, userName)
                 elif op == 'reset_all_data':
-                    logger.debug('reset_all_data turtle {0} of user {1} '.format(turtleName, user))
-                    monkapi.reset_all_data(turtleName, user)    
+                    logger.debug('reset_all_data turtle {0} of user {1} '.format(turtleName, userName))
+                    monkapi.reset_all_data(turtleName, userName)    
                 elif op == 'offsetCommit':
                     consumer.commit()
                 elif op == 'set_mantis_parameter':
                     para = decodedMessage.get('para', '')
                     value = decodedMessage.get('value', 0)
                     logger.debug('set_mantis_parameter {0} to {1}'.format(para, value))
-                    monkapi.set_mantis_parameter(turtleName, user, para, value)
+                    monkapi.set_mantis_parameter(turtleName, userName, para, value)
                 elif op == 'reload':
                     monkapi.reloads()
                 else:

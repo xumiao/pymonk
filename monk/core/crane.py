@@ -297,11 +297,13 @@ class Crane(object):
             return False
 
 uidStore     = UID()
+userStore    = Crane()
 entityStore  = Crane()
 pandaStore   = Crane()
 mantisStore  = Crane()
 turtleStore  = Crane()
 tigressStore = Crane()
+workerStore  = Crane()
 
 def exit_storage():
     Crane.mongoClientPool.exists()
@@ -309,6 +311,7 @@ def exit_storage():
 def initialize_storage(config):
     global uidStore, entityStore, pandaStore
     global mantisStore, turtleStore, tigressStore
+    global userStore, workerStore
     
     uidStore     = UID(config.uidConnectionString,
                        config.uidDataBaseName)
@@ -317,33 +320,48 @@ def initialize_storage(config):
                          config.dataDataBaseName,
                          config.entityCollectionName)
 
+    userStore    = Crane(config.modelConnectionString,
+                         config.modelDataBaseName,
+                         config.userCollectionName)
+                         
+    workerStore  = Crane(config.sysConnectionString,
+                         config.sysDataBaseName,
+                         config.workerCollectionName)
+
     pandaStore   = Crane(config.modelConnectionString,
                          config.modelDataBaseName,
                          config.pandaCollectionName)
-    from panda import Panda
-    Panda.store = pandaStore
 
     mantisStore  = Crane(config.modelConnectionString,
                          config.modelDataBaseName,
                          config.mantisCollectionName)
-    from mantis import Mantis
-    Mantis.store = mantisStore
-    
+                         
     turtleStore  = Crane(config.modelConnectionString,
                          config.modelDataBaseName,
                          config.turtleCollectionName)
-    from turtle import Turtle
-    Turtle.store = turtleStore
-    
+
     tigressStore = Crane(config.modelConnectionString,
                          config.modelDataBaseName,
                          config.tigressCollectionName)
-    from tigress import Tigress
-    Tigress.store = tigressStore
+
+    # TODO: test if these are necessary and remove them
+    #from panda import Panda
+    #Panda.store = pandaStore
+
+    #from mantis import Mantis
+    #Mantis.store = mantisStore
+    
+    #from turtle import Turtle
+    #Turtle.store = turtleStore
+    
+    #from tigress import Tigress
+    #Tigress.store = tigressStore
     
     return True
 
 def reload_storage():
+    userStore._reload()
+    workerStore._reload()
     mantisStore._reload()
     pandaStore._reload()
     tigressStore._reload()
