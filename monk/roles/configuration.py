@@ -27,7 +27,7 @@ class Configuration(object):
         
         self.sysConnectionString   = 'localhost'
         self.sysDataBaseName       = 'MONKSysTest'
-        self.workerCollectionName  = 'WorkerStore'
+        self.engineCollectionName  = 'engineStore'
         
         self.kafkaConnectionString = 'localhost'
         self.kafkaGroup = 'test'
