@@ -311,7 +311,7 @@ def exit_storage():
 def initialize_storage(config):
     global uidStore, entityStore, pandaStore
     global mantisStore, turtleStore, tigressStore
-    global userStore, workerStore
+    global userStore, engineStore
     
     uidStore     = UID(config.uidConnectionString,
                        config.uidDataBaseName)
@@ -324,9 +324,9 @@ def initialize_storage(config):
                          config.modelDataBaseName,
                          config.userCollectionName)
                          
-    workerStore  = Crane(config.sysConnectionString,
+    engineStore  = Crane(config.sysConnectionString,
                          config.sysDataBaseName,
-                         config.workerCollectionName)
+                         config.engineCollectionName)
 
     pandaStore   = Crane(config.modelConnectionString,
                          config.modelDataBaseName,
@@ -345,17 +345,23 @@ def initialize_storage(config):
                          config.tigressCollectionName)
 
     # TODO: test if these are necessary and remove them
-    #from panda import Panda
-    #Panda.store = pandaStore
+    from panda import Panda
+    Panda.store = pandaStore
 
-    #from mantis import Mantis
-    #Mantis.store = mantisStore
+    from mantis import Mantis
+    Mantis.store = mantisStore
     
-    #from turtle import Turtle
-    #Turtle.store = turtleStore
+    from turtle import Turtle
+    Turtle.store = turtleStore
     
-    #from tigress import Tigress
-    #Tigress.store = tigressStore
+    from tigress import Tigress
+    Tigress.store = tigressStore
+    
+    from user import User
+    User.store = userStore
+        
+    from engine import Engine
+    Engine.store = engineStore
     
     return True
 

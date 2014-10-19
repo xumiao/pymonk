@@ -9,12 +9,13 @@ import logging.config
 from constants import DEFAULT_CREATOR
 from bson.objectid import ObjectId
 # to register classes in base
-import base, crane, entity, relation, tigress, turtle, mantis, panda, user
+import base, crane, entity, relation, tigress, turtle, mantis, panda, user, engine
 import configuration
 import yaml
 
 logger = logging.getLogger("monk.api")
 _config = None
+_initialized = False
 
 # utility APIs
 def UUID(objId=None):
@@ -31,22 +32,24 @@ def yaml2json(yamlFileName):
     return None
     
 def initialize(config=None):
-    global _config
+    global _config, _initialized
+    if _initialized:
+        return
+        
     if config is not None:
-        if isinstance(config, basestring):
-            _config = configuration.Configuration(config)
-        else:
-            _config = config
+        _config = config
     
-    logging.config.dictConfig(_config.loggingConfig)
     logger.info('------start up------')
-    return crane.initialize_storage(_config)
+    _initialized = crane.initialize_storage(_config)
+    return _initialized
 
 def exits():
+    global _initialized
     if _config is None:
         return False
     logger.info('------end-----------')
     crane.exit_storage()
+    _initialized = False
     return True
 
 def reloads(config=None):
@@ -55,13 +58,15 @@ def reloads(config=None):
         reload(crane)
         initialize(config)
 
+    reload(user)
     reload(base)
+    reload(panda)
     reload(tigress)
     reload(turtle)
     reload(mantis) 
-    reload(panda)
     reload(entity)
     reload(relation)
+    reload(engine)
     crane.reload_storage()
 
 def dummy(duration):

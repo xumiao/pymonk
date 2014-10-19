@@ -43,7 +43,7 @@ class User(entity.Entity):
         result = super(User, self).generic()
         return result
 
-    def clone(self, user):
+    def clone(self, userName):
         ''' User can not be replicated '''
         return None
     
@@ -51,8 +51,9 @@ class User(entity.Entity):
         thisyear = datetime.date.today().year
         return thisyear - self.year
     
-    def partition(self):
-        return self.partition
+    def set_partition(self, partition):
+        self.partition = partition
+        self.update_fields({self.PART:self.partition})
     
     def add_turtle(self, turtleName):
         self.turtles.append(turtleName)

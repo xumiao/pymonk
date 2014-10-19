@@ -17,6 +17,9 @@ import simplejson
 import sys, getopt
 import os
 import platform
+import monk.network.broker as mnb
+import monk.utils.utils as ut
+
 import socket
 if platform.system() == 'Windows':
     import win32api
@@ -31,6 +34,36 @@ kafkaClient = None
 users = None
 producer = None
 consumer = None
+
+class WorkerBroker(mnb.KafkaBroker):
+    def add_data(turtleName, user, ent):
+        pass
+    
+    def reset(turtleName, user):
+        pass
+    
+    def train(turtleName, user):
+        pass
+    
+    def predict(turtleName, user, ent):
+        pass
+    
+    def add_follower(turtleName, user, follower):
+        pass
+
+class AdminBroker(mnb.KafkaBroker):
+    def add_user(self, userName, password='', **kwargs):
+        self.produce(partition=0, op='add_user', userName=userName, password=password, kwargs)
+        
+    def register_worker(self, **kwargs):
+        produce(partition=0, op='register_worker', workerPID=os.getpgid(), workerIP=ut.get_lan_ip(), workerPartitions=self.partitions, kwargs)
+    
+    def update_worker(self, **kwargs):
+        produce(partition=0, op='update_woorker', workerPID=os.getpgid(), workerIP=ut.get_lan_ip(), workerPartitions=self.partitions, kwargs)
+
+    def unregister_worker(self, **kwargs):
+        produce(partition=0, op='unregister_worker', workerPID=os.getpgid(), workerIP=ut.get_lan_ip(), workerPartitions=self.partitions, kwargs)
+
 
 def print_help():
     print 'monkworker.py -c <configFile> -p <kafkaPartitions, e.g., range(1,8)> -o <to start from the last message'

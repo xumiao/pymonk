@@ -5,7 +5,7 @@ Created on Sun Mar 16 23:42:45 2014
 @author: xm
 """
 import yaml
-import socket
+import logging
 
 class Configuration(object):
 
@@ -30,12 +30,18 @@ class Configuration(object):
         self.engineCollectionName  = 'engineStore'
         
         self.kafkaConnectionString = 'localhost'
-        self.kafkaGroup = 'test'
-        self.kafkaTopic = 'test_topic'
-        self.monkHost = socket.gethostbyname(socket.gethostname())
-        self.monkPort = 8887
+        
+        self.workerGroup = 'monktest'
+        self.workerTopic = 'monktest'
+        
+        self.administratorGroup = 'monkadmin'
+        self.administratorTopic = 'monkadmin'
+        self.administratorParitions = [0]
+        
+        self.brokerTimeout = 200
         
         self.logFileNameStub = 'logs/monk'
+        
         if configurationFileName:
             with open(configurationFileName, 'r') as conf:
                 self.__dict__.update(yaml.load(conf))
@@ -43,4 +49,5 @@ class Configuration(object):
         if logFileMidName:
             self.loggingConfig['handlers']['files']['filename'] = \
             '.'.join([self.logFileNameStub, logFileMidName, pid, 'log'])
-                
+        
+        logging.config.dictConfig(self.loggingConfig)
