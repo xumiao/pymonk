@@ -89,6 +89,35 @@ def load_entity(entity, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)
     return crane.entityStore.load_or_create(entity)
 
+# engine APIs
+def has_engine_in_store(engineName):
+    return crane.engineStore.has_name_user(engineName, DEFAULT_CREATOR)
+
+def find_engine(query):
+    ids = [_engine['_id'] for _engine in crane.engineStore.load_all_in_ids(query, 0, 0)]
+    return crane.engineStore.load_all_by_ids(ids)
+
+def create_engine(engineScript):
+    _engine = crane.engineStore.load_or_create(engineScript, True)
+    if _engine is None:
+        logger.error('failed to load or create engine {}'.format(engineScript))
+        return None
+    return _engine
+
+def load_engine(engineName):
+    _engine = crane.engineStore.load_or_create({'name':engineName, 'creator':DEFAULT_CREATOR})
+    if _engine is None:
+        logger.error('engine {} does not exist'.format(engineName))
+        return None
+    return _engine
+
+def save_engine(engineName):
+    _engine = load_engine(engineName)
+    if _engine:
+        _engine.save()
+        return True
+    return False
+    
 # user APIs
 def has_user_in_store(userName):
     return crane.userStore.has_name_user(userName, DEFAULT_CREATOR)

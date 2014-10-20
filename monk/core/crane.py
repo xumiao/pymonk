@@ -304,6 +304,8 @@ mantisStore  = Crane()
 turtleStore  = Crane()
 tigressStore = Crane()
 workerStore  = Crane()
+engineStore  = Crane()
+
 
 def exit_storage():
     Crane.mongoClientPool.exists()

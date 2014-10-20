@@ -36,7 +36,8 @@ class Configuration(object):
         
         self.administratorGroup = 'monkadmin'
         self.administratorTopic = 'monkadmin'
-        self.administratorParitions = [0]
+        self.administratorServerParition = 0
+        self.administratorClientPartition = 1
         
         self.brokerTimeout = 200
         
