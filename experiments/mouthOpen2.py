@@ -16,15 +16,19 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+from monk.core.configuration import Configuration
+import os
 
 logging.basicConfig(format='[%(asctime)s][%(name)-12s][%(levelname)-8s] : %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
                     level=logging.ERROR)
 
+config = Configuration("C:\Users\chch\GitHubRepo\pymonk\experiments\monk_config.yml", "mouthOpen2", str(os.getpid()))
+
 turtleName = 'mouthOpenTurtle2'
 pandaName = 'mouthOpen2'
-kafkaHost = 'monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9094'
-kafkaTopic = 'expr'
+kafkaHost = config.kafkaConnectionString
+kafkaTopic = config.kafkaTopic
 partitions = range(8)
 users = {}
 trainData = {}          # the ObjectID of the selected data in DB
@@ -68,18 +72,18 @@ def loadPreparedData(file1, file2 = None):
 def add_users():
     global users
     
-    mcl = pm.MongoClient('10.137.172.201:27017')
+    mcl = pm.MongoClient(config.modelConnectionString)
     kafka = KafkaClient(kafkaHost, timeout=None)
     producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
                             req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                             ack_timeout=200)
-    coll = mcl.DataSet['PMLExpression']
+    coll = mcl.DataSet[config.entityCollectionName]
     
     for ent in coll.find(None, {'_id':True, 'userId':True}, timeout=False):
         follower = ent['userId']
         if follower not in users:
             encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                               'user':'monk',
+                                               'userName':'monk',
                                                'follower':follower,
                                                'operation':'add_user'})
             print producer.send(follower, encodedMessage)
@@ -96,26 +100,26 @@ def add_data():
     global users
     global trainData
     checkUserPartitionMapping()
-    mcl = pm.MongoClient('10.137.172.201:27017')        
+    mcl = pm.MongoClient(config.modelConnectionString)        
     kafka = KafkaClient(kafkaHost, timeout=None)
     producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
                       req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
                       ack_timeout=200)
-    coll = mcl.DataSet['PMLExpression']
+    coll = mcl.DataSet[config.entityCollectionName]
 
     for ent in coll.find(None, {'_id':True, 'userId':True}, timeout=False):
         entity = str(ent['_id'])
         user = ent['userId']
         if ent['_id'] in trainData[user]:
             encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                               'user':user,
+                                               'userName':user,
                                                'entity':entity,
                                                'operation':'add_data'})
             print producer.send(user, encodedMessage)
         
     for user, partitionId in users.iteritems():
         encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                           'user':user,
+                                           'userName':user,
                                            'operation':'save_turtle'})
         print producer.send(user, encodedMessage)
     mcl.close()
@@ -132,7 +136,7 @@ def train(numIters):
             if user == ''  or user == 'monk':
                 continue
             encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                               'user':user,
+                                               'userName':user,
                                                'operation':'train'})
             print i, producer.send(user, encodedMessage)
     
@@ -144,7 +148,7 @@ def test(isPersonalized):
     global users
     global testData
     checkUserPartitionMapping()
-    mcl = pm.MongoClient('10.137.172.201:27017')        
+    mcl = pm.MongoClient(config.modelConnectionString)        
     kafka = KafkaClient(kafkaHost, timeout=None)
     producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
                       req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
@@ -155,7 +159,7 @@ def test(isPersonalized):
             for dataID in testData[user]:
                 entity = str(dataID)
                 encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                   'user':user,
+                                                   'userName':user,
                                                    'entity':entity,
                                                    'isPersonalized':isPersonalized,
                                                    'operation':'test_data'})
@@ -168,8 +172,8 @@ def centralizedTest(isPersonalized):
     global testData
     checkUserPartitionMapping()
     
-    mcl = pm.MongoClient('10.137.172.201:27017')
-    coll = mcl.DataSet['PMLExpression']
+    mcl = pm.MongoClient(config.modelConnectionString)
+    coll = mcl.DataSet[config.entityCollectionName]
     MONKModelPandaStore = mcl.MONKModel['PandaStore']
     monkpa = MONKModelPandaStore.find_one({'creator': 'monk', 'name': pandaName}, {'_id':True, 'weights':True, 'z':True}, timeout=False)
     z = FlexibleVector(generic=monkpa['z'])        
@@ -230,7 +234,7 @@ def offsetCommit():
                       ack_timeout=200)
     for partition in partitions:
         encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                           'user':'',
+                                           'userName':'',
                                            'operation':'offsetCommit'})
         print producer.send(kafkaTopic, partition, encodedMessage)
     producer.stop(1)
@@ -246,7 +250,7 @@ def reset():
 
     for user, partitionId in users.iteritems():            
         encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                           'user':user,
+                                           'userName':user,
                                            'operation':'reset'})
         print producer.send(user, encodedMessage)
     
@@ -268,13 +272,13 @@ def reset_all_data():
 
     for user, partitionId in users.iteritems():            
         encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                           'user':user,
+                                           'userName':user,
                                            'operation':'reset_all_data'})
         print producer.send(user, encodedMessage)
     
     users['monk'] = 8
     encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                       'user':'monk',
+                                       'userName':'monk',
                                        'operation':'reset_all_data'})
     print producer.send('monk', encodedMessage)
     producer.stop(1)
@@ -291,7 +295,7 @@ def set_mantis_parameter(para, value):
 #        if not partitionId == 4:
 #            continue
         encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                           'user':user,
+                                           'userName':user,
                                            'operation':'set_mantis_parameter',
                                            'para':para,
                                            'value':value})
@@ -304,7 +308,7 @@ def changeParameters():
     global users
     checkUserPartitionMapping()
 
-    mcl = pm.MongoClient('10.137.172.201:27017')
+    mcl = pm.MongoClient(config.modelConnectionString)
     MONKModelTurtleStore = mcl.MONKModel['TurtleStore']
     MONKModelPandaStore = mcl.MONKModel['PandaStore']
     MONKModelMantisStore = mcl.MONKModel['MantisStore']
@@ -321,8 +325,8 @@ def changeParameters():
 
 def retrieveData():
     global UoI
-    mcl = pm.MongoClient('10.137.172.201:27017')        
-    coll = mcl.DataSet['PMLExpression']
+    mcl = pm.MongoClient(config.modelConnectionString)        
+    coll = mcl.DataSet[config.entityCollectionName]
     originalData = {}
     for user in UoI.keys():
         originalData[user] = {'0':[], '1':[]}
@@ -374,24 +378,21 @@ def splitData(originalData):
 
 def stratifiedSelection(posindex, negindex, fracTrain): 
     
-    num = int(len(posindex)*fracTrain)
-#    if len(posindex) > 0:
-#        num = 1
-#    else:
-#        num = 0
-    selectPosIndex = sample(posindex, num)    
-    num = int(len(negindex)*fracTrain)
-#    if len(negindex) > 0:
-#        num = 1
-#    else:
-#        num = 0
+    #num = int(len(posindex)*fracTrain)
+    num = min(len(posindex), 3)
+
+    selectPosIndex = sample(posindex, num) 
+    
+    #num = int(len(negindex)*fracTrain)
+    num = min(len(negindex), 3)
+    
     selectNegIndex = sample(negindex, num)    
     
     return selectPosIndex, selectNegIndex
     
 def checkUserPartitionMapping():
     global users
-    mcl = pm.MongoClient('10.137.172.201:27017')
+    mcl = pm.MongoClient(config.modelConnectionString)
     if not users: 
         userColl = mcl.DataSet['PMLUsers']
         for u in userColl.find(None, {'userId':True, 'partitionId':True}, timeout=False):
@@ -630,8 +631,8 @@ def plotCurveFromFile(fileNames):
 
 def normalize_data():
 
-    mcl = pm.MongoClient('10.137.172.201:27017')        
-    coll = mcl.DataSet['PMLExpression']
+    mcl = pm.MongoClient(config.modelConnectionString)        
+    coll = mcl.DataSet[config.entityCollectionName]
     collBackup = mcl.DataSet['PMLExpressionBackup']
 
     dimension = 4275
@@ -663,26 +664,26 @@ def normalize_data():
 if __name__=='__main__':    
     #normalize_data()
     #reset()
-    #prepareData()
+#    prepareData()
     loadPreparedData("trainData", "testData")
 #
 ##    print "add_users"
 ##    add_users()
 #    print "add_data"
 #    add_data()
-    print "train"
-    train(1)
+#    print "train"
+#    train(1)
     
-#    print "test"
-#    isPersonalized = True
-#    resGTs = centralizedTest(isPersonalized)
-#    destfile = open("resGTs_personalized", 'w')       # save result and gt
-#    pickle.dump(resGTs, destfile)
-#    destfile.close()
+    print "test"
+    isPersonalized = False
+    resGTs = centralizedTest(isPersonalized)
+    destfile = open("resGTs_consensus", 'w')       # save result and gt
+    pickle.dump(resGTs, destfile)
+    destfile.close()
     
-#    print "evaluate"
-#    file = open("resGTs_personalized", 'r')
-#    resGTs_personalized = pickle.load(file)
-#    file.close()
-#    evaluate(resGTs_personalized, "acc.curve")
+    print "evaluate"
+    file = open("resGTs_consensus", 'r')
+    resGTs_consensus = pickle.load(file)
+    file.close()
+    evaluate(resGTs_consensus, "acc.curve")
 

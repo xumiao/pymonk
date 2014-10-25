@@ -1,4 +1,4 @@
-modelConnectionString : &monkdb monkdb.cloudapp.net:27017
+modelConnectionString : &monkdb localhost:27017
 modelDataBaseName : MONKModel
 dataConnectionString : *monkdb
 dataDataBaseName : DataSet
