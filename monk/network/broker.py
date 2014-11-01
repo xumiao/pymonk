@@ -10,6 +10,7 @@ from kafka.client import KafkaClient
 from kafka.producer import KeyedProducer
 from kafka.consumer import SimpleConsumer
 from kafka.common import KafkaError
+from partitioner import UserPartitioner
 import simplejson
 import traceback
 
@@ -36,19 +37,24 @@ class Task(object):
         except:
             return (Task.PRIORITY_LOW, None)
             
+            
 class KafkaBroker(object):
-    def __init__(self, kafkaHost, kafkaGroup, kafkaTopic, partitions):
+    def __init__(self, kafkaHost, kafkaGroup, kafkaTopic, consumerPartitions, producerPartitions):
         self.kafkaHost = kafkaHost
         self.kafkaGroup = kafkaGroup
         self.kafkaTopic = kafkaTopic
-        self.partitions = partitions
+        self.consumerPartitions = consumerPartitions
+        self.producerPartitions = producerPartitions
         self.kafkaClient = KafkaClient(kafkaHost, timeout=None)
+        self.partitioner = UserPartitioner(self.producerPartitions)
         try:
-            self.producer = KeyedProducer(self.kafkaClient, async=False, 
-                                          req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, 
-                                          ack_timeout=200)
-            self.consumer = SimpleConsumer(self.kafkaClient, self.kafkaGroup, 
-                                           self.kafkaTopic, partitions=self.partitions)
+            self.producer = KeyedProducer(self.kafkaClient, partitioner=self.partitioner, async=False,
+                                          req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
+            if consumerPartitions:
+                self.consumer = SimpleConsumer(self.kafkaClient, self.kafkaGroup, 
+                                               self.kafkaTopic, partitions=self.consumerPartitions)
+            else:
+                self.consumer = None
         except Exception as e:
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
@@ -72,18 +78,22 @@ class KafkaBroker(object):
     def reconnect(self):
         self.close()
         self.kafkaClient = KafkaClient(self.kafkaHost, timeout=None)
-        self.producer = KeyedProducer(self.kafkaClient, async=False, 
-                                      req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, 
-                                      ack_timeout=200)
+        self.producer = KeyedProducer(self.kafkaClient, partitioner=self.partitioner, async=False,
+                                      req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
         self.consumer = SimpleConsumer(self.kafkaClient, self.kafkaGroup, 
-                                       self.kafkaTopic, partitions=self.partitions)
+                                       self.kafkaTopic, partitions=self.consumerPartitions)
                                        
         logger.info('Kafka coonection restarted')
 
-    def produce(self, partition, **kwargs):
+    def produce(self, op, name, **kwargs):
+        # TODO: when name is None, the operation is propagated to all partitions 
+        if not op or not name:
+            logger.warning('op or name must not be empty')
+            return
+            
         try:
             encodedMessage = simplejson.dumps(dict(kwargs))
-            self.producer.send(self.kafkaTopic, partition, encodedMessage)
+            self.producer.send(self.kafkaTopic, name, encodedMessage)
         except KafkaError as e:
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exec())
@@ -91,25 +101,59 @@ class KafkaBroker(object):
         except Exception as e:
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
+
+    def setConsumerPartition(self, consumerPartitions):
+        if not consumerPartitions:
+            logger.warning('consumer partitions can not be empty')
+            return
+            
+        if self.consumer:
+            self.consumer.commit()
+            self.consumer.stop()
+            self.consumer = None
+        self.consumerPartitions = consumerPartitions
+        try:
+            self.consumer = SimpleConsumer(self.kafkaClient, self.kafkaGroup,
+                                           self.kafkaTopic, partitions=self.consumerPartitions)
+        except KafkaError as e:
+            logger.warning('Exception {}'.format(e))
+            logger.debug(traceback.format_exec())
+            self.reconnect()
+        except Exception as e:
+            logger.warning('Exception {}'.format(e))
+            logger.debug(traceback.format_exc())
+    
+    def isConsumerReady(self):
+        if not self.consumer:
+            logger.warning('Consumer is not ready yet')
+            return False
+        return True
         
     def seekToEnd(self):
-        self.consumer.seek(0,2)
+        if self.isConsumerReady():
+            self.consumer.seek(0,2)
         
+    def commit(self):
+        if self.isConsumerReady():
+            self.consumer.commit()
+            
     def consumeOne(self):
-        try:
-            message = self.consumer.get_message()
-            return Task.create(message.message.value)
-        except Exception as e:
-            logger.warning('Exception {}'.format(e))
-            logger.debug(traceback.format_exc())
-            self.reconnect()
+        if self.isConsumerReady():
+            try:
+                message = self.consumer.get_message()
+                return Task.create(message.message.value)
+            except Exception as e:
+                logger.warning('Exception {}'.format(e))
+                logger.debug(traceback.format_exc())
+                self.reconnect()
         
     def consume(self, count=10):
-        try:
-            messages = self.consumer.get_messages(count=count)
-            return [Task.create(message.message.value) for message in messages]
-        except Exception as e:
-            logger.warning('Exception {}'.format(e))
-            logger.debug(traceback.format_exc())
-            self.reconnect()
+        if self.isConsumerReady():
+            try:
+                messages = self.consumer.get_messages(count=count)
+                return [Task.create(message.message.value) for message in messages]
+            except Exception as e:
+                logger.warning('Exception {}'.format(e))
+                logger.debug(traceback.format_exc())
+                self.reconnect()
     

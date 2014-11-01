@@ -33,11 +33,12 @@ class Configuration(object):
         
         self.workerGroup = 'monktest'
         self.workerTopic = 'monktest'
+        self.workerPartitions = range(8)
         
         self.administratorGroup = 'monkadmin'
         self.administratorTopic = 'monkadmin'
-        self.administratorServerParition = 0
-        self.administratorClientPartition = 1
+        self.administratorServerParitions  = [0]
+        self.administratorClientPartitions = [1]
         
         self.brokerTimeout = 200
         

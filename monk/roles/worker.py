@@ -3,235 +3,202 @@
 Created on Sat Feb 01 10:45:09 2014
 Training models remotely in cloud
 @author: pacif_000
-"""
-
+"""    
 from monk.core.configuration import Configuration
+from monk.roles.administrator import AdminBroker
 import monk.core.api as monkapi
 import logging
-import pymongo as pm
-from kafka.client import KafkaClient
-from kafka.consumer import SimpleConsumer
-from kafka.producer import UserProducer
-from kafka.common import KafkaError
-import simplejson
 import sys, getopt
 import os
 import platform
 import monk.network.broker as mnb
+import monk.network.scheduler as mns
 import monk.utils.utils as ut
-
-import socket
 if platform.system() == 'Windows':
     import win32api
 else:
     import signal
 import thread
-import traceback
 
 logger = logging.getLogger("monk.worker")
 
-kafkaClient = None
-users = None
-producer = None
-consumer = None
+adminBroker = None
+workerBroker = None
+scheduler = None
 
-class WorkerBroker(mnb.KafkaBroker):
-    def add_data(turtleName, user, ent):
-        pass
+class WorkerTask(mnb.Task):
+    def __init__(self, decodedMessage):
+        self.decodedMessage = decodedMessage
+        self.turtleName = decodedMessage.get('turtleName')
+        self.userName = decodedMessage.get('name')
     
-    def reset(turtleName, user):
-        pass
-    
-    def train(turtleName, user):
-        pass
-    
-    def predict(turtleName, user, ent):
-        pass
-    
-    def add_follower(turtleName, user, follower):
-        pass
+class Train(WorkerTask):
+    def act(self):
+        monkapi.train(self.turtleName, self.userName)
+        leader = monkapi.get_leader(self.turtleName, self.userName)
+        workerBroker.merge(leader, follower=self.userName, turtleName=self.turtleName)
 
-class AdminBroker(mnb.KafkaBroker):
-    def add_user(self, userName, password='', **kwargs):
-        self.produce(partition=0, op='add_user', userName=userName, password=password, kwargs)
+class Merge(WorkerTask):
+    def act(self):
+        follower = self.decodedMessage.get('follower')
+        if monkapi.merge(self.turtleName, self.userName, follower):
+            for follower in monkapi.get_followers(self.turtleName, self.userName):
+                workerBroker.train(follower, turtleName=self.turtleName)
+
+class Reset(WorkerTask):
+    def act(self):
+        logger.debug('reset turtle {} for user {}'.format(self.turtleName, self.userName))
+        monkapi.reset(self.turtleName, self.userName)
+
+class SaveTurtle(WorkerTask):
+    def act(self):
+        monkapi.save_turtle(self.turtleName, self.userName)
+
+class ResetAllData(WorkerTask):
+    def act(self):
+        logger.debug('reset_all_data turtle {0} of user {1} '.format(self.turtleName, self.userName))
+        monkapi.reset_all_data(self.turtleName, self.userName)
+
+class OffsetCommit(WorkerTask):
+    def act(self):
+        workerBroker.commit()
+
+class SetMantisParameter(WorkerTask):
+    def act(self):
+        para = self.decodedMessage.get('para', '')
+        value = self.decodedMessage.get('value', 0)
+        logger.debug('set_mantis_parameter {} to {}'.format(para, value))
+        monkapi.set_mantis_parameter(self.turtleName, self.userName, para, value)
         
-    def register_worker(self, **kwargs):
-        produce(partition=0, op='register_worker', workerPID=os.getpgid(), workerIP=ut.get_lan_ip(), workerPartitions=self.partitions, kwargs)
+class MonkReload(WorkerTask):
+    def act(self):
+        monkapi.reloads()
+
+class Follow(WorkerTask):
+    def act(self):
+        leader = self.decodedMessage.get('leader')
+        if leader:
+            monkapi.follow_turtle_follower(self.turtleName, self.userName, leader)
+        follower = self.decodedMessage('follower')
+        if follower:
+            monkapi.follow_turtle_leader(self.turtleName, self.userName, follower)
+
+class UnFollow(WorkerTask):
+    def act(self):
+        leader = self.decodedMessage.get('leader')
+        if leader:
+            monkapi.unfollow_turtle_follower(self.turtleName, self.userName, leader)
+        follower = self.decodedMessage('follower')
+        if follower:
+            monkapi.follow_turtle_leader(self.turtleName, self.userName, follower)
+
+class AddUser(WorkerTask):
+    def act(self):
+        follower = self.decodedMessage.get('follower')
+        if follower:
+            monkapi.clone_turtle(self.turtleName, self.userName, follower)
+            monkapi.follow_turtle_leader(self.turtleName, self.userName, follower)
+            
+class RemoveUser(WorkerTask):
+    def act(self):
+        leader = monkapi.get_leader(self.turtleName, self.userName)
+        monkapi.remove_turtle(self.turtleName, self.userName)
+        workerBroker.unfollow(leader, turtleName=self.turtleName, follower=self.userName)
+
+class AddData(WorkerTask):
+    def act(self):
+        entity = self.decodedMessage.get('entity')
+        if entity:
+            monkapi.add_data(self.turtleName, self.userName, entity)
+
+class TestData(WorkerTask):
+    def act(self):
+        logger.debug('test on data from {}'.format(self.userName))
+        entity = self.decodedMessage.get('entity')
+        #isPersonalized = decodedMessage.get('isPersonalized',1)
+        if entity:
+            monkapi.predict(self.turtleName, self.userName, entity)
+
+class AcknowledgeRegistration(Task):
+    def act(self):
+        workerName = self.decodedMessage.get('name')
+        partition = self.decodedMessage.get('partition')
+        offsetToEnd = self.decodedMessage.get('offsetToEnd')
+        logger.debug('Received registration for {} at partition {}'.format(workerName, partition))
+        address = ut.get_lan_ip()
+        pid = os.getpgid()
+        if workerName == '{}-{}'.format(address, pid):
+            workerBroker.setConsumerPartition([partition])
+            logger.debug('{} registered and is ready'.format(workerName))
+            if eval(offsetToEnd):
+                workerBroker.seekToEnd()
+        
+class WorkerBroker(mnb.KafkaBroker):
+    def add_user(self, userName, turtleName, follower, **kwargs):
+        self.producer.produce('AddUser', userName, turtleName=turtleName, follower=follower, kwargs)
     
-    def update_worker(self, **kwargs):
-        produce(partition=0, op='update_woorker', workerPID=os.getpgid(), workerIP=ut.get_lan_ip(), workerPartitions=self.partitions, kwargs)
+    def follow(self, userName, turtleName, leader, follower, **kwargs):
+        if leader:
+            self.produce('Follow', userName, turtleName=turtleName, leader=leader, kwargs)
+        if follower:
+            self.produce('Follow', userName, turtleName=turtleName, follower=follower, kwargs)
+    
+    def unfollow(self, userName, turtleName, leader, follower, **kwargs):
+        if leader:
+            self.produce('UnFollow', userName, turtleName=turtleName, leader=leader, kwargs)
+        if follower:
+            self.produce('UnFollow', userName, turtleName=turtleName, follower=follower, kwargs)
+    
+    def remove_user(self, userName, turtleName, **kwargs):
+        self.produce('RemoveUser', userName, turtleName=turtleName, kwargs)
+    
+    def add_data(self, userName, turtleName, ent, **kwargs):
+        self.produce('AddData', userName, turtleName=turtleName, entity=ent, kwargs)
+    
+    def save_turtle(self, userName, turtleName, **kwargs):
+        self.produce('SaveTurtle', userName, turtleName=turtleName, kwargs)
+    
+    def merge(self, userName, turtleName, follower, **kwargs):
+        self.produce('Merge', userName, turtleName=turtleName, follower=follower, kwargs)
+    
+    def train(self, userName, turtleName, **kwargs):
+        self.produce('Train', userName, turtleName=turtleName, kwargs)
 
-    def unregister_worker(self, **kwargs):
-        produce(partition=0, op='unregister_worker', workerPID=os.getpgid(), workerIP=ut.get_lan_ip(), workerPartitions=self.partitions, kwargs)
+    def test_data(self, userName, turtleName, ent, **kwargs):
+        self.produce('TestData', userName, turtleNmae=turtleName, entity=ent, kwargs)
 
+    def reset(self, userName, turtleName, **kwargs):
+        self.produce('Reset', userName, turtleName=turtleName, kwargs)
+    
+    def reset_all_data(self, userName, turtleName, **kwargs):
+        self.produce('ResetAllData', userName, turtleName=turtleName, kwargs)
+    
+    def offset_commit(self, userName, turtleName, **kwargs):
+        self.produce('OffsetCommit', userName, turtleName=turtleName, kwargs)
+    
+    def set_mantis_parameter(self, userName, turtleName, para, value, **kwargs):
+        self.produce('SetMantisParameter', userName, turtleName=turtleName, para=para, value=value, kwargs)
+    
+    def monk_reload(self, **kwargs):
+        self.produce('MonkReload', None, kwargs)
 
 def print_help():
-    print 'monkworker.py -c <configFile> -p <kafkaPartitions, e.g., range(1,8)> -o <to start from the last message'
-    
+    print 'monkworker.py -c <configFile> -o <to start from the last message>'
+
 def onexit():
-    closeKafka()
+    adminBroker.exits()
     monkapi.exits()
-    logger.info('worker {0} is shutting down'.format(os.getpid()))
+    logger.info('administrator {0} is shutting down'.format(os.getpid()))
 
-def handler(sig, hook = thread.interrupt_main):
-    closeKafka()
-    monkapi.exits()
-    logger.info('worker {0} is shutting down'.format(os.getpid()))
+def handler(sig, hook=thread.interrupt_main):
+    onexit()
     exit(1)
-
-def initKafka(config, partitions):
-    global kafkaClient, producer, consumer, users
-    kafkaClient = KafkaClient(config.kafkaConnectionString)
-    users = {}
-    mcl = pm.MongoClient('10.137.172.201:27017')
-    userColl = mcl.DataSet['PMLUsers']
-    allpartitions = set()
-    for u in userColl.find(None, {'userId':True, 'partitionId':True}, timeout=False):
-        users[u['userId']] = u['partitionId']
-        allpartitions.add(u['partitionId'])
-    mcl.close()
-    logger.info('allpartitions = {0}'.format(allpartitions))
-    producer = UserProducer(kafkaClient, config.kafkaTopic, users, list(allpartitions), async=False,
-                            req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
-                            ack_timeout=200)
-    consumer = SimpleConsumer(kafkaClient, config.kafkaGroup,
-                              config.kafkaTopic,
-                              partitions=partitions)
-
-def closeKafka():
-    global kafkaClient, producer, consumer
-    if consumer:
-        consumer.commit()
-        consumer.stop()
-        consumer = None
-    if producer:
-        producer.stop()
-        producer = None
-    if kafkaClient:
-        kafkaClient.close()
-        kafkaClient = None
-        
-def server(configFile, partitions, ote):
-    global kafkaClient, producer, consumer
-    config = Configuration(configFile, "worker", str(os.getpid()))
-    monkapi.initialize(config)
-    if platform.system() == 'Windows':
-        win32api.SetConsoleCtrlHandler(handler, 1)
-    else:
-        signal.signal(signal.SIGINT, onexit)
-    
-    while True:
-        try:
-            closeKafka()
-            initKafka(config, partitions)
-            if ote:
-                consumer.seek(0,2)
-                logger.info('offset to end')
-                ote = False
-                
-            for message in consumer:
-                logger.debug(message)
-                decodedMessage = simplejson.loads(message.message.value)
-                
-                op         = decodedMessage.get('operation')
-                userName   = decodedMessage.get('userName')
-                turtleName = decodedMessage.get('turtleName')
-                
-                if userName is None or turtleName is None:
-                    logger.error('needs turtleId and userId')
-                    continue
-    
-                if op == 'add_user':
-                    follower = decodedMessage.get('follower')
-                    if follower:
-                        monkapi.clone_turtle(turtleName, userName, follower)
-                        monkapi.follow_turtle_leader(turtleName, userName, follower)
-                elif op == 'follow':
-                    leader = decodedMessage.get('leader')
-                    if leader:
-                        monkapi.follow_turtle_follower(turtleName, userName, leader)
-                    follower = decodedMessage.get('follower')
-                    if follower:
-                        monkapi.follow_turtle_leader(turtleName, userName, follower)
-                elif op == 'unfollow':
-                    leader = decodedMessage.get('leader')
-                    if leader:
-                        monkapi.unfollow_turtle_follower(turtleName, userName, leader)
-                    follower = decodedMessage.get('follower')
-                    if follower:
-                        monkapi.unfollow_turtle_leader(turtleName, userName, follower)
-                elif op == 'remove_user':
-                    leader = monkapi.get_leader(turtleName, userName)
-                    monkapi.remove_turtle(turtleName, userName)
-                    encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                       'user':leader,
-                                                       'follower':userName,
-                                                       'operation':'unfollow'})
-                    producer.send(leader, encodedMessage)
-                elif op == 'add_data':
-                    entity = decodedMessage.get('entity')
-                    if entity:
-                        monkapi.add_data(turtleName, userName, entity)
-                elif op == 'save_turtle':
-                    monkapi.save_turtle(turtleName, userName) 
-                elif op == 'merge':
-                    follower = decodedMessage.get('follower')
-                    if (monkapi.merge(turtleName, userName, follower)):
-                        for follower in monkapi.get_followers(turtleName, userName):
-                            encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                               'user':follower,
-                                                               'operation':'train'})
-                            producer.send(follower, encodedMessage)
-                elif op == 'train':
-                    monkapi.train(turtleName, userName)
-                    leader = monkapi.get_leader(turtleName, userName)
-                    encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                        'user':leader,
-                                                        'follower':userName,
-                                                        'operation':'merge'})
-                    producer.send(leader, encodedMessage)
-                elif op == 'test_data':
-                    logger.debug('test on the data of {0}'.format(userName))
-                    entity = decodedMessage.get('entity')
-                    #isPersonalized = decodedMessage.get('isPersonalized',1)
-                    if entity:
-                        monkapi.predict(turtleName, userName, entity)
-                elif op == 'reset':
-                    logger.debug('reset turtle {0} of user {1} '.format(turtleName, userName))
-                    monkapi.reset(turtleName, userName)
-                elif op == 'reset_all_data':
-                    logger.debug('reset_all_data turtle {0} of user {1} '.format(turtleName, userName))
-                    monkapi.reset_all_data(turtleName, userName)    
-                elif op == 'offsetCommit':
-                    consumer.commit()
-                elif op == 'set_mantis_parameter':
-                    para = decodedMessage.get('para', '')
-                    value = decodedMessage.get('value', 0)
-                    logger.debug('set_mantis_parameter {0} to {1}'.format(para, value))
-                    monkapi.set_mantis_parameter(turtleName, userName, para, value)
-                elif op == 'reload':
-                    monkapi.reloads()
-                else:
-                    logger.error('Operation not recognized {0}'.format(op))
-        except simplejson.JSONDecodeError as e:
-            logger.warning('Exception message is not in Json format {0}'.format(e))
-        except socket.error as e:
-            logger.warning('Exception network error {0}'.format(e))
-        except KafkaError as e :
-            logger.warning('Exception from Kafka {0}'.format(e))
-        except Exception as e:
-            logger.warning('Exception {0}'.format(e))
-        except KeyboardInterrupt:
-            onexit()
-            
-        logger.debug(traceback.format_exc())
-        logger.warning('Restart Kafka....\n')
 
 def main():
     configFile = 'monk_config.yml'
-    kafkaPartitions = [0]
+    global workerBroker, adminBroker, scheduler
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hoc:p:',['configFile=', 'kafkaPartitions='])
+        opts, args = getopt.getopt(sys.argv[1:], 'hoc:',['configFile='])
     except getopt.GetoptError:
         print_help()
         sys.exit(2)
@@ -244,10 +211,20 @@ def main():
             offsetToEnd = True
         elif opt in ('-c', '--configFile'):
             configFile = arg
-        elif opt in ('-p', '--kafkaPartitions'):
-            kafkaPartitions = eval(arg)
+    config = Configuration(configFile, "administrator", str(os.getpid()))
+    monkapi.initialize(config)
+    if platform.system() == 'Windows':
+        win32api.SetConsoleCtrlHandler(handler, 1)
+    else:
+        signal.signal(signal.SIGINT, onexit)
 
-    server(configFile, kafkaPartitions, offsetToEnd)
-    
+    adminBroker = AdminBroker(config.kafkaConnectionString, config.administratorGroup, config.administratorTopic, 
+                              config.administratorClientParitions, config.administratorServerPartitions)
+    workerBroker = WorkerBroker(config.kafkaConnectionString, config.workerGroup, config.workerTopic,
+                                [], config.workerPartitions)
+    scheduler = mns.Scheduler([adminBroker, workerBroker])
+    adminBroker.register_worker(offsetToEnd=offsetToEnd)
+    scheduler.run()
+
 if __name__=='__main__':
     main()

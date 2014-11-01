@@ -11,6 +11,7 @@ from monk.core.engine import Engine
 import logging
 import monk.network.broker as mnb
 import monk.network.scheduler as mns
+import monk.utils.utils as ut
 import os
 import sys
 import thread
@@ -21,15 +22,13 @@ if platform.system() == 'Windows':
 else:
     import signal
 import datetime
-from numpy import argmin
 
 logger = logging.getLogger('monk.roles.administrator')
 
 adminBroker = None
 scheduler = None
-adminClientPartition = 1
 workers = {}
-
+    
 class AddUser(mnb.Task):
     def getLeastLoadedEngine(self):
         lengine = None
@@ -76,7 +75,8 @@ class RegisterWorker(mnb.Task):
             engine.save()
         else:
             engine = workers[workerName]
-        adminBroker.produce(adminClientPartition, name=workerName, partition=engine.partition)
+        offsetToEnd = self.decodedMessage.get('offsetToEnd', 'False')
+        adminBroker.produce('workerName, partition=engine.partition, offsetToEnd=offsetToEnd)
         
 class UpdateWorker(mnb.Task):
     def act(self):
@@ -93,20 +93,42 @@ class UnregisterWorker(mnb.Task):
         #TODO:currently unsupported
         pass
         
+class AdminBroker(mnb.KafkaBroker):
+    def acknowledge_registration(self, workerName, partition, offsetToEnd, **kwargs):
+        self.produce('AcknowledgeRegistration', workername, partition=partition, offsetToEnd=offsetToEnd, kwargs)
+        
+    def add_user(self, userName, password='', **kwargs):
+        self.produce('AddUser', userName, password=password, kwargs)
+        
+    def register_worker(self, **kwargs):
+        address = ut.get_lan_ip()
+        pid = os.getpgid()
+        self.produce('RegisterWorker', '{}-{}'.format(address, pid), address=adress, pid=pid, kwargs)
+    
+    def update_worker(self, **kwargs):
+        address = ut.get_lan_ip()
+        pid = os.getpgid()
+        produce('UpdateWorker', '{}-{}'.format(address, pid), kwargs)
+
+    def unregister_worker(self, **kwargs):
+        address = ut.get_lan_ip()
+        pid = os.getpgid()
+        produce('UnregisterWorker', '{}-{}'.format(address, pid), kwargs)
+
 def print_help():
     print 'monkadmin.py -c <configFile>'
     
 def onexit():
     adminBroker.exits()
     monkapi.exits()
-    logger.info('worker {0} is shutting down'.format(os.getpid()))
+    logger.info('administrator {0} is shutting down'.format(os.getpid()))
 
 def handler(sig, hook=thread.interrupt_main):
     onexit()
     exit(1)
     
 def main():
-    global adminBroker, scheduler, adminClientPartition
+    global adminBroker, scheduler
     configFile = 'monk_config.yml'
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hc:',['configFile='])
@@ -126,9 +148,8 @@ def main():
     else:
         signal.signal(signal.SIGINT, onexit)
     
-    adminClientPartition = config.administratorClientPartition
-    adminBroker = mnb.KafkaBroker(config.kafkaConnectionString, config.administratorGroup, 
-                                  config.administratorTopic, [config.administratorServerParition])
+    adminBroker = AdminBroker(config.kafkaConnectionString, config.administratorGroup, config.administratorTopic, 
+                              config.administratorServerParitions, config.administratorClientPartitions)
     scheduler = mns.Scheduler([adminBroker])
     scheduler.run()
 
