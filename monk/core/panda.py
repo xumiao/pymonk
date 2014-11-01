@@ -228,6 +228,12 @@ class LinearPanda(Panda):
         metricLog.info(encodeMetric(self, 'decision', value))
         entity[self.uid] = sigmoid(value)
         return entity[self.uid]
+        
+    def test_data(self, entity):
+        value = self.weights.dot(entity._features)
+        metricLog.info(encodeMetric(self, 'score', value))
+        entity[self.uid] = value
+        return entity[self.uid]
     
     def reset(self):
         self.weights.clear()

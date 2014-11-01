@@ -345,17 +345,17 @@ def initialize_storage(config):
                          config.tigressCollectionName)
 
     # TODO: test if these are necessary and remove them
-    #from panda import Panda
-    #Panda.store = pandaStore
+    from panda import Panda
+    Panda.store = pandaStore
 
-    #from mantis import Mantis
-    #Mantis.store = mantisStore
+    from mantis import Mantis
+    Mantis.store = mantisStore
     
-    #from turtle import Turtle
-    #Turtle.store = turtleStore
+    from turtle import Turtle
+    Turtle.store = turtleStore
     
-    #from tigress import Tigress
-    #Tigress.store = tigressStore
+    from tigress import Tigress
+    Tigress.store = tigressStore
     
     return True
 

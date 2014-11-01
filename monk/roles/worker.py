@@ -50,7 +50,7 @@ def initKafka(config, partitions):
     global kafkaClient, producer, consumer, users
     kafkaClient = KafkaClient(config.kafkaConnectionString)
     users = {}
-    mcl = pm.MongoClient('10.137.172.201:27017')
+    mcl = pm.MongoClient('localhost:27017')
     userColl = mcl.DataSet['PMLUsers']
     allpartitions = set()
     for u in userColl.find(None, {'userId':True, 'partitionId':True}, timeout=False):
@@ -131,7 +131,7 @@ def server(configFile, partitions, ote):
                     leader = monkapi.get_leader(turtleName, userName)
                     monkapi.remove_turtle(turtleName, userName)
                     encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                       'user':leader,
+                                                       'userName':leader,
                                                        'follower':userName,
                                                        'operation':'unfollow'})
                     producer.send(leader, encodedMessage)
@@ -143,17 +143,18 @@ def server(configFile, partitions, ote):
                     monkapi.save_turtle(turtleName, userName) 
                 elif op == 'merge':
                     follower = decodedMessage.get('follower')
+                    #monkapi.merge(turtleName, userName, follower)
                     if (monkapi.merge(turtleName, userName, follower)):
                         for follower in monkapi.get_followers(turtleName, userName):
                             encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                               'user':follower,
+                                                               'userName':follower,
                                                                'operation':'train'})
                             producer.send(follower, encodedMessage)
                 elif op == 'train':
                     monkapi.train(turtleName, userName)
                     leader = monkapi.get_leader(turtleName, userName)
                     encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                        'user':leader,
+                                                        'userName':leader,
                                                         'follower':userName,
                                                         'operation':'merge'})
                     producer.send(leader, encodedMessage)
@@ -162,13 +163,16 @@ def server(configFile, partitions, ote):
                     entity = decodedMessage.get('entity')
                     #isPersonalized = decodedMessage.get('isPersonalized',1)
                     if entity:
-                        monkapi.predict(turtleName, userName, entity)
+                        monkapi.test_data(turtleName, userName, entity)
                 elif op == 'reset':
                     logger.debug('reset turtle {0} of user {1} '.format(turtleName, userName))
                     monkapi.reset(turtleName, userName)
                 elif op == 'reset_all_data':
                     logger.debug('reset_all_data turtle {0} of user {1} '.format(turtleName, userName))
                     monkapi.reset_all_data(turtleName, userName)    
+                elif op == 'reset_test_only':
+                    logger.debug('reset_test_only turtle {0} of user {1} '.format(turtleName, userName))
+                    monkapi.reset_test_only(turtleName, userName)    
                 elif op == 'offsetCommit':
                     consumer.commit()
                 elif op == 'set_mantis_parameter':

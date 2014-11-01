@@ -284,6 +284,28 @@ def reset_all_data():
     producer.stop(1)
     kafka.close()    
 
+def reset_test_only():
+    global users
+    checkUserPartitionMapping()
+    kafka = KafkaClient(kafkaHost, timeout=None)
+    producer = UserProducer(kafka, kafkaTopic, users, partitions, async=False,
+                      req_acks=UserProducer.ACK_AFTER_LOCAL_WRITE,
+                      ack_timeout=200)
+
+    for user, partitionId in users.iteritems():            
+        encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                           'userName':user,
+                                           'operation':'reset_test_only'})
+        print producer.send(user, encodedMessage)
+    
+#    users['monk'] = 8
+#    encodedMessage = simplejson.dumps({'turtleName':turtleName,
+#                                       'userName':'monk',
+#                                       'operation':'reset_all_data'})
+#    print producer.send('monk', encodedMessage)
+    producer.stop(1)
+    kafka.close()    
+    
 def set_mantis_parameter(para, value):
     global users
     checkUserPartitionMapping()
@@ -306,17 +328,23 @@ def set_mantis_parameter(para, value):
     
 def changeParameters():
     global users
-    checkUserPartitionMapping()
+    #checkUserPartitionMapping()
 
     mcl = pm.MongoClient(config.modelConnectionString)
     MONKModelTurtleStore = mcl.MONKModel['TurtleStore']
     MONKModelPandaStore = mcl.MONKModel['PandaStore']
     MONKModelMantisStore = mcl.MONKModel['MantisStore']
+    MONKModelTigressStore = mcl.MONKModel['TigressStore']
     #MONKModelPandaStore.update({'creator': 'monk2', 'name': pandaName}, {'$set':{'z':[]}}, timeout=False)
     #{'name':{$exists: true}}
-    for user, partitionId in users.iteritems():  
+    testuser = 'Steve_70f97adb-2860-4b96-aff3-b538a1781581'
+    testturtleName = 'mouthOpenTurtle'
+    #for user, partitionId in users.iteritems():  
         #MONKModelTurtleStore.update({'creator': user, 'name': turtleName}, {'$set':{'leader':'monk'}}, timeout=False)
-        MONKModelMantisStore.update({'creator': user, 'name': pandaName}, {'$set':{'gamma':1}}, timeout=False)
+    MONKModelTigressStore.update({'creator': testuser, 'name': testturtleName}, {'$set':{'activeBatchSize':333}}, timeout=False)
+
+    MONKModelTigressStore.update({'creator': testuser, 'name': testturtleName}, {'$set':{'testResults':{'aaa':[1, 1, 1]}}}, timeout=False)
+    MONKModelTigressStore.update({'creator': testuser, 'name': testturtleName}, {'$push':{'testResults.aaa':2}}, timeout=False)
 
     mcl.close()
 
@@ -662,10 +690,11 @@ def normalize_data():
 #reset()
     
 if __name__=='__main__':    
+    changeParameters    ()
     #normalize_data()
     #reset()
 #    prepareData()
-    loadPreparedData("trainData", "testData")
+#    loadPreparedData("trainData", "testData")
 #
 ##    print "add_users"
 ##    add_users()
@@ -674,16 +703,16 @@ if __name__=='__main__':
 #    print "train"
 #    train(1)
     
-    print "test"
-    isPersonalized = False
-    resGTs = centralizedTest(isPersonalized)
-    destfile = open("resGTs_consensus", 'w')       # save result and gt
-    pickle.dump(resGTs, destfile)
-    destfile.close()
-    
-    print "evaluate"
-    file = open("resGTs_consensus", 'r')
-    resGTs_consensus = pickle.load(file)
-    file.close()
-    evaluate(resGTs_consensus, "acc.curve")
+#    print "test"
+#    isPersonalized = False
+#    resGTs = centralizedTest(isPersonalized)
+#    destfile = open("resGTs_consensus", 'w')       # save result and gt
+#    pickle.dump(resGTs, destfile)
+#    destfile.close()
+#    
+#    print "evaluate"
+#    file = open("resGTs_consensus", 'r')
+#    resGTs_consensus = pickle.load(file)
+#    file.close()
+#    evaluate(resGTs_consensus, "acc.curve")
 

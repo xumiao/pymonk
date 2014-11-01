@@ -322,6 +322,15 @@ def predict(turtleName, userName, entity, fields=None):
         logger.warning('can not find turtle by {0}@{1} to predict'.format(userName, turtleName))
         return 0
         
+def test_data(turtleName, userName, entity, fields=None):
+    _turtle = load_turtle(turtleName, userName)
+    if _turtle:
+        entity = crane.entityStore.load_or_create(ObjectId(entity))
+        return _turtle.test_data(entity, fields)
+    else:
+        logger.warning('can not find turtle by {0}@{1} to predict'.format(userName, turtleName))
+        return 0        
+        
 def reset(turtleName, userName):
     _turtle = load_turtle(turtleName, userName)
     if _turtle:
@@ -340,6 +349,15 @@ def reset_all_data(turtleName, userName):
     else:
         logger.warning('can not find turtle by {0}@{1} to reset_all_data'.format(userName, turtleName))
         return False        
+
+def reset_test_only(turtleName, userName):
+    _turtle = load_turtle(turtleName, userName)
+    if _turtle:
+        _turtle.reset_test_only()
+        return True
+    else:
+        logger.warning('can not find turtle by {0}@{1} to reset_test_only'.format(userName, turtleName))
+        return False      
                
 # meta query APIs
 def find_type(typeName):

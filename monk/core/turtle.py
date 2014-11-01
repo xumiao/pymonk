@@ -190,8 +190,9 @@ class Turtle(base.MONKObject):
         return predicted
         
     def test_data(self, entity):
-        test = [panda.predict(entity) for panda in self.pandas]
+        test = [panda.test_data(entity) for panda in self.pandas]
         logger.info('turtle {0} value is {1}'.format(self.creator, test[0]))
+        self.tigress.store_test_result(test[0])
         return test    
 
     def add_data(self, entity):
@@ -240,6 +241,9 @@ class Turtle(base.MONKObject):
         
     def reset_data(self):
         [panda.reset_data() for panda in self.pandas] 
+    
+    def reset_test_only(self):
+        self.tigress.reset_test_only()
 
     def set_mantis_parameter(self, para, value):
         [panda.set_mantis_parameter(para, value) for panda in self.pandas]                   
@@ -254,6 +258,12 @@ class SingleTurtle(Turtle):
         else:
             self.tigress.measure(entity, cons.DEFAULT_NONE)
             return cons.DEFAULT_NONE
+    
+    def test_data(self, entity):
+        test = [panda.test_data(entity) for panda in self.pandas]
+        logger.info('turtle {0} value is {1}'.format(self.creator, test[0]))
+        self.tigress.store_test_result(test[0])
+        return test    
         
 class MultiLabelTurtle(Turtle):
 

@@ -27,6 +27,7 @@ class Tigress(base.MONKObject):
     FDISPLAY_IMAGE_FIELD = 'displayImageField'
     FACTIVE_BATCH_SIZE   = 'activeBatchSize'
     FTOTAL               = 'total'
+    FTEST_RESULTS        = 'testResults'
     store = crane.tigressStore
     
     def __default__(self):
@@ -65,8 +66,13 @@ class Tigress(base.MONKObject):
         
     def supervise(self, turtle, entity):
         return True
-    
 
+    def reset_test_only(self):
+        self.update_fields({self.FTEST_RESULTS:{}})   
+        
+    def store_test_result(self, test_result):
+        self.update_fields({self.FTEST_RESULTS:{test_result._id:[1, 2]}})   # [TODO] 1: ground truth, 2: score
+        
 class PatternTigress(Tigress):
     """
     Find patterns for the targets. 
