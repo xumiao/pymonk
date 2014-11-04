@@ -102,7 +102,7 @@ class KafkaBroker(object):
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
 
-    def setConsumerPartition(self, consumerPartitions):
+    def set_consumer_partition(self, consumerPartitions):
         if not consumerPartitions:
             logger.warning('consumer partitions can not be empty')
             return
@@ -123,22 +123,22 @@ class KafkaBroker(object):
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
     
-    def isConsumerReady(self):
+    def is_consumer_ready(self):
         if not self.consumer:
             logger.warning('Consumer is not ready yet')
             return False
         return True
         
-    def seekToEnd(self):
-        if self.isConsumerReady():
+    def seek_to_end(self):
+        if self.is_consumer_ready():
             self.consumer.seek(0,2)
         
     def commit(self):
-        if self.isConsumerReady():
+        if self.is_consumer_ready():
             self.consumer.commit()
             
     def consumeOne(self):
-        if self.isConsumerReady():
+        if self.is_consumer_ready():
             try:
                 message = self.consumer.get_message()
                 return Task.create(message.message.value)
@@ -148,7 +148,7 @@ class KafkaBroker(object):
                 self.reconnect()
         
     def consume(self, count=10):
-        if self.isConsumerReady():
+        if self.is_consumer_ready():
             try:
                 messages = self.consumer.get_messages(count=count)
                 return [Task.create(message.message.value) for message in messages]

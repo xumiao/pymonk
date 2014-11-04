@@ -9,18 +9,11 @@ from monk.roles.administrator import AdminBroker
 import monk.core.api as monkapi
 import logging
 import sys, getopt
-import os
-import platform
 import monk.network.broker as mnb
 import monk.network.scheduler as mns
 import monk.utils.utils as ut
-if platform.system() == 'Windows':
-    import win32api
-else:
-    import signal
-import thread
 
-logger = logging.getLogger("monk.worker")
+logger = logging.getLogger("monk.roles.worker")
 
 adminBroker = None
 workerBroker = None
@@ -119,19 +112,17 @@ class TestData(WorkerTask):
         if entity:
             monkapi.predict(self.turtleName, self.userName, entity)
 
-class AcknowledgeRegistration(Task):
+class AcknowledgeRegistration(mnb.Task):
     def act(self):
         workerName = self.decodedMessage.get('name')
         partition = self.decodedMessage.get('partition')
         offsetToEnd = self.decodedMessage.get('offsetToEnd')
-        logger.debug('Received registration for {} at partition {}'.format(workerName, partition))
-        address = ut.get_lan_ip()
-        pid = os.getpgid()
-        if workerName == '{}-{}'.format(address, pid):
-            workerBroker.setConsumerPartition([partition])
-            logger.debug('{} registered and is ready'.format(workerName))
+        logger.info('Received registration for {} at partition {}'.format(workerName, partition))
+        if workerName == ut.get_host_name():
+            workerBroker.set_consumer_partition([partition])
+            logger.info('{} registered and is ready'.format(workerName))
             if eval(offsetToEnd):
-                workerBroker.seekToEnd()
+                workerBroker.seek_to_end()
         
 class WorkerBroker(mnb.KafkaBroker):
     def add_user(self, userName, turtleName, follower, **kwargs):
@@ -185,15 +176,6 @@ class WorkerBroker(mnb.KafkaBroker):
 def print_help():
     print 'monkworker.py -c <configFile> -o <to start from the last message>'
 
-def onexit():
-    adminBroker.exits()
-    monkapi.exits()
-    logger.info('administrator {0} is shutting down'.format(os.getpid()))
-
-def handler(sig, hook=thread.interrupt_main):
-    onexit()
-    exit(1)
-
 def main():
     configFile = 'monk_config.yml'
     global workerBroker, adminBroker, scheduler
@@ -211,18 +193,14 @@ def main():
             offsetToEnd = True
         elif opt in ('-c', '--configFile'):
             configFile = arg
-    config = Configuration(configFile, "administrator", str(os.getpid()))
+    config = Configuration(configFile, "worker", str(os.getpid()))
     monkapi.initialize(config)
-    if platform.system() == 'Windows':
-        win32api.SetConsoleCtrlHandler(handler, 1)
-    else:
-        signal.signal(signal.SIGINT, onexit)
-
     adminBroker = AdminBroker(config.kafkaConnectionString, config.administratorGroup, config.administratorTopic, 
                               config.administratorClientParitions, config.administratorServerPartitions)
     workerBroker = WorkerBroker(config.kafkaConnectionString, config.workerGroup, config.workerTopic,
                                 [], config.workerPartitions)
-    scheduler = mns.Scheduler([adminBroker, workerBroker])
+    scheduler = mns.Scheduler('worker' + get_worker_name(), [adminBroker, workerBroker])
+    #register this worker
     adminBroker.register_worker(offsetToEnd=offsetToEnd)
     scheduler.run()
 

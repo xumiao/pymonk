@@ -12,15 +12,8 @@ import logging
 import monk.network.broker as mnb
 import monk.network.scheduler as mns
 import monk.utils.utils as ut
-import os
 import sys
-import thread
 import getopt
-import platform
-if platform.system() == 'Windows':
-    import win32api
-else:
-    import signal
 import datetime
 
 logger = logging.getLogger('monk.roles.administrator')
@@ -76,7 +69,7 @@ class RegisterWorker(mnb.Task):
         else:
             engine = workers[workerName]
         offsetToEnd = self.decodedMessage.get('offsetToEnd', 'False')
-        adminBroker.produce('workerName, partition=engine.partition, offsetToEnd=offsetToEnd)
+        adminBroker.acknowledge_registration(workerName, engine.partition, offsetToEnd)
         
 class UpdateWorker(mnb.Task):
     def act(self):
@@ -102,31 +95,18 @@ class AdminBroker(mnb.KafkaBroker):
         
     def register_worker(self, **kwargs):
         address = ut.get_lan_ip()
-        pid = os.getpgid()
-        self.produce('RegisterWorker', '{}-{}'.format(address, pid), address=adress, pid=pid, kwargs)
+        pid = os.getpid()
+        self.produce('RegisterWorker', ut.get_host_name(address, pid), address=adress, pid=pid, kwargs)
     
     def update_worker(self, **kwargs):
-        address = ut.get_lan_ip()
-        pid = os.getpgid()
-        produce('UpdateWorker', '{}-{}'.format(address, pid), kwargs)
+        produce('UpdateWorker', ut.get_host_name(), kwargs)
 
     def unregister_worker(self, **kwargs):
-        address = ut.get_lan_ip()
-        pid = os.getpgid()
-        produce('UnregisterWorker', '{}-{}'.format(address, pid), kwargs)
+        produce('UnregisterWorker', ut.get_host_name(), kwargs)
 
 def print_help():
     print 'monkadmin.py -c <configFile>'
-    
-def onexit():
-    adminBroker.exits()
-    monkapi.exits()
-    logger.info('administrator {0} is shutting down'.format(os.getpid()))
 
-def handler(sig, hook=thread.interrupt_main):
-    onexit()
-    exit(1)
-    
 def main():
     global adminBroker, scheduler
     configFile = 'monk_config.yml'
@@ -141,16 +121,12 @@ def main():
             sys.exit()
         elif opt in ('-c', '--configFile'):
             configFile = arg
+    
     config = Configuration(configFile, "administrator", str(os.getpid()))
     monkapi.initialize(config)
-    if platform.system() == 'Windows':
-        win32api.SetConsoleCtrlHandler(handler, 1)
-    else:
-        signal.signal(signal.SIGINT, onexit)
-    
     adminBroker = AdminBroker(config.kafkaConnectionString, config.administratorGroup, config.administratorTopic, 
                               config.administratorServerParitions, config.administratorClientPartitions)
-    scheduler = mns.Scheduler([adminBroker])
+    scheduler = mns.Scheduler('administrator-'+str(os.getpid()), [adminBroker])
     scheduler.run()
 
 if __name__=='__main__':

@@ -54,7 +54,14 @@ def get_lan_ip():
             except IOError:
                 pass
     return ip
-    
+
+def get_host_name(address=None, pid=None):
+    if not address:
+        address = get_lan_ip()
+    if not pid:
+        pid = os.getpid()
+    return '{}-{}'.format(address, pid)
+
 class DateTimeEncoder(simplejson.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
