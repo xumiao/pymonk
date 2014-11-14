@@ -124,6 +124,7 @@ def main():
             configFile = arg
     
     config = Configuration(configFile, "administrator", str(os.getpid()))
+    logger.debug(config.administratorClientPartitions)
     monkapi.initialize(config)
     adminBroker = AdminBroker(config.kafkaConnectionString, config.administratorGroup, config.administratorTopic, 
                               config.administratorServerParitions, config.administratorClientPartitions)

@@ -54,9 +54,9 @@ class Scheduler(object):
                 task.act()
                 wait = False
             for broker in self.brokers:
-                priority, task = broker.consumeOne()
+                task = broker.consumeOne()
                 if task:
-                    self.pq.put((priority, task))
+                    self.pq.put((task.priority, task))
                     wait = False
             if time.time() - self.lastMaintenance > Scheduler.MAINTENANCE_INTERVAL:
                 self.maintanence()

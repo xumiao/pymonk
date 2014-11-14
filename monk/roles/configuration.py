@@ -27,17 +27,17 @@ class Configuration(object):
         
         self.sysConnectionString   = 'localhost'
         self.sysDataBaseName       = 'MONKSysTest'
-        self.engineCollectionName  = 'engineStore'
+        self.engineCollectionName  = 'EngineStore'
         
         self.kafkaConnectionString = 'localhost'
         
-        self.workerGroup = 'monktest'
-        self.workerTopic = 'monktest'
-        self.workerPartitions = range(8)
+        self.workerGroup = 'monkTest'
+        self.workerTopic = 'monkTest'
+        self.workerPartitions = range(32)
         
-        self.administratorGroup = 'monkadmin'
-        self.administratorTopic = 'monkadmin'
-        self.administratorServerParitions  = [0]
+        self.administratorGroup = 'monkTestAdmin'
+        self.administratorTopic = 'monkTestAdmin'
+        self.administratorServerPartitions = [0]
         self.administratorClientPartitions = [1]
         
         self.brokerTimeout = 200

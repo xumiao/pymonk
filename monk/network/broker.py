@@ -7,8 +7,8 @@ Created on Sat Sep 27 16:17:12 2014
 
 import logging
 from kafka.client import KafkaClient
-from kafka.producer import KeyedProducer
-from kafka.consumer import SimpleConsumer
+from kafka.producer.keyed import KeyedProducer
+from kafka.consumer.simple import SimpleConsumer
 from kafka.common import KafkaError
 from partitioner import UserPartitioner
 import simplejson
@@ -33,12 +33,12 @@ class Task(object):
         op = decodedMessage.get('op', None)
         try:
             task = eval(op)(decodedMessage)
-            return (task.priority, task)
+            return task
         except Exception as e:
             logger.error('can not create tasks for {}'.format(message))
             logger.debug('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
-            return (Task.PRIORITY_LOW, None)         
+            return None
             
 class KafkaBroker(object):
     def __init__(self, kafkaHost, kafkaGroup, kafkaTopic, consumerPartitions, producerPartitions):
@@ -143,11 +143,14 @@ class KafkaBroker(object):
         if self.is_consumer_ready():
             try:
                 message = self.consumer.get_message()
+                if not message:
+                    return None
                 return Task.create(message.message.value)
             except Exception as e:
                 logger.warning('Exception {}'.format(e))
                 logger.debug(traceback.format_exc())
                 self.reconnect()
+        return None
         
     def consume(self, count=10):
         if self.is_consumer_ready():
@@ -158,4 +161,4 @@ class KafkaBroker(object):
                 logger.warning('Exception {}'.format(e))
                 logger.debug(traceback.format_exc())
                 self.reconnect()
-    
+        return []
