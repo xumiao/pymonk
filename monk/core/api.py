@@ -10,7 +10,6 @@ from constants import DEFAULT_CREATOR
 from bson.objectid import ObjectId
 # to register classes in base
 import base, crane, entity, relation, tigress, turtle, mantis, panda, user, engine
-import configuration
 import yaml
 
 logger = logging.getLogger("monk.api")
