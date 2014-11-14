@@ -12,7 +12,7 @@ import logging
 import monk.network.broker as mnb
 import monk.network.scheduler as mns
 import monk.utils.utils as ut
-import sys
+import sys, os
 import getopt
 import datetime
 
@@ -89,21 +89,21 @@ class UnregisterWorker(mnb.Task):
         
 class AdminBroker(mnb.KafkaBroker):
     def acknowledge_registration(self, workerName, partition, offsetToEnd, **kwargs):
-        self.produce('AcknowledgeRegistration', workername, partition=partition, offsetToEnd=offsetToEnd, kwargs)
+        self.produce('AcknowledgeRegistration', workerName, partition=partition, offsetToEnd=offsetToEnd, **kwargs)
         
     def add_user(self, userName, password='', **kwargs):
-        self.produce('AddUser', userName, password=password, kwargs)
+        self.produce('AddUser', userName, password=password, **kwargs)
         
     def register_worker(self, **kwargs):
         address = ut.get_lan_ip()
         pid = os.getpid()
-        self.produce('RegisterWorker', ut.get_host_name(address, pid), address=adress, pid=pid, kwargs)
+        self.produce('RegisterWorker', ut.get_host_name(address, pid), address=address, pid=pid, **kwargs)
     
     def update_worker(self, **kwargs):
-        produce('UpdateWorker', ut.get_host_name(), kwargs)
+        self.produce('UpdateWorker', ut.get_host_name(), **kwargs)
 
     def unregister_worker(self, **kwargs):
-        produce('UnregisterWorker', ut.get_host_name(), kwargs)
+        self.produce('UnregisterWorker', ut.get_host_name(), **kwargs)
 
 def print_help():
     print 'monkadmin.py -c <configFile>'

@@ -4,7 +4,7 @@ Created on Sat Feb 01 10:45:09 2014
 Training models remotely in cloud
 @author: pacif_000
 """    
-from monk.core.configuration import Configuration
+from monk.roles.configuration import Configuration
 from monk.roles.administrator import AdminBroker
 import monk.core.api as monkapi
 import logging
@@ -12,6 +12,7 @@ import sys, getopt
 import monk.network.broker as mnb
 import monk.network.scheduler as mns
 import monk.utils.utils as ut
+import os
 
 logger = logging.getLogger("monk.roles.worker")
 
@@ -126,52 +127,52 @@ class AcknowledgeRegistration(mnb.Task):
         
 class WorkerBroker(mnb.KafkaBroker):
     def add_user(self, userName, turtleName, follower, **kwargs):
-        self.producer.produce('AddUser', userName, turtleName=turtleName, follower=follower, kwargs)
+        self.producer.produce('AddUser', userName, turtleName=turtleName, follower=follower, **kwargs)
     
     def follow(self, userName, turtleName, leader, follower, **kwargs):
         if leader:
-            self.produce('Follow', userName, turtleName=turtleName, leader=leader, kwargs)
+            self.produce('Follow', userName, turtleName=turtleName, leader=leader, **kwargs)
         if follower:
-            self.produce('Follow', userName, turtleName=turtleName, follower=follower, kwargs)
+            self.produce('Follow', userName, turtleName=turtleName, follower=follower, **kwargs)
     
     def unfollow(self, userName, turtleName, leader, follower, **kwargs):
         if leader:
-            self.produce('UnFollow', userName, turtleName=turtleName, leader=leader, kwargs)
+            self.produce('UnFollow', userName, turtleName=turtleName, leader=leader, **kwargs)
         if follower:
-            self.produce('UnFollow', userName, turtleName=turtleName, follower=follower, kwargs)
+            self.produce('UnFollow', userName, turtleName=turtleName, follower=follower, **kwargs)
     
     def remove_user(self, userName, turtleName, **kwargs):
-        self.produce('RemoveUser', userName, turtleName=turtleName, kwargs)
+        self.produce('RemoveUser', userName, turtleName=turtleName, **kwargs)
     
     def add_data(self, userName, turtleName, ent, **kwargs):
-        self.produce('AddData', userName, turtleName=turtleName, entity=ent, kwargs)
+        self.produce('AddData', userName, turtleName=turtleName, entity=ent, **kwargs)
     
     def save_turtle(self, userName, turtleName, **kwargs):
-        self.produce('SaveTurtle', userName, turtleName=turtleName, kwargs)
+        self.produce('SaveTurtle', userName, turtleName=turtleName, **kwargs)
     
     def merge(self, userName, turtleName, follower, **kwargs):
-        self.produce('Merge', userName, turtleName=turtleName, follower=follower, kwargs)
+        self.produce('Merge', userName, turtleName=turtleName, follower=follower, **kwargs)
     
     def train(self, userName, turtleName, **kwargs):
-        self.produce('Train', userName, turtleName=turtleName, kwargs)
+        self.produce('Train', userName, turtleName=turtleName, **kwargs)
 
     def test_data(self, userName, turtleName, ent, **kwargs):
-        self.produce('TestData', userName, turtleNmae=turtleName, entity=ent, kwargs)
+        self.produce('TestData', userName, turtleNmae=turtleName, entity=ent, **kwargs)
 
     def reset(self, userName, turtleName, **kwargs):
-        self.produce('Reset', userName, turtleName=turtleName, kwargs)
+        self.produce('Reset', userName, turtleName=turtleName, **kwargs)
     
     def reset_all_data(self, userName, turtleName, **kwargs):
-        self.produce('ResetAllData', userName, turtleName=turtleName, kwargs)
+        self.produce('ResetAllData', userName, turtleName=turtleName, **kwargs)
     
     def offset_commit(self, userName, turtleName, **kwargs):
-        self.produce('OffsetCommit', userName, turtleName=turtleName, kwargs)
+        self.produce('OffsetCommit', userName, turtleName=turtleName, **kwargs)
     
     def set_mantis_parameter(self, userName, turtleName, para, value, **kwargs):
-        self.produce('SetMantisParameter', userName, turtleName=turtleName, para=para, value=value, kwargs)
+        self.produce('SetMantisParameter', userName, turtleName=turtleName, para=para, value=value, **kwargs)
     
     def monk_reload(self, **kwargs):
-        self.produce('MonkReload', None, kwargs)
+        self.produce('MonkReload', None, **kwargs)
 
 def print_help():
     print 'monkworker.py -c <configFile> -o <to start from the last message>'
@@ -199,7 +200,7 @@ def main():
                               config.administratorClientParitions, config.administratorServerPartitions)
     workerBroker = WorkerBroker(config.kafkaConnectionString, config.workerGroup, config.workerTopic,
                                 [], config.workerPartitions)
-    scheduler = mns.Scheduler('worker' + get_worker_name(), [adminBroker, workerBroker])
+    scheduler = mns.Scheduler('worker' + ut.get_worker_name(), [adminBroker, workerBroker])
     #register this worker
     adminBroker.register_worker(offsetToEnd=offsetToEnd)
     scheduler.run()
