@@ -61,6 +61,7 @@ class RegisterWorker(mnb.Task):
             engine = monkapi.load_engine(workerName)
             if not engine:
                 engine = monkapi.create_engine(self.decodedMessage)
+            # TODO: fetch kafka partitions
             engine.partition = len(workers)
             engine.starttime = datetime.datetime.now()
             engine.status = 'active'

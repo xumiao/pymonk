@@ -19,10 +19,10 @@ logger = logging.getLogger('monk.roles.broker')
 class Task(object):
     PRIORITY_HIGH = 1
     PRIORITY_LOW = 5
-    priority = 5
     
     def __init__(self, decodedMessage):
         self.decodedMessage = decodedMessage
+        self.priority = int(decodedMessage.get('priority', Task.PRIORITY_LOW))
     
     def act(self):
         logger.warning('no task is defined for {}'.format(self.decodedMessage))
@@ -34,9 +34,11 @@ class Task(object):
         try:
             task = eval(op)(decodedMessage)
             return (task.priority, task)
-        except:
-            return (Task.PRIORITY_LOW, None)
-            
+        except Exception as e:
+            logger.error('can not create tasks for {}'.format(message))
+            logger.debug('Exception {}'.format(e))
+            logger.debug(traceback.format_exc())
+            return (Task.PRIORITY_LOW, None)         
             
 class KafkaBroker(object):
     def __init__(self, kafkaHost, kafkaGroup, kafkaTopic, consumerPartitions, producerPartitions):

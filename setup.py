@@ -88,7 +88,8 @@ setup(
     entry_points={
         'console_scripts': [
             'monkworker=monk.roles.worker:main',
-	    #'monkmonitor=monk.roles.monitor:main',
+            'monkadmin=monk.roles.administrator:main',
+            #'monkmonitor=monk.roles.monitor:main',
             #'monkscientist=monk.roles.scientist:main',
         ],
     },
