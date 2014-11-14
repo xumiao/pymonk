@@ -6,7 +6,7 @@ Created on Sun Oct  5 14:38:22 2014
 """
 
 import logging
-from kafka.partitioner import Partitioner
+from kafka.partitioner.base import Partitioner
 import monk.core.api as monkapi
 from itertools import cycle
 
