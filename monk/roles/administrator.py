@@ -127,7 +127,7 @@ def main():
     logger.debug(config.administratorClientPartitions)
     monkapi.initialize(config)
     adminBroker = AdminBroker(config.kafkaConnectionString, config.administratorGroup, config.administratorTopic, 
-                              config.administratorServerParitions, config.administratorClientPartitions)
+                              config.administratorServerPartitions, config.administratorClientPartitions)
     scheduler = mns.Scheduler('administrator-'+str(os.getpid()), [adminBroker])
     scheduler.run()
 

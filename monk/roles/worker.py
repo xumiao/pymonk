@@ -197,7 +197,7 @@ def main():
     config = Configuration(configFile, "worker", str(os.getpid()))
     monkapi.initialize(config)
     adminBroker = AdminBroker(config.kafkaConnectionString, config.administratorGroup, config.administratorTopic, 
-                              config.administratorClientParitions, config.administratorServerPartitions)
+                              config.administratorClientPartitions, config.administratorServerPartitions)
     workerBroker = WorkerBroker(config.kafkaConnectionString, config.workerGroup, config.workerTopic,
                                 [], config.workerPartitions)
     scheduler = mns.Scheduler('worker' + ut.get_worker_name(), [adminBroker, workerBroker])
