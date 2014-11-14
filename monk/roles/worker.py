@@ -200,7 +200,7 @@ def main():
                               config.administratorClientPartitions, config.administratorServerPartitions)
     workerBroker = WorkerBroker(config.kafkaConnectionString, config.workerGroup, config.workerTopic,
                                 [], config.workerPartitions)
-    scheduler = mns.Scheduler('worker' + ut.get_worker_name(), [adminBroker, workerBroker])
+    scheduler = mns.Scheduler('worker' + ut.get_host_name(), [adminBroker, workerBroker])
     #register this worker
     adminBroker.register_worker(offsetToEnd=offsetToEnd)
     scheduler.run()
