@@ -29,7 +29,7 @@ class Engine(entity.Entity):
         super(Engine, self).__default__()
         self.address = DEFAULT_EMPTY
         self.pid = DEFAULT_EMPTY
-        self.partitions = []
+        self.partition = 0
         self.status = 'inactive'
         self.starttime = datetime.datetime.now()
         self.endtime = datetime.datetime.now()
