@@ -18,6 +18,38 @@ from monk.utils.utils import class_from
 
 logger = logging.getLogger('monk.network.broker')
 
+class TaskFactory(object):
+
+    def __init__(self):
+        self.factory = {}
+
+    def register(self, TaskClass):
+        className = TaskClass.__name__
+        if className not in self.factory:
+            self.factory[TaskClass.__name__] = TaskClass
+
+    def find(self, name):
+        return [key for key in self.factory.iterkeys() if key.find(name) >= 0]
+        
+    def create(self, message):
+        try:
+            generic = simplejson.loads(message)
+            name = generic.get('op', None)
+            if not name:
+                return None
+            else:
+                return self.factory[name](generic)
+        except Exception as e:
+            logger.error('can not create tasks for {}'.format())
+            logger.debug('Exception {}'.format(e))
+            logger.debug(traceback.format_exc())
+            return None
+
+brokerTaskFactory = TaskFactory()
+
+def register(TaskClass):
+    brokerTaskFactory.register(TaskClass)
+
 class Task(object):
     PRIORITY_HIGH = 1
     PRIORITY_LOW = 5
@@ -29,22 +61,9 @@ class Task(object):
     def act(self):
         logger.warning('no task is defined for {}'.format(self.decodedMessage))
     
-    @classmethod
-    def create(cls, message):
-        decodedMessage = simplejson.loads(message)
-        opModule = decodedMessage.get('broker', None)
-        opClass = decodedMessage.get('op', None)
-        try:
-            task = class_from(opModule, opClass)(decodedMessage)
-            return task
-        except Exception as e:
-            logger.error('can not create tasks for {}'.format(message))
-            logger.debug('Exception {}'.format(e))
-            logger.debug(traceback.format_exc())
-            return None
-            
+register(Task)
+
 class KafkaBroker(object):
-    brokerModule = 'monk.network.broker'
     
     def __init__(self, kafkaHost, kafkaGroup, kafkaTopic, consumerPartitions=[], producerPartitions=[]):
         self.kafkaHost = kafkaHost
@@ -108,7 +127,6 @@ class KafkaBroker(object):
             
         try:
             dictMessage = dict(kwargs)
-            dictMessage['broker'] = self.brokerModule
             dictMessage['op'] = op
             dictMessage['name'] = name
             encodedMessage = simplejson.dumps(dictMessage)
@@ -164,7 +182,7 @@ class KafkaBroker(object):
             message = self.consumer.get_message()
             if not message:
                 return None
-            return Task.create(message.message.value)
+            return brokerTaskFactory.create(message.message.value)
         except Exception as e:
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
@@ -177,7 +195,7 @@ class KafkaBroker(object):
             
         try:
             messages = self.consumer.get_messages(count=count)
-            return [Task.create(message.message.value) for message in messages]
+            return [brokerTaskFactory.create(message.message.value) for message in messages]
         except Exception as e:
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())

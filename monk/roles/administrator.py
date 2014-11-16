@@ -45,11 +45,14 @@ class AddUser(mnb.Task):
         user.partition = leastLoadedEngine.partition
         user.save()
         leastLoadedEngine.addUser(userName)
+
+mnb.register(AddUser)
         
 class RebalanceUser(mnb.Task):
     def act(self):
         #TODO:
         pass
+mnb.register(RebalanceUser)
     
 class RegisterWorker(mnb.Task):
     def act(self):
@@ -73,6 +76,8 @@ class RegisterWorker(mnb.Task):
             engine = workers[workerName]
         offsetToEnd = self.decodedMessage.get('offsetToEnd', 'False')
         adminBroker.acknowledge_registration(workerName, engine.partition, offsetToEnd)
+
+mnb.register(RegisterWorker)
         
 class UpdateWorker(mnb.Task):
     def act(self):
@@ -84,14 +89,16 @@ class UpdateWorker(mnb.Task):
         engine = workers[workerName]
         engine.save()
 
+mnb.register(UpdateWorker)
+
 class UnregisterWorker(mnb.Task):
     def act(self):
         #TODO:currently unsupported
         pass
+
+mnb.register(UnregisterWorker)
         
 class AdminBroker(mnb.KafkaBroker):
-    brokerModule = 'monk.roles.administrator'
-    
     def acknowledge_registration(self, workerName, partition, offsetToEnd, **kwargs):
         self.produce('AcknowledgeRegistration', workerName, partition=partition, offsetToEnd=offsetToEnd, **kwargs)
         

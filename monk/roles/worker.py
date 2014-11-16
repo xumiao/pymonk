@@ -25,12 +25,16 @@ class WorkerTask(mnb.Task):
         self.decodedMessage = decodedMessage
         self.turtleName = decodedMessage.get('turtleName')
         self.userName = decodedMessage.get('name')
+
+mnb.register(WorkerTask)
     
 class Train(WorkerTask):
     def act(self):
         monkapi.train(self.turtleName, self.userName)
         leader = monkapi.get_leader(self.turtleName, self.userName)
         workerBroker.merge(leader, follower=self.userName, turtleName=self.turtleName)
+
+mnb.register(Train)
 
 class Merge(WorkerTask):
     def act(self):
@@ -39,23 +43,33 @@ class Merge(WorkerTask):
             for follower in monkapi.get_followers(self.turtleName, self.userName):
                 workerBroker.train(follower, turtleName=self.turtleName)
 
+mnb.register(Merge)
+
 class Reset(WorkerTask):
     def act(self):
         logger.debug('reset turtle {} for user {}'.format(self.turtleName, self.userName))
         monkapi.reset(self.turtleName, self.userName)
 
+mnb.register(Reset)
+
 class SaveTurtle(WorkerTask):
     def act(self):
         monkapi.save_turtle(self.turtleName, self.userName)
+
+mnb.register(SaveTurtle)
 
 class ResetAllData(WorkerTask):
     def act(self):
         logger.debug('reset_all_data turtle {0} of user {1} '.format(self.turtleName, self.userName))
         monkapi.reset_all_data(self.turtleName, self.userName)
 
+mnb.register(ResetAllData)
+
 class OffsetCommit(WorkerTask):
     def act(self):
         workerBroker.commit()
+
+mnb.register(OffsetCommit)
 
 class SetMantisParameter(WorkerTask):
     def act(self):
@@ -63,10 +77,14 @@ class SetMantisParameter(WorkerTask):
         value = self.decodedMessage.get('value', 0)
         logger.debug('set_mantis_parameter {} to {}'.format(para, value))
         monkapi.set_mantis_parameter(self.turtleName, self.userName, para, value)
+
+mnb.register(SetMantisParameter)
         
 class MonkReload(WorkerTask):
     def act(self):
         monkapi.reloads()
+
+mnb.register(MonkReload)
 
 class Follow(WorkerTask):
     def act(self):
@@ -77,6 +95,8 @@ class Follow(WorkerTask):
         if follower:
             monkapi.follow_turtle_leader(self.turtleName, self.userName, follower)
 
+mnb.register(Follow)
+
 class UnFollow(WorkerTask):
     def act(self):
         leader = self.decodedMessage.get('leader')
@@ -86,12 +106,16 @@ class UnFollow(WorkerTask):
         if follower:
             monkapi.follow_turtle_leader(self.turtleName, self.userName, follower)
 
+mnb.register(UnFollow)
+
 class AddUser(WorkerTask):
     def act(self):
         follower = self.decodedMessage.get('follower')
         if follower:
             monkapi.clone_turtle(self.turtleName, self.userName, follower)
             monkapi.follow_turtle_leader(self.turtleName, self.userName, follower)
+
+mnb.register(AddUser)
             
 class RemoveUser(WorkerTask):
     def act(self):
@@ -99,11 +123,15 @@ class RemoveUser(WorkerTask):
         monkapi.remove_turtle(self.turtleName, self.userName)
         workerBroker.unfollow(leader, turtleName=self.turtleName, follower=self.userName)
 
+mnb.register(RemoveUser)
+
 class AddData(WorkerTask):
     def act(self):
         entity = self.decodedMessage.get('entity')
         if entity:
             monkapi.add_data(self.turtleName, self.userName, entity)
+
+mnb.register(AddData)
 
 class TestData(WorkerTask):
     def act(self):
@@ -112,6 +140,8 @@ class TestData(WorkerTask):
         #isPersonalized = decodedMessage.get('isPersonalized',1)
         if entity:
             monkapi.predict(self.turtleName, self.userName, entity)
+
+mnb.register(TestData)
 
 class AcknowledgeRegistration(mnb.Task):
     def act(self):
@@ -124,10 +154,10 @@ class AcknowledgeRegistration(mnb.Task):
             logger.info('{} registered and is ready'.format(workerName))
             if eval(offsetToEnd):
                 workerBroker.seek_to_end()
+
+mnb.register(AcknowledgeRegistration)
         
 class WorkerBroker(mnb.KafkaBroker):
-    brokerModule = 'monk.roles.worker'
-    
     def add_user(self, userName, turtleName, follower, **kwargs):
         self.producer.produce('AddUser', userName, turtleName=turtleName, follower=follower, **kwargs)
     
