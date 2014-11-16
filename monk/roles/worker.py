@@ -198,8 +198,7 @@ def main():
     monkapi.initialize(config)
     adminBroker = AdminBroker(config.kafkaConnectionString, config.administratorGroup, config.administratorTopic, 
                               config.administratorClientPartitions, config.administratorServerPartitions)
-    workerBroker = WorkerBroker(config.kafkaConnectionString, config.workerGroup, config.workerTopic,
-                                [], config.workerPartitions)
+    workerBroker = WorkerBroker(config.kafkaConnectionString, config.workerGroup, config.workerTopic)
     scheduler = mns.Scheduler('worker' + ut.get_host_name(), [adminBroker, workerBroker])
     #register this worker
     adminBroker.register_worker(offsetToEnd=offsetToEnd)

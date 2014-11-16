@@ -31,7 +31,7 @@ class Scheduler(object):
         if platform.system() == 'Windows':
             win32api.SetConsoleCtrlHandler(self.handler, 1)
         else:
-            signal.signal(signal.SIGINT, self.onexit)
+            signal.signal(signal.SIGINT, self.handler)
         
     def maintanence(self):
         self.lastMaintenance = time.time()

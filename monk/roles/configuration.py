@@ -33,7 +33,6 @@ class Configuration(object):
         
         self.workerGroup = 'monkTest'
         self.workerTopic = 'monkTest'
-        self.workerPartitions = range(32)
         
         self.administratorGroup = 'monkTestAdmin'
         self.administratorTopic = 'monkTestAdmin'
