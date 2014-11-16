@@ -70,8 +70,8 @@ class Tigress(base.MONKObject):
     def reset_test_only(self):
         self.update_fields({self.FTEST_RESULTS:{}})   
         
-    def store_test_result(self, test_result):
-        self.update_fields({self.FTEST_RESULTS:{test_result._id:[1, 2]}})   # [TODO] 1: ground truth, 2: score
+    def store_test_result(self, dataid, gt, score):
+        self.update_fields({self.FTEST_RESULTS + '.' + dataid:[gt, score]})   # [TODO] 1: ground truth, 2: score
         
 class PatternTigress(Tigress):
     """

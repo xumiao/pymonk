@@ -325,8 +325,14 @@ def predict(turtleName, userName, entity, fields=None):
 def test_data(turtleName, userName, entity, fields=None):
     _turtle = load_turtle(turtleName, userName)
     if _turtle:
+        crane.entityStore.set_collection_name(_turtle.entityCollectionName)
         entity = crane.entityStore.load_or_create(ObjectId(entity))
-        return _turtle.test_data(entity, fields)
+        if len(entity.labels) == 0:
+            gt = -1
+        else:
+            gt = 1
+
+        return _turtle.test_data(entity, gt)
     else:
         logger.warning('can not find turtle by {0}@{1} to predict'.format(userName, turtleName))
         return 0        

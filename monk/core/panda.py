@@ -231,9 +231,9 @@ class LinearPanda(Panda):
         
     def test_data(self, entity):
         value = self.weights.dot(entity._features)
-        metricLog.info(encodeMetric(self, 'score', value))
-        entity[self.uid] = value
-        return entity[self.uid]
+        #metricLog.info(encodeMetric(self, 'score', value))     # [TODO] comment out for now. It produces error message "No partitions for exprmetric....."
+        #entity[self.uid] = value
+        return value
     
     def reset(self):
         self.weights.clear()

@@ -163,7 +163,7 @@ def test(isPersonalized):
                                                    'entity':entity,
                                                    'isPersonalized':isPersonalized,
                                                    'operation':'test_data'})
-                print producer.send(user, encodedMessage)                      
+                print producer.send(user, encodedMessage)                   
                 
     mcl.close()
     
@@ -345,6 +345,7 @@ def changeParameters():
 
     MONKModelTigressStore.update({'creator': testuser, 'name': testturtleName}, {'$set':{'testResults':{'aaa':[1, 1, 1]}}}, timeout=False)
     MONKModelTigressStore.update({'creator': testuser, 'name': testturtleName}, {'$push':{'testResults.aaa':2}}, timeout=False)
+    MONKModelTigressStore.update({'creator': testuser, 'name': testturtleName}, {'$set':{'testResults.bbb':[3, 3, 3]}}, timeout=False)
 
     mcl.close()
 
@@ -690,11 +691,13 @@ def normalize_data():
 #reset()
     
 if __name__=='__main__':    
-    changeParameters    ()
-    #normalize_data()
-    #reset()
+#    changeParameters()
+#    normalize_data()
+#    reset()
+#    reset_test_only()
 #    prepareData()
-#    loadPreparedData("trainData", "testData")
+    loadPreparedData("trainData", "testData")
+
 #
 ##    print "add_users"
 ##    add_users()
@@ -704,7 +707,8 @@ if __name__=='__main__':
 #    train(1)
     
 #    print "test"
-#    isPersonalized = False
+    isPersonalized = True
+    test(isPersonalized)
 #    resGTs = centralizedTest(isPersonalized)
 #    destfile = open("resGTs_consensus", 'w')       # save result and gt
 #    pickle.dump(resGTs, destfile)

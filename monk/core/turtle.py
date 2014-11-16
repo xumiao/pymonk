@@ -189,11 +189,12 @@ class Turtle(base.MONKObject):
         self.tigress.measure(entity, predicted)
         return predicted
         
-    def test_data(self, entity):
-        test = [panda.test_data(entity) for panda in self.pandas]
-        logger.info('turtle {0} value is {1}'.format(self.creator, test[0]))
-        self.tigress.store_test_result(test[0])
-        return test    
+    def test_data(self, entity, gt):
+        pass
+#        scores = [panda.test_data(entity) for panda in self.pandas]
+#        logger.info('data id {0} value is {1}'.format(str(entity._id), scores[0]))
+#        self.tigress.store_test_result(str(entity._id), gt, scores[0])
+#        return scores    
 
     def add_data(self, entity):
         return self.tigress.supervise(self, entity)
@@ -259,11 +260,11 @@ class SingleTurtle(Turtle):
             self.tigress.measure(entity, cons.DEFAULT_NONE)
             return cons.DEFAULT_NONE
     
-    def test_data(self, entity):
-        test = [panda.test_data(entity) for panda in self.pandas]
-        logger.info('turtle {0} value is {1}'.format(self.creator, test[0]))
-        self.tigress.store_test_result(test[0])
-        return test    
+    def test_data(self, entity, gt):
+        scores = [panda.test_data(entity) for panda in self.pandas]
+        logger.info('data id {0} value is {1}'.format(str(entity._id), scores[0]))
+        self.tigress.store_test_result(str(entity._id), gt, scores[0])
+        return scores 
         
 class MultiLabelTurtle(Turtle):
 
