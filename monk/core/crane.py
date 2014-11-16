@@ -369,7 +369,7 @@ def initialize_storage(config):
 
 def reload_storage():
     userStore._reload()
-    workerStore._reload()
+    engineStore._reload()
     mantisStore._reload()
     pandaStore._reload()
     tigressStore._reload()

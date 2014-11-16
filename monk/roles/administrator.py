@@ -39,6 +39,7 @@ class AddUser(mnb.Task):
             return
         user = monkapi.load_user(userName)
         if not user:
+            self.decodedMessage['monkType'] = 'User'
             user = monkapi.create_user(self.decodedMessage)
         leastLoadedEngine = self.getLeastLoadedEngine()
         user.partition = leastLoadedEngine.partition
@@ -60,6 +61,7 @@ class RegisterWorker(mnb.Task):
         if workerName not in workers:
             engine = monkapi.load_engine(workerName)
             if not engine:
+                self.decodedMessage['monkType'] = 'Engine'
                 engine = monkapi.create_engine(self.decodedMessage)
             # TODO: fetch kafka partitions
             engine.partition = len(workers)
@@ -88,7 +90,7 @@ class UnregisterWorker(mnb.Task):
         pass
         
 class AdminBroker(mnb.KafkaBroker):
-    broker_module = 'monk.roles.administrator'
+    brokerModule = 'monk.roles.administrator'
     
     def acknowledge_registration(self, workerName, partition, offsetToEnd, **kwargs):
         self.produce('AcknowledgeRegistration', workerName, partition=partition, offsetToEnd=offsetToEnd, **kwargs)

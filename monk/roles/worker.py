@@ -126,7 +126,7 @@ class AcknowledgeRegistration(mnb.Task):
                 workerBroker.seek_to_end()
         
 class WorkerBroker(mnb.KafkaBroker):
-    broker_module = 'monk.roles.worker'
+    brokerModule = 'monk.roles.worker'
     
     def add_user(self, userName, turtleName, follower, **kwargs):
         self.producer.produce('AddUser', userName, turtleName=turtleName, follower=follower, **kwargs)
