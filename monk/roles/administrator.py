@@ -88,7 +88,7 @@ class UnregisterWorker(mnb.Task):
         pass
         
 class AdminBroker(mnb.KafkaBroker):
-    broker_path = 'monk.roles.administrator'
+    broker_module = 'monk.roles.administrator'
     
     def acknowledge_registration(self, workerName, partition, offsetToEnd, **kwargs):
         self.produce('AcknowledgeRegistration', workerName, partition=partition, offsetToEnd=offsetToEnd, **kwargs)

@@ -15,10 +15,11 @@ import logging
 from monk.core.constants import EPS
 from monk.math.flexible_vector import difference
 from numpy import sqrt
+import importlib
 from simplejson import encoder
 encoder.FLOAT_REPR = lambda o: format(o, '.4f')
 
-logger = logging.getLogger('monk.utils')
+logger = logging.getLogger('monk.utils.utils')
 
 
 import os
@@ -62,6 +63,11 @@ def get_host_name(address=None, pid=None):
         pid = os.getpid()
     return '{}-{}'.format(address, pid)
 
+def class_from(moduleName, className):
+    m = importlib.import_module(moduleName)
+    c = getattr(m, className)
+    return c
+    
 class DateTimeEncoder(simplejson.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.datetime):

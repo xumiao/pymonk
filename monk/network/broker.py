@@ -14,6 +14,7 @@ from kafka.common import KafkaError
 from partitioner import UserPartitioner
 import simplejson
 import traceback
+from monk.utils.utils import class_from
 
 logger = logging.getLogger('monk.network.broker')
 
@@ -31,9 +32,10 @@ class Task(object):
     @classmethod
     def create(cls, message):
         decodedMessage = simplejson.loads(message)
-        op = decodedMessage.get('op', None)
+        opModule = decodedMessage.get('broker', None)
+        opClass = decodedMessage.get('op', None)
         try:
-            task = eval(op)(decodedMessage)
+            task = class_from(opModule, opClass)(decodedMessage)
             return task
         except Exception as e:
             logger.error('can not create tasks for {}'.format(message))
@@ -42,7 +44,7 @@ class Task(object):
             return None
             
 class KafkaBroker(object):
-    broker_path = 'monk.network.broker'
+    broker_module = 'monk.network.broker'
     
     def __init__(self, kafkaHost, kafkaGroup, kafkaTopic, consumerPartitions=[], producerPartitions=[]):
         self.kafkaHost = kafkaHost
@@ -106,7 +108,8 @@ class KafkaBroker(object):
             
         try:
             dictMessage = dict(kwargs)
-            dictMessage['op'] = '.'.join([self.broker_path, op])
+            dictMessage['broker'] = self.broker_module
+            dictMessage['op'] = op
             dictMessage['name'] = name
             encodedMessage = simplejson.dumps(dictMessage)
             self.producer.send(self.kafkaTopic, name, encodedMessage)
