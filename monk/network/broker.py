@@ -15,7 +15,7 @@ from partitioner import UserPartitioner
 import simplejson
 import traceback
 
-logger = logging.getLogger('monk.roles.broker')
+logger = logging.getLogger('monk.network.broker')
 
 class Task(object):
     PRIORITY_HIGH = 1
@@ -103,7 +103,10 @@ class KafkaBroker(object):
             return
             
         try:
-            encodedMessage = simplejson.dumps(dict(kwargs))
+            dictMessage = dict(kwargs)
+            dictMessage['op'] = op
+            dictMessage['name'] = name
+            encodedMessage = simplejson.dumps(dictMessage)
             self.producer.send(self.kafkaTopic, name, encodedMessage)
         except KafkaError as e:
             logger.warning('Exception {}'.format(e))

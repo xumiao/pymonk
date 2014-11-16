@@ -15,7 +15,7 @@ else:
     import signal
 import thread
 
-logger = logging.getLogger('monk.scheduler')
+logger = logging.getLogger('monk.network.scheduler')
 
 
 class Scheduler(object):

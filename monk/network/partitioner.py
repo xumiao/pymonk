@@ -14,7 +14,7 @@ logger = logging.getLogger('monk.network.partitioner')
 
 class UserPartitioner(Partitioner):
     """
-    With fixed partition output for the key
+    With fixed partition output for the key (user)
     Assumption: monkapi is initialized first
     """
     def __init__(self, partitions):

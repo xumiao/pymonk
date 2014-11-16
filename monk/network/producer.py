@@ -9,7 +9,7 @@ from __future__ import absolute_import
 import logging
 from kafka.producer.base import Producer, BATCH_SEND_DEFAULT_INTERVAL, BATCH_SEND_MSG_COUNT
 
-logger = logging.getLogger("kafka")
+logger = logging.getLogger("monk.network.producer")
 
 class FixedProducer(Producer):
     """
