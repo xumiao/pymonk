@@ -42,6 +42,8 @@ class Task(object):
             return None
             
 class KafkaBroker(object):
+    broker_path = 'monk.network.broker'
+    
     def __init__(self, kafkaHost, kafkaGroup, kafkaTopic, consumerPartitions=[], producerPartitions=[]):
         self.kafkaHost = kafkaHost
         self.kafkaGroup = kafkaGroup
@@ -104,7 +106,7 @@ class KafkaBroker(object):
             
         try:
             dictMessage = dict(kwargs)
-            dictMessage['op'] = op
+            dictMessage['op'] = '.'.join([self.broker_path, op])
             dictMessage['name'] = name
             encodedMessage = simplejson.dumps(dictMessage)
             self.producer.send(self.kafkaTopic, name, encodedMessage)
