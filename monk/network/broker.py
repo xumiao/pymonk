@@ -81,6 +81,7 @@ class KafkaBroker(object):
             if consumerPartitions:
                 self.consumer = SimpleConsumer(self.kafkaClient, self.kafkaGroup, 
                                                self.kafkaTopic, partitions=self.consumerPartitions)
+                logger.debug('consumer is listening on {}@{}'.format(self.kafkaTopic, self.consumerPartitions))
             else:
                 self.consumer = None
         except Exception as e:
@@ -114,6 +115,7 @@ class KafkaBroker(object):
         if self.consumerPartitions:
             self.consumer = SimpleConsumer(self.kafkaClient, self.kafkaGroup, 
                                            self.kafkaTopic, partitions=self.consumerPartitions)
+            logger.debug('consumer is listening on {}@{}'.format(self.kafkaTopic, self.consumerPartitions))
         else:
             self.consumer = None
                                        
