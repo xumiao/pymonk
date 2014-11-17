@@ -33,7 +33,7 @@ class FixedProducer(Producer):
         self.partition = partition
         super(FixedProducer, self).__init__(client, async, req_acks, ack_timeout, codec, batch_send, batch_send_every_n, batch_send_every_t)
         
-    def send(self, topic, *msg):
+    def send(self, topic, name, *msg):
         return self.send_messages(topic, self.partition, *msg)
         
     def __repr__(self):

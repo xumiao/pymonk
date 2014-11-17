@@ -60,7 +60,7 @@ class RegisterWorker(mnb.Task):
         if not workerName:
             logger.error('empty worker name {}'.format(self.decodedMessage))
             return
-            
+        logger.info('worker {} registering'.format(workerName))
         if workerName not in workers:
             engine = monkapi.load_engine(workerName)
             if not engine:

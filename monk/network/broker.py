@@ -32,7 +32,7 @@ class TaskFactory(object):
         
     def create(self, message):
         try:
-            logger.debug('Task message {}'.format(message))
+            logger.debug('Task from message {}'.format(message))
             generic = simplejson.loads(message)
             name = generic.get('op', None)
             if not name:
