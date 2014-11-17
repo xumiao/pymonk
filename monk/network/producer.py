@@ -34,6 +34,7 @@ class FixedProducer(Producer):
         super(FixedProducer, self).__init__(client, async, req_acks, ack_timeout, codec, batch_send, batch_send_every_n, batch_send_every_t)
         
     def send(self, topic, name, *msg):
+        logger.debug('sending message {} at {}@{}'.format(msg, topic, self.partition))
         return self.send_messages(topic, self.partition, *msg)
         
     def __repr__(self):
