@@ -14,7 +14,6 @@ from kafka.common import KafkaError
 from partitioner import UserPartitioner
 import simplejson
 import traceback
-from monk.utils.utils import class_from
 
 logger = logging.getLogger('monk.network.broker')
 
@@ -33,6 +32,7 @@ class TaskFactory(object):
         
     def create(self, message):
         try:
+            logger.debug('Task message {}'.format(message))
             generic = simplejson.loads(message)
             name = generic.get('op', None)
             if not name:
@@ -40,7 +40,7 @@ class TaskFactory(object):
             else:
                 return self.factory[name](generic)
         except Exception as e:
-            logger.error('can not create tasks for {}'.format())
+            logger.debug('can not create tasks for {}'.format(message))
             logger.debug('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
             return None

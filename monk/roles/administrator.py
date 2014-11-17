@@ -139,6 +139,7 @@ def main():
     adminBroker = AdminBroker(config.kafkaConnectionString, config.administratorGroup, config.administratorTopic, 
                               config.administratorServerPartitions, config.administratorClientPartitions)
     scheduler = mns.Scheduler('administrator-'+str(os.getpid()), [adminBroker])
+    adminBroker.seek_to_end()
     scheduler.run()
 
 if __name__=='__main__':

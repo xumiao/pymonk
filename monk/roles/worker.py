@@ -152,7 +152,7 @@ class AcknowledgeRegistration(mnb.Task):
         if workerName == ut.get_host_name():
             workerBroker.set_consumer_partition([partition])
             logger.info('{} registered and is ready'.format(workerName))
-            if eval(offsetToEnd):
+            if offsetToEnd == 'True':
                 workerBroker.seek_to_end()
 
 mnb.register(AcknowledgeRegistration)
