@@ -99,6 +99,7 @@ def add_users():
 def add_data():
     global users
     global trainData
+    global testData
     checkUserPartitionMapping()
     mcl = pm.MongoClient(config.modelConnectionString)        
     kafka = KafkaClient(kafkaHost, timeout=None)
@@ -116,7 +117,13 @@ def add_data():
                                                'entity':entity,
                                                'operation':'add_data'})
             print producer.send(user, encodedMessage)
-        
+        elif ent['_id'] in testData[user]:
+            encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                               'userName':user,
+                                               'entity':entity,
+                                               'operation':'add_test_data'})
+            print producer.send(user, encodedMessage)
+            
     for user, partitionId in users.iteritems():
         encodedMessage = simplejson.dumps({'turtleName':turtleName,
                                            'userName':user,
@@ -144,7 +151,7 @@ def train(numIters):
     kafka.close()
 
 
-def test(isPersonalized):
+def test():
     global users
     global testData
     checkUserPartitionMapping()
@@ -156,14 +163,10 @@ def test(isPersonalized):
     
     for user, partitionId in users.iteritems():
         if user != u'':
-            for dataID in testData[user]:
-                entity = str(dataID)
-                encodedMessage = simplejson.dumps({'turtleName':turtleName,
-                                                   'userName':user,
-                                                   'entity':entity,
-                                                   'isPersonalized':isPersonalized,
-                                                   'operation':'test_data'})
-                print producer.send(user, encodedMessage)                   
+            encodedMessage = simplejson.dumps({'turtleName':turtleName,
+                                               'userName':user,
+                                               'operation':'test'})
+            print producer.send(user, encodedMessage)                   
                 
     mcl.close()
     
@@ -706,13 +709,13 @@ if __name__=='__main__':
 #    print "train"
 #    train(1)
     
-#    print "test"
+    print "test"
     isPersonalized = True
-    test(isPersonalized)
-#    resGTs = centralizedTest(isPersonalized)
-#    destfile = open("resGTs_consensus", 'w')       # save result and gt
-#    pickle.dump(resGTs, destfile)
-#    destfile.close()
+#    test(isPersonalized)
+    resGTs = centralizedTest(isPersonalized)
+    destfile = open("resGTs_consensus", 'w')       # save result and gt
+    pickle.dump(resGTs, destfile)
+    destfile.close()
 #    
 #    print "evaluate"
 #    file = open("resGTs_consensus", 'r')

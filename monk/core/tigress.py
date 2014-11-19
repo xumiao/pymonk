@@ -10,6 +10,7 @@ import re
 from itertools import izip
 import monk.utils.utils as utils
 import constants as cons
+from bson.objectid import ObjectId
 import logging
 logger = logging.getLogger('monk.tigress')
 
@@ -42,6 +43,7 @@ class Tigress(base.MONKObject):
         self.displayImageField = None
         self.activeBatchSize = 10
         self.total = 1e-8
+        self.testResults = {}
 
     def retrieve_target(self, entity):
         return () # an empty iterator
@@ -68,10 +70,29 @@ class Tigress(base.MONKObject):
         return True
 
     def reset_test_only(self):
-        self.update_fields({self.FTEST_RESULTS:{}})   
+        self.testResults = {}
+        self.update_fields({self.FTEST_RESULTS:{}})  
+        logger.debug('testResults {0}'.format(self.testResults))
         
     def store_test_result(self, dataid, gt, score):
-        self.update_fields({self.FTEST_RESULTS + '.' + dataid:[gt, score]})   # [TODO] 1: ground truth, 2: score
+        self.testResults[dataid] = [gt, score]
+        self.update_fields({self.FTEST_RESULTS + '.' + dataid:[gt, score]})
+    
+    def test(self, turtle, leaderTurtle):
+        crane.entityStore.set_collection_name(turtle.entityCollectionName)  
+        if leaderTurtle.pandas:
+            leaderPanda = leaderTurtle.pandas[0]
+            consensusModel = leaderPanda.z
+            
+            for dataID in self.testResults.keys():
+                entity = crane.entityStore.load_or_create(ObjectId(dataID))
+                scores = [panda.test_data(entity) for panda in turtle.pandas]
+                self.testResults[dataID][1] = scores[0]
+                consensusScore = consensusModel.dot(entity._features)
+                self.testResults[dataID][2] = consensusScore
+                self.update_fields({self.FTEST_RESULTS + '.' + dataID:[self.testResults[dataID][0], scores[0], consensusScore]})
+        else:
+           logger.debug('no pandas in leaderTurtle in Tigress::test') 
         
 class PatternTigress(Tigress):
     """
@@ -173,6 +194,31 @@ class PatternTigress(Tigress):
             logger.info('active training stopped')
         return True
 
+    def _supervise_test_data(self, turtle, entity, tags):
+        for t in tags:
+            #cost = self.costs.get(t, self.defaultCost)
+            ys = turtle.mapping[t]
+            scoreWithConsensusModel = 0
+            scoreWithPersonalizedModel = 0
+            self.testResults[str(entity._id)] = [ys[0], scoreWithConsensusModel, scoreWithPersonalizedModel]
+            #[panda.add_data(entity, y, cost) for panda, y in izip(turtle.pandas, ys)]
+            if self.mutualExclusive:
+                return True
+
+        if self.defaulting and not tags:
+            # no pattern found, add all negative
+            #[panda.add_data(entity, -1, self.defaultCost) for panda in turtle.pandas]
+            scoreWithConsensusModel = 0
+            scoreWithPersonalizedModel = 0
+            self.testResults[str(entity._id)] = [-1, scoreWithConsensusModel, scoreWithPersonalizedModel]
+            
+    def supervise_test_data(self, turtle, entity=None):
+        if entity:
+            self._supervise_test_data(turtle, entity, self.retrieve_target(entity))
+            return True
+        else:    
+            return False
+            
 class MultiLabelTigress(PatternTigress):
     """
     Find independent patterns for the targets. 

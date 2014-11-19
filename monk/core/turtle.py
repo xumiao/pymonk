@@ -196,8 +196,14 @@ class Turtle(base.MONKObject):
 #        self.tigress.store_test_result(str(entity._id), gt, scores[0])
 #        return scores    
 
+    def test(self):
+        pass
+    
     def add_data(self, entity):
         return self.tigress.supervise(self, entity)
+        
+    def add_test_data(self, entity):
+        return self.tigress.supervise_test_data(self, entity)        
     
     def active_train(self):
         try:
@@ -242,6 +248,7 @@ class Turtle(base.MONKObject):
         
     def reset_data(self):
         [panda.reset_data() for panda in self.pandas] 
+        self.tigress.reset_test_only()
     
     def reset_test_only(self):
         self.tigress.reset_test_only()
@@ -260,10 +267,18 @@ class SingleTurtle(Turtle):
             self.tigress.measure(entity, cons.DEFAULT_NONE)
             return cons.DEFAULT_NONE
     
+    def test(self):
+        leaderTurtle = crane.turtleStore.load_or_create({'name':self.name, 'creator':self.leader})
+        logger.debug('In SingleTurtle::test, the name of turtle is {0}'.format(self.name))
+        if leaderTurtle:       
+            self.tigress.test(self, leaderTurtle)
+        else:
+            logger.error('can not find leaderTurtle with name {0} and creator {1}'.format(self.name, self.leader))
+    
     def test_data(self, entity, gt):
         scores = [panda.test_data(entity) for panda in self.pandas]
-        logger.info('data id {0} value is {1}'.format(str(entity._id), scores[0]))
-        self.tigress.store_test_result(str(entity._id), gt, scores[0])
+        logger.info('data id {0} value is {1}'.format(str(entity._id), scores[0]))      #[TODO]: consider multiple panda
+        self.tigress.store_test_result(str(entity._id), gt, scores[0])      #[TODO]: consider multiple panda
         return scores 
         
 class MultiLabelTurtle(Turtle):

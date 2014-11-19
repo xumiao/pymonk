@@ -250,6 +250,16 @@ def add_data(turtleName, userName, ent):
         logger.warning('can not find turtle {0}@{1} to add data'.format(userName, turtleName))
         return False
 
+def add_test_data(turtleName, userName, ent):
+    _turtle = load_turtle(turtleName, userName)
+    if _turtle:
+        crane.entityStore.set_collection_name(_turtle.entityCollectionName)
+        ent = crane.entityStore.load_or_create(ObjectId(ent))
+        return _turtle.add_test_data(ent)
+    else:
+        logger.warning('can not find turtle {0}@{1} to add test data'.format(userName, turtleName))
+        return False
+        
 def checkout(turtleName, userName):
     _turtle = load_turtle(turtleName, userName)
     if _turtle:
@@ -321,6 +331,15 @@ def predict(turtleName, userName, entity, fields=None):
     else:
         logger.warning('can not find turtle by {0}@{1} to predict'.format(userName, turtleName))
         return 0
+
+def test(turtleName, userName, fields=None):
+    _turtle = load_turtle(turtleName, userName)
+    if _turtle:
+        _turtle.test()
+        return True
+    else:
+        logger.warning('can not find turtle by {0}@{1} to test'.format(userName, turtleName))
+        return False 
         
 def test_data(turtleName, userName, entity, fields=None):
     _turtle = load_turtle(turtleName, userName)
@@ -334,7 +353,7 @@ def test_data(turtleName, userName, entity, fields=None):
 
         return _turtle.test_data(entity, gt)
     else:
-        logger.warning('can not find turtle by {0}@{1} to predict'.format(userName, turtleName))
+        logger.warning('can not find turtle by {0}@{1} to test'.format(userName, turtleName))
         return 0        
         
 def reset(turtleName, userName):

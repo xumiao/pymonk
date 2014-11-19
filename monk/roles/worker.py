@@ -139,6 +139,10 @@ def server(configFile, partitions, ote):
                     entity = decodedMessage.get('entity')
                     if entity:
                         monkapi.add_data(turtleName, userName, entity)
+                elif op == 'add_test_data':
+                    entity = decodedMessage.get('entity')
+                    if entity:
+                        monkapi.add_test_data(turtleName, userName, entity)        
                 elif op == 'save_turtle':
                     monkapi.save_turtle(turtleName, userName) 
                 elif op == 'merge':
@@ -158,9 +162,13 @@ def server(configFile, partitions, ote):
                                                         'follower':userName,
                                                         'operation':'merge'})
                     producer.send(leader, encodedMessage)
-                elif op == 'test_data':
+                elif op == 'test':
                     logger.debug('test on the data of {0}'.format(userName))
+                    if entity:
+                        monkapi.test(turtleName, userName)    
+                elif op == 'test_data':
                     entity = decodedMessage.get('entity')
+                    logger.debug('test on the data {0} of {1}'.format(entity, userName))
                     #isPersonalized = decodedMessage.get('isPersonalized',1)
                     if entity:
                         monkapi.test_data(turtleName, userName, entity)
