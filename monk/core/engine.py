@@ -9,12 +9,14 @@ import base
 import crane
 import entity
 import datetime
-from constants import DEFAULT_NONE, DEFAULT_EMPTY
+import time
+import constants as cons
 import logging
 
 logger = logging.getLogger("monk.engine")
 
 class Engine(entity.Entity):
+    IDLE_TIME   = 300 # 5 minutes
     FADDRESS    = 'address'
     FPID        = 'pid'
     FPARTITION  = 'partition'
@@ -27,10 +29,10 @@ class Engine(entity.Entity):
     
     def __default__(self):
         super(Engine, self).__default__()
-        self.address = DEFAULT_EMPTY
-        self.pid = DEFAULT_EMPTY
+        self.address = cons.DEFAULT_EMPTY
+        self.pid = cons.DEFAULT_EMPTY
         self.partition = 0
-        self.status = 'inactive'
+        self.status = cons.STATUS_INACTIVE
         self.starttime = datetime.datetime.now()
         self.endtime = datetime.datetime.now()
         self.users = []
@@ -48,8 +50,19 @@ class Engine(entity.Entity):
         ''' Engine can not be replicated '''
         return None
     
-    def addUser(self, userName):
+    def is_active(self):
+        if not self.status:
+            return False
+        currTime = time.mktime(datetime.datetime.now().timetuple())
+        lastTime = time.mktime(self.lastModified.timetuple())
+        if currTime - lastTime > self.IDLE_TIME:
+            self.status = cons.STATUS_INACTIVE
+            self.update_fields({self.FSTATUS:cons.STATUS_INACTIVE})
+            return False
+        return True
+        
+    def add_user(self, userName):
         self.users.append(userName)
-        self.store.push_one_in_fields(self, {'users':userName})
+        self.store.push_one_in_fields(self, {self.FUSERS:userName})
         
 base.register(Engine)

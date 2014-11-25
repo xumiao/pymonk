@@ -58,9 +58,7 @@ class Scheduler(object):
                 if task:
                     self.pq.put((task.priority, task))
                     wait = False
-            if time.time() - self.lastMaintenance > Scheduler.MAINTENANCE_INTERVAL:
-                self.maintanence()
-                wait = False
             if wait:
+                self.maintanence()
                 time.sleep(Scheduler.WAIT_TIME)
             

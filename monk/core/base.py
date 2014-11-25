@@ -24,7 +24,7 @@ class MONKObject(object):
         
         if generic:
             try:
-                self.__dict__.update(generic)
+                self.__dict__.update({k:v for k,v in generic.iteritems() if k and v})
             except Exception as e:
                 logger.debug('trying to deserialize {0}'.format(generic))
                 logger.warning('deserializatin failed. {0}'.format(e.message))
@@ -49,8 +49,17 @@ class MONKObject(object):
     def _hasattr(self, key):
         return key in self.__dict__
         
-    def _setattr(self, key, value):
-        self.__dict__[key] = value
+    def _setattr(self, key, value, converter=None):
+        if value is not None:
+            if converter:
+                try:
+                    self.__dict__[key] = converter(value)
+                except Exception as e:
+                    logger.error('can not set attribute {}:{}'.format(key, value))
+                    logger.error('converter failed')
+                    logger.debug(e.message)
+            else:
+                self.__dict__[key] = value
     
     def _getattr(self, key, default=None):
         if key in self.__dict__:

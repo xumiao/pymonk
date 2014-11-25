@@ -97,6 +97,8 @@ def find_engine(query):
     return crane.engineStore.load_all_by_ids(ids)
 
 def create_engine(engineScript):
+    if 'monkType' not in engineScript:
+        engineScript['monkType'] = 'Engine'
     _engine = crane.engineStore.load_or_create(engineScript, True)
     if _engine is None:
         logger.error('failed to load or create engine {}'.format(engineScript))
@@ -116,6 +118,13 @@ def save_engine(engineName):
         _engine.save()
         return True
     return False
+
+def delete_engine(engineName):
+    _engine = load_engine(engineName)
+    if _engine:
+        crane.engineStore.delete_by_id(_engine._id)
+        return True
+    return False
     
 # user APIs
 def has_user_in_store(userName):
@@ -126,6 +135,8 @@ def find_users(query):
     return crane.userStore.load_all_by_ids(ids)
     
 def create_user(userScript):
+    if 'monkType' not in userScript:
+        userScript['monkType'] = 'User'
     _user = crane.userStore.load_or_create(userScript, True)
     if _user is None:
         logger.error('failed to load or create user {0}'.format(userScript))
@@ -152,6 +163,13 @@ def save_user(userName, password=''):
         return True
     return False
     
+def delete_user(userName, password=''):
+    _user = load_user(userName, password)
+    if _user:
+        crane.userStore.delete_by_id(_user._id)
+        return True
+    return False
+        
 # project(turtle) management APIs
 def has_turtle_in_store(turtleName, userName):
     return crane.turtleStore.has_name_user(turtleName, userName)

@@ -12,6 +12,7 @@ import sys, getopt
 import monk.network.broker as mnb
 import monk.network.scheduler as mns
 import monk.utils.utils as ut
+import time
 import os
 
 logger = logging.getLogger("monk.roles.worker")
@@ -19,6 +20,7 @@ logger = logging.getLogger("monk.roles.worker")
 adminBroker = None
 workerBroker = None
 scheduler = None
+myname = None
 
 class WorkerTask(mnb.Task):
     def __init__(self, decodedMessage):
@@ -149,7 +151,7 @@ class AcknowledgeRegistration(mnb.Task):
         partition = self.decodedMessage.get('partition')
         offsetToEnd = self.decodedMessage.get('offsetToEnd')
         logger.info('Received registration for {} at partition {}'.format(workerName, partition))
-        if workerName == ut.get_host_name():
+        if workerName == myname:
             workerBroker.set_consumer_partition([partition])
             logger.info('{} registered and is ready'.format(workerName))
             if offsetToEnd == 'True':
@@ -206,14 +208,24 @@ class WorkerBroker(mnb.KafkaBroker):
     def monk_reload(self, **kwargs):
         self.produce('MonkReload', None, **kwargs)
 
+class WorkerScheduler(mns.Scheduler):
+    def maintanence(self):
+        adminBroker.update_worker()
+        self.lastMaintenance = time.time()
+
+    def onexit(self):
+        adminBroker.unregister_worker()
+        super(WorkerScheduler, mns.Scheduler).onexit()
+        
 def print_help():
-    print 'monkworker.py -c <configFile> -o <to start from the last message>'
+    print 'monkworker.py name -c <configFile> -o <to start from the last message>'
 
 def main():
     configFile = 'monk_config.yml'
-    global workerBroker, adminBroker, scheduler
+    global workerBroker, adminBroker, scheduler, myname
+    myname = sys.argv[1] + ut.get_lan_ip()
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hoc:',['configFile='])
+        opts, args = getopt.getopt(sys.argv[2:], 'hoc:',['configFile='])
     except getopt.GetoptError:
         print_help()
         sys.exit(2)
@@ -231,9 +243,9 @@ def main():
     adminBroker = AdminBroker(config.kafkaConnectionString, config.administratorGroup, config.administratorTopic, 
                               config.administratorClientPartitions, config.administratorServerPartitions)
     workerBroker = WorkerBroker(config.kafkaConnectionString, config.workerGroup, config.workerTopic)
-    scheduler = mns.Scheduler('worker' + ut.get_host_name(), [adminBroker, workerBroker])
+    scheduler = WorkerScheduler(myname, [adminBroker, workerBroker])
     #register this worker
-    adminBroker.register_worker(offsetToEnd=offsetToEnd)
+    adminBroker.register_worker(myname, offsetToEnd=offsetToEnd)
     scheduler.run()
 
 if __name__=='__main__':
