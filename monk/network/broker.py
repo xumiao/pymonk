@@ -135,7 +135,7 @@ class KafkaBroker(object):
             self.producer.send(self.kafkaTopic, name, encodedMessage)
         except KafkaError as e:
             logger.warning('Exception {}'.format(e))
-            logger.debug(traceback.format_exec())
+            logger.debug(traceback.format_exc())
             self.reconnect()
         except Exception as e:
             logger.warning('Exception {}'.format(e))
@@ -156,7 +156,7 @@ class KafkaBroker(object):
                                            self.kafkaTopic, partitions=self.consumerPartitions)
         except KafkaError as e:
             logger.warning('Exception {}'.format(e))
-            logger.debug(traceback.format_exec())
+            logger.debug(traceback.format_exc())
             self.reconnect()
         except Exception as e:
             logger.warning('Exception {}'.format(e))
