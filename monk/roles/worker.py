@@ -210,7 +210,7 @@ class WorkerBroker(mnb.KafkaBroker):
 
 class WorkerScheduler(mns.Scheduler):
     def maintanence(self):
-        adminBroker.update_worker()
+        adminBroker.update_worker(myname)
         self.lastMaintenance = time.time()
 
     def onexit(self):
