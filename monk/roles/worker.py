@@ -224,7 +224,7 @@ def print_help():
 def main():
     configFile = 'monk_config.yml'
     global workerBroker, adminBroker, scheduler, myname
-    myname = sys.argv[1] + ut.get_lan_ip()
+    myname = '_'.join([sys.argv[1], ut.get_lan_ip()])
     try:
         opts, args = getopt.getopt(sys.argv[2:], 'hoc:',['configFile='])
     except getopt.GetoptError:

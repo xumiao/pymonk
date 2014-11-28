@@ -28,6 +28,7 @@ class Scheduler(object):
         self.pq = PriorityQueue(self.MAX_QUEUE_SIZE)
         self.lastMaintenance = time.time()
         self.schedulerName = schedulerName
+        self.lastMaintenance = time.time()
         if platform.system() == 'Windows':
             win32api.SetConsoleCtrlHandler(self.handler, 1)
         else:
