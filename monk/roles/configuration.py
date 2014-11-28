@@ -47,8 +47,17 @@ class Configuration(object):
             with open(configurationFileName, 'r') as conf:
                 self.__dict__.update(yaml.load(conf))
         
+        if 'loggingConfig' not in self.__dict__:
+            with open('log_config.yml', 'r') as logConf:
+                loggingConfig = yaml.load(logConf)
+        elif isinstance(self.loggingConfig, str):
+            with open(self.loggingConfig, 'r') as logConf:
+                loggingConfig = yaml.load(logConf)
+        else:
+            loggingConfig = self.loggingConfig
+            
         if logFileMidName:
-            self.loggingConfig['handlers']['files']['filename'] = \
+            loggingConfig['handlers']['files']['filename'] = \
             '.'.join([self.logFileNameStub, logFileMidName, pid, 'log'])
         
-        logging.config.dictConfig(self.loggingConfig)
+        logging.config.dictConfig(loggingConfig)
