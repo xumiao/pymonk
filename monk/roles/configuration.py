@@ -33,6 +33,7 @@ class Configuration(object):
         
         self.workerGroup = 'monkTest'
         self.workerTopic = 'monkTest'
+        self.workerMaintenanceInterval = 60 #1 heartbeat per minute
         
         self.administratorGroup = 'monkTestAdmin'
         self.administratorTopic = 'monkTestAdmin'

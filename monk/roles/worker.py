@@ -210,8 +210,9 @@ class WorkerBroker(mnb.KafkaBroker):
 
 class WorkerScheduler(mns.Scheduler):
     def maintanence(self):
-        adminBroker.update_worker(myname)
-        self.lastMaintenance = time.time()
+        if time.time() - self.lastMaintenance > self.MAINTENANCE_INTERVAL:
+            adminBroker.update_worker(myname)
+            self.lastMaintenance = time.time()
 
     def onexit(self):
         adminBroker.unregister_worker()
@@ -244,6 +245,7 @@ def main():
                               config.administratorClientPartitions, config.administratorServerPartitions)
     workerBroker = WorkerBroker(config.kafkaConnectionString, config.workerGroup, config.workerTopic)
     scheduler = WorkerScheduler(myname, [adminBroker, workerBroker])
+    scheduler.MAINTENANCE_INTERVAL = config.workerMaintenanceInterval
     #register this worker
     adminBroker.register_worker(myname, offsetToEnd=offsetToEnd)
     scheduler.run()
