@@ -14,4 +14,10 @@ STATUS_ACTIVE   = 'active'
 STATUS_INACTIVE = 'inactive'
 STATUS_BUSY     = 'busy'
 STATUS_WAITING  = 'waiting'
+
 EPS             = 1e-12
+
+BASE_NAME          = 'name'
+BASE_CREATOR       = 'creator'
+BASE_CREATED_TIME  = 'createdTime'
+BASE_LAST_MODIFIED = 'lastModified'

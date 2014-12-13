@@ -186,7 +186,7 @@ def clone_turtle(turtleName, userName, follower):
         newTurtle.save()
         return newTurtle
     else:
-        follow_turtle_follower(turtleName, follower, userName)
+        follow_turtle(turtleName, follower, leader=userName)
         logger.error('user {0} already has cloned this turtle'.format(userName))
         return None
 
@@ -197,46 +197,34 @@ def remove_turtle(turtleName, userName, deep=False):
         return False
     return _turtle.delete(deep)
 
-def follow_turtle_leader(turtleName, userName, follower):
+def follow_turtle(turtleName, userName, leader=None, follower=None):
     try:
         _turtle = load_turtle(turtleName, userName)
-        _turtle.add_follower(follower)
-        return True
+        rt = True
+        if follower:
+            rt = rt & _turtle.add_follower(follower)
+        if leader:
+            rt = rt & _turtle.add_leader(leader)
+        return rt
+    except Exception as e:
+        logger.error(e)
+        logger.error('can not find turtle {0}@{1}'.format(turtleName, userName))
+        return False
+                
+def unfollow_turtle(turtleName, userName, leader=None, follower=None):
+    try:
+        _turtle = load_turtle(turtleName, userName)
+        rt = True
+        if follower:
+            rt = rt & _turtle.remove_follower(follower)
+        if leader:
+            rt = rt & _turtle.remove_leader(leader)
+        return rt
     except Exception as e:
         logger.error(e)
         logger.error('can not find turtle {0}@{1}'.format(turtleName, userName))
         return False
         
-def follow_turtle_follower(turtleName, userName, leader):
-    try:
-        _turtle = load_turtle(turtleName, userName)
-        _turtle.add_leader(leader)
-        return True
-    except Exception as e:
-        logger.error(e)
-        logger.error('can not find turtle {0}@{1}'.format(turtleName, userName))
-        return False
-        
-def unfollow_turtle_leader(turtleName, userName, follower):
-    try:
-        _turtle = load_turtle(turtleName, userName)
-        _turtle.remove_follower(follower)
-        return True
-    except Exception as e:
-        logger.error(e)
-        logger.error('can not find turtle {0}@{1}'.format(turtleName, userName))
-        return False
-        
-def unfollow_turtle_follower(turtleName, userName, leader):
-    try:
-        _turtle = load_turtle(turtleName, userName)
-        _turtle.remove_leader()
-        return True
-    except Exception as e:
-        logger.error(e)
-        logger.error('can not find turtle {0}@{1}'.format(turtleName, userName))
-        return False
-
 def find_turtles(query):
     ids = [t['_id'] for t in crane.turtleStore.load_all_in_ids(query, 0, 0)]
     return crane.turtleStore.load_all_by_ids(ids)
@@ -295,7 +283,7 @@ def add_data(turtleName, userName, ent):
     _turtle = load_turtle(turtleName, userName)
     if _turtle:
         crane.entityStore.set_collection_name(_turtle.entityCollectionName)
-        ent = crane.entityStore.load_or_create(ObjectId(ent))
+        ent = crane.entityStore.load_or_create(UUID(ent), True)
         return _turtle.add_data(ent)
     else:
         logger.warning('can not find turtle {0}@{1} to add data'.format(userName, turtleName))
@@ -367,7 +355,7 @@ def set_mantis_parameter(turtleName, userName, para, value):
 def predict(turtleName, userName, entity, fields=None):
     _turtle = load_turtle(turtleName, userName)
     if _turtle:
-        entity = crane.entityStore.load_or_create(ObjectId(entity))
+        entity = crane.entityStore.load_or_create(UUID(entity))
         return _turtle.predict(entity, fields)
     else:
         logger.warning('can not find turtle by {0}@{1} to predict'.format(userName, turtleName))

@@ -129,21 +129,38 @@ class Turtle(base.MONKObject):
             self.followers.add(follower)
             self.store.push_one_in_fields(self, {'followers':follower})
             [pa.increment() for pa in self.pandas]
+            return True
+        else:
+            logger.info('user {} is already a follower'.format(follower))
+            return False
             
     def add_leader(self, leader):
-        self.leader = leader
-        self.store.update_one_in_fields(self, {'leader': leader})
-        
-    def remove_leader(self):
-        if self.leader:
+        if self.leader != leader:
+            self.leader = leader
+            self.store.update_one_in_fields(self, {'leader': leader})
+            return True
+        else:
+            logger.info('user {} is already the leader'.format(leader))
+            return False
+            
+    def remove_leader(self, leader):
+        if self.leader and leader == self.leader:
             self.leader = None
             self.store.update_one_in_fields(self, {'leader':None})
+            return True
+        else:
+            logger.info('user {} is not the leader of {}@{}'.format(leader, self.name, self.creator))
+            return False
             
     def remove_follower(self, follower):
         if follower in self.followers:
             self.followers.remove(follower)
             self.store.pull_one_in_fields(self, {'followers':follower})
             [pa.decrease() for pa in self.pandas]
+            return True
+        else:
+            logger.info('user {} is not a follower of {}@{}'.format(follower, self.name, self.crcreator))
+            return False
         
     def require_panda(self, panda):
         if self.has_panda(panda):
@@ -271,6 +288,8 @@ class RankingTurtle(Turtle):
     FWINDOW_SIZE              = 'windowSize'
     FQUERY                    = 'queryFunc'
     FTARGET_STORE             = 'targetStore'
+    RAW_TARGETID              = '_targetId'
+    RAW_RELEVANCE             = '_relevance'
     
     def __default__(self):
         super(RankingTurtle, self).__default__()
@@ -295,7 +314,7 @@ class RankingTurtle(Turtle):
         return result
     
     def clone(self, userName):
-        obj = super(RankingTurtle, self).clone(userName)
+        obj = super(RankingTurtle, self).clone(userName) 
         return obj
         
     def predict(self, entity, fields=None):
@@ -314,15 +333,15 @@ class RankingTurtle(Turtle):
         return results[:self.beamSize]
     
     def add_data(self, entity):
-        targetId = entity.get_raw('_targetId', None)
-        relevance = entity.get_raw('_relevance', 0)
+        targetId = entity.get_raw(self.RAW_TARGETID, None)
+        relevance = entity.get_raw(self.RAW_RELEVANCE, 0)
         if targetId:
             target = self.targetStore.load_one_by_id(targetId)
             relation = MatchingRelation()
             relation.set_argument(0, entity)
             relation.set_argument(1, target)
             relation.compute()
-            relation.set_raw('_relevance', relevance)
+            relation.set_raw(self.RAW_RELEVANCE, relevance)
             self.tigress.supervise(self, relation)
         
 class SPNTurtle(Turtle):
