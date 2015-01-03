@@ -10,6 +10,7 @@ import monk.core.api as monkapi
 import logging
 from monk.network.broker import KafkaBroker
 from monk.network.server import taskT, Task, MonkServer
+from monk.roles.monitor import MonitorBroker
 from monk.core.user import User
 from monk.core.engine import Engine
 import monk.core.constants as cons
@@ -60,7 +61,10 @@ class MonkAdmin(MonkServer):
         self.adminBroker = AdminBroker(config.kafkaConnectionString, config.administratorGroup, config.administratorTopic, 
                                        config.administratorServerPartitions, config.administratorClientPartitions)
         self.adminBroker.seek(config.administratorOffsetSkip)
-        return [self.adminBroker]
+        self.monitorBroker = MonitorBroker(config.kafkaConnectionString, config.monitorGroup, config.monitorGroup, config.monitorTopic, 
+                                       config.monitorClientPartitions, config.monitorServerPartitions, producerType=KafkaBroker.SIMPLE_PRODUCER)
+        monkapi.set_monitor(self.monitorBroker)
+        return [self.adminBroker, self.monitorBroker]
 
 admin = MonkAdmin()
 

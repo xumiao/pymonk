@@ -4,181 +4,471 @@ Created on Tue Feb 11 09:09:06 2014
 Build a report page to monitor different MONK services
 @author: xm
 """
-import os
-import simplejson
+from monk.roles.configuration import get_config
+import monk.core.api as monkapi
 import logging
-from kafka.client import KafkaClient
-from kafka.consumer import SimpleConsumer
-from twisted.web.server import Site
-from twisted.web.static import File
-from twisted.internet import reactor
-from deffered_resource import DefferedResource
-from twisted.internet.task import LoopingCall
-import traceback
-from monk.utils.utils import decodeMetric
+from monk.network.broker import KafkaBroker
+from monk.network.server import taskT, Task, MonkServer
+import sys
+import time
+from collections import deque
+from tornado.web import RequestHandler
+from bokeh.resources import INLINE
+from bokeh.plotting import figure, file_html, decode_utf8
+import numpy as np
 
-class MonkMetrics(object):
-    group = 'metrics'
-    bigNumber = 1000000000
-    def __init__(self, hosts, timeSpan=1000, timeInterval=10, timeTick=1000, offsetInterval=1000):
-        self.kafkaHosts = hosts
-        self.timeInterval = timeInterval
-        self.timeTick = timeTick
-        self.timeSpan = timeSpan
-        self.offsetInterval = offsetInterval
-        self.maxOffset = 20000
-        self.metrics = {}
-        self.users = {}
+logger = logging.getLogger('monk.roles.monitor')
+
+DEFAULT_MONITOR_USER='_monitor_'
+
+class MonitorBroker(KafkaBroker):
+    def track(self, name, value, user=DEFAULT_MONITOR_USER):
+        self.produce('Track', name, user=user, value=value, time=time.time())
     
-    def parseUser(self, user, t, topic, metricName):
-        if topic in self.users:
-            users = self.users[topic]
-        else:
-            users = {}
-            self.users[topic] = users
-            
-        if user in users:
-            userProfile = users[user]
-            userProfile['lastSeen'] = t
-            if metricName not in userProfile['metricNames']:
-                userProfile['metricNames'].append(metricName)
-        else:
-            userProfile = {'name':user,
-                           'userId':len(users) + 1,
-                           'firstSeen':t,
-                           'lastSeen':t,
-                           'topic':topic,
-                           'metricNames':[metricName]}
-            users[user] = userProfile
-        return userProfile['userId']
+    def aggregate(self, name, value, user=DEFAULT_MONITOR_USER):
+        self.produce('Aggregate', name, user=user, value=value)
+
+    def measure(self, name, value, pos=True, user=DEFAULT_MONITOR_USER):
+        self.produce('MeasureAccuracy', name, user=user, value=value, pos=pos)
         
-    def parseMessages(self, topic, messages):
-        minTime = self.bigNumber
-        maxTime = 0
-        if topic in self.metrics:
-            metrics = self.metrics[topic]
-        else:
-            metrics = {}
-            self.metrics[topic] = metrics
-        for message in messages:
-            monkuser, t, name, value = decodeMetric(message.message.value.split(' : ')[1])
-            minTime = min(minTime, t)
-            maxTime = max(maxTime, t)
-            if name in metrics:
-                metric = metrics[name]
+    def reset_tracker(self, name):
+        self.produce('ResetTracker', name)
+    
+    def reset_aggregator(self, name):
+        self.produce('ResetAggregator', name)
+    
+    def reset_measurer(self, name):
+        self.produce('ResetMeasurer', name)
+        
+    def rename_tracker(self, name, newname):
+        self.produce('RenameTracker', name, newname=newname)
+    
+    def rename_aggregator(self, name, newname):
+        self.produce('RenameAggregator', name, newname=newname)
+    
+    def rename_measurer(self, name, newname):
+        self.produce('RenameMeasurer', name, newname=newname)
+    
+    def annotate_tracker(self, name, annotator):
+        self.produce('AnnotateTracker', name, annotator=annotator, time=time.time())
+
+class MonkMonitor(MonkServer):
+    def init_brokers(self, config):
+        self.trackers = {}
+        self.aggregators = {}
+        self.measurers = {}
+        monkapi.initialize(config)
+        self.MAINTAIN_INTERVAL = config.monitorMaintainInterval
+        self.POLL_INTERVAL = config.monitorPollInterval
+        self.EXECUTE_INTERVAL = config.monitorExecuteInterval
+        self.MAX_QUEUE_SIZE = config.monitorMaxQueueSize
+        self.monitorBroker = MonitorBroker(config.kafkaConnectionString, config.monitorGroup, config.monitorTopic, 
+                                       config.monitorServerPartitions, config.monitorClientPartitions, KafkaBroker.SIMPLE_PRODUCER)
+        return [self.monitorBroker]
+
+monitor = MonkMonitor()
+
+class Tracker(object):    
+    def __init__(self, retireTime=7200, resolution=1):
+        self.valuesTimed = dict()
+        self.numTimed = dict()
+        self.annotatorTimed = dict()
+        self.queue = deque()
+        self.resolution = resolution
+        self.retiredTime = int(retireTime / resolution)
+        
+    def add(self, t, value, user):
+        t = int(t / self.resolution)
+        firstTime = self.queue[0]
+        if t - firstTime > self.retiredTime:
+            if firstTime in self.valuesTimed:
+                del self.valuesTimed[firstTime]
+                del self.numTimed[firstTime]
+                del self.annotatorTimed[firstTime]
+            self.queue.popleft()
+        self.queue.append(t)
+        if t in self.valuesTimed:
+            if user in self.valuesTimed:
+                self.valuesTimed[t][user] += value
+                self.numTimed[t][user] += 1.0
             else:
-                metric = []
-                metrics[name] = metric
-            userId = self.parseUser(monkuser, t, topic, name)
-            metric.append({'time':t, 'userId':userId, 'value':value})
-            print userId, t, value, name, monkuser
-        return minTime, maxTime
+                self.valuesTimed[t][user] = value
+                self.numTimed[t][user] = 1.0
+        else:
+            self.valuesTimed[t] = {user:value}
+            self.numTimed[t] = {user:1.0}
     
-    def normalize_metrics(self):
-        for metrics in self.metrics.itervalues():
-            for metric in metrics.itervalues():
-                metric.sort(key=lambda x:x['time'])
-                currtime = metric[-1]['time']
-                for m in metric:
-                    m['rtime'] = (m['time'] - currtime) / 1000
-                    
-    def retrieve_metrics(self, topic, metricStartPosition):
-        if metricStartPosition >= 0:
-            return 0
+    def annotate(self, t, annotator):
+        t = int(t / self.resolution)
+        if t in self.annotatorTimed:
+            logger.warning('another annotator {} already at time {}'.format(\
+                self.annotatorTimed[t], t * self.resolution))
+        else:
+            self.annotatorTimed[t] = annotator
             
+    def clear(self):
+        self.queue.clear()
+        self.valuesTimed.clear()
+        self.numTimed.clear()
+        
+@taskT
+class Track(Task):
+    def act(self):
+        key = self.name
+        if not key:
+            self.warning(logger, 'no valid tracking name set')
+            return
         try:
-            kafkaClient = KafkaClient(self.kafkaHosts)
-            consumer = SimpleConsumer(kafkaClient, self.group, topic, partitions=[0])
-            timeSpan = 0
-            timeNow = 0
-            timePast = self.bigNumber
-            consumer.seek(metricStartPosition, 2)
-            messages = consumer.get_messages(count=-metricStartPosition)
-            minTime, maxTime = self.parseMessages(topic, messages)
-            timeNow = max(maxTime, timeNow)
-            timePast = min(minTime, timePast)
-            timeSpan = max(timeNow - timePast, timeSpan)
-            kafkaClient.close()
-            return len(messages)
-        except Exception as e:
-            print e
-            print traceback.format_exc()
-        return 0
+            value = float(self.get('value'))
+        except:
+            self.warning(logger, 'no valid value set')
+            return
+        try:
+            t = float(self.get('time'))
+        except:
+            self.warning(logger, 'no valid time set')
+            return
+        user = self.get('user')
+        if key not in monitor.trackers:
+            monitor.trackers[key] = Tracker()
+        tracker = monitor.trackers[key]
+        tracker.add(t, value, user)
+        
+@taskT
+class ResetTracker(Task):
+    def act(self):
+        key = self.name
+        if not key:
+            self.warning(logger, 'no valid tracking name set')
+            return
+        if key in monitor.trackers:
+            monitor.trackers[key].clear()
 
-monkMetrics = MonkMetrics('monkkafka.cloudapp.net:9092,monkkafka.cloudapp.net:9093,monkkafka.cloudapp.net:9094')
+@taskT
+class RenameTracker(Task):
+    def act(self):
+        key = self.name
+        if not key:
+            self.warning(logger, 'no valid tracking name set')
+            return
+        newname = self.get('newname')
+        if key in monitor.trackers and newname:
+            monitor.trackers[newname] = monitor.trackers[key]
+            del monitor.trackers[key]
 
-def monitoring():
-    global monkMetrics
-    print 'retrieving metrics'
-    monkMetrics.retrieve_metrics('exprmetric')
-    #monkMetrics.retrieve_metrics('expr2')
-
-#lc = LoopingCall(monitoring)
-#lc.start(120)
-
-class Users(DefferedResource):
-    isLeaf = True
-    def __init__(self, delayTime=0.0):
-        DefferedResource.__init__(self, delayTime)
+@taskT
+class AnnotateTracker(Task):
+    def act(self):
+        key = self.name
+        if not key:
+            self.warning(logger, 'no valid tracking name set')
+            return
+        annotator = self.get('annotator')
+        try:
+            t = float(self.get('time'))
+        except:
+            self.warning(logger, 'no valid time set')
+            return
+        if annotator and key in monitor.trackers:
+            tracker = monitor.trackers[key]
+            tracker.annotate(t, annotator)
+            
+class Aggregator(object):
+    def __init__(self, resolution=0.01):
+        self.resolution = resolution
+        self.hist = dict()
+        self.num = dict()
     
-    def _get_users(self, args):
-        global monkMetrics
-        topic = args.get('topic',['exprmetric'])[0]
-        metricName = args.get('metricName', ['|dq|/|q|'])[0]
-        users = monkMetrics.users.get(topic, {})
-        print 'return users for ', topic, metricName
-        return [user for user in users.values() if metricName in user['metricNames']]
+    def clear(self):
+        self.hist.clear()
+        self.num.clear()
+    
+    def add(self, value, user):
+        vL = int(value / self.resolution)
+        vH = vL + 1
+        wL = value / self.resolution - vL
+        wH = 1.0 - wL
+        if user in self.hist:
+            hist = self.hist[user]
+            if vL in hist:
+                hist[vL] += wL
+            else:
+                hist[vL] = wL
+            if vH in hist:
+                hist[vH] += wH
+            else:
+                hist[vH] = wH
+            self.num[user] += 1.0
+        else:
+            self.hist[user] = {vL:wL, vH:wH}
+            self.num[user] = 1.0
         
-    def _delayedRender_GET(self, request):
-        results = self._get_users(request.args)
-        simplejson.dump(results, request)
-        request.finish()
-        
-    def _delayedRender_POST(self, request):
-        results = self._get_users(request.args)
-        simplejson.dump(results, request)
-        request.finish()
+@taskT
+class Aggregate(Task):
+    def act(self):
+        key = self.name
+        if not key:
+            self.warning(logger, 'no valid aggregator name set')
+            return
+        try:
+            value = float(self.get('value'))
+        except:
+            self.warning(logger, 'no valid value set')
+            return
+        user = self.get('user')
+        if key not in monitor.aggregators:
+            monitor.aggregators[key] = Aggregator()
+        aggregator = monitor.aggregators[key]
+        aggregator.add(value, user)
 
-class  Metrics(DefferedResource):
-    isLeaf = True
-    def __init__(self, delayTime=0.0):
-        DefferedResource.__init__(self, delayTime)
+@taskT
+class ResetAggregator(Task):
+    def act(self):
+        key = self.name
+        if not key:
+            self.warning(logger, 'no valid aggregator name set')
+            return
+        if key in monitor.aggregators:
+            monitor.aggregators[key].clear()
+
+@taskT
+class RenameAggregator(Task):
+    def act(self):
+        key = self.name
+        if not key:
+            self.warning(logger, 'no valid aggregator name set')
+            return
+        newname = self.get('newname')
+        if key in monitor.aggregators and newname:
+            monitor.aggregators[newname] = monitor.aggregators[key]
+            del monitor.aggregators[key]
+
+class Measurer(object):
+    def __init__(self, resolution=0.01):
+        self.resolution = resolution
+        self.scores = dict()
+        self.totalPos = dict()
+        self.totalNeg = dict()
+        self.PRCs = None
+        self.ROCs = None
+        self.invalid = True
+        
+    def clear(self):
+        self.scores.clear()
+        self.totalPos.clear()
+        self.totalNeg.clear()
+        self.PRCs = None
+        self.ROCs = None
+        self.invalid = True
     
-    def _get_metrics(self, args):
-        global monkMetrics
-        topic = args.get('topic', ['exprmetric'])[0]
-        metricName = args.get('metricName', ['z2q'])[0]
-        metricStartPosition = int(args.get('start', [0])[0])
-        sz = monkMetrics.retrieve_metrics(topic, metricStartPosition)
-        metrics = monkMetrics.metrics.get(topic, {}).get(metricName, [])
-        #if sz > 0:
-        #    metrics = monkMetrics.metrics.get(topic, {}).get(metricName, [])[-sz:]
-        #else:
-        #    metrics = []
-        print 'return metrics for ', topic, metricName, metricStartPosition
-        return metrics
-        
-    def _delayedRender_GET(self, request):
-        results = self._get_metrics(request.args)
-        simplejson.dump(results, request)
-        request.finish()
-        
-    def _delayedRender_POST(self, request):
-        results = self._get_metrics(request.args)
-        simplejson.dump(results, request)
-        request.finish()
-        
-#TODO: read in configuration file
-def main():
-    root = DefferedResource()
-    indexpage = File('./web/')
-    root.putChild("monitor", indexpage)
-    root.putChild("users", Users())
-    root.putChild("metrics", Metrics())
+    def add(self, value, user, pos):
+        if user not in self.scores:
+           self.scores[user] = []
+           self.totalNeg[user] = 0
+           self.totalPos[user] = 0
+        self.scores[user].append((value, pos))
+        self.totalNeg[user] += 1
+        self.totalPos[user] += 1
+        self.invalid = True
     
-    site = Site(root, "monkmonitor.log")
-    reactor.listenTCP(80, site)
-    reactor.run()
+    def intervals(self):
+        num = int(1.0 /self.resolution) + 1
+        return np.linspace(0.0, 1.0, num)
+        
+    def compute_metrics(self):
+        # the number of buckets for the curves
+        num = int(1.0 /self.resolution) + 1
+        self.PRCs = None
+        self.ROCs = None
+        PRCn = np.zeros(num, dtype=int)
+        ROCn = np.zeros(num, dtype=int)
+        for user in self.scores:
+            if user is DEFAULT_MONITOR_USER:
+                continue
+            # initialize basic metrics
+            tp = self.totalPos[user]
+            tn = 0
+            fp = self.totalNeg[user]
+            fn = 0
+            totalP = tp
+            totalN = fp
+            # ignore incomplete user
+            if totalP == 0 or totalN == 0:
+                continue
+            # sort the scores
+            score = self.scores[user]
+            score.sort()
+            # initialize PRC and ROC
+            PRC = np.zeros(num)
+            ROC = np.zeros(num)
+            PRCn.fill(0)
+            ROCn.fill(0)
+            # loop through scores
+            for s, pos in score:
+                if pos: # positive example
+                    fn += 1
+                    tp -= 1
+                else:   # negative example
+                    tn += 1
+                    fp -= 1
+                recall = float(tp) / float(totalP)
+                # precision value
+                if tp + fp == 0:
+                    precision = 1
+                else:
+                    precision = float(tp) / float(tp + fp)
+                v = int(precision / self.resolution)
+                PRC[v] += recall
+                PRCn[v] += 1
+                # false positive rate value
+                fpr = float(fp) / float(totalN)
+                v = int(fpr / self.resolution)
+                ROC[v] += recall
+                ROCn[v] += 1
+            # averaging ROC and PRC since multiple recalls might fall into the same bucket
+            # fill the missing buckets
+            for v in reversed(range(num)):
+                if PRCn[v] == 0:
+                    # fill the missing values from high precision
+                    # precision == 1 is assumed to exist all the time
+                    PRC[v] = PRC[v+1]
+                else:
+                    # average over all recalls at this precision
+                    PRC[v] /= PRCn[v]
+            for v in range(num):
+                if ROCn[v] == 0:
+                    # fill the missing values from low fpr
+                    # fpr == 0 is assumed to exist all the time
+                    ROC[v] = ROC[v-1]
+                else:
+                    # average over all recalls at this fpr
+                    ROC[v] /= ROCn[v]
+            # next user
+            if self.PRCs is None:
+                self.PRCs = PRC
+            else:
+                self.PRCs = np.vstack((self.PRCs, PRC))
+            if self.ROCs is None:
+                self.ROCs = ROC
+            else:
+                self.ROCs = np.vstack((self.ROCs, ROC))
+        self.ROCs.sort(axis=0)
+        self.PRCs.sort(axis=0)
+        self.invalid = False
+
+    def set_resolution(self, resolution):
+        try:
+            self.resolution = float(resolution)
+            self.invalid = True
+        except:
+            logger.warning('resolution can not be converted to a float {}'.format(resolution))
+        
+    def get_ROCs(self):
+        if self.invalid:
+            self.compute_metrics()
+        return self.ROCs
+    
+    def get_PRCs(self):
+        if self.invalid:
+            self.compute_metrics()
+        return self.PRCs
+        
+@taskT
+class Measure(Task):
+    def act(self):
+        key = self.name
+        if not key:
+            self.warning(logger, 'no valid measurer name set')
+            return
+        try:
+            value = float(self.get('value'))
+        except:
+            self.warning(logger, 'no valid value set')
+            return
+        try:
+            pos = bool(self.get('pos'))
+        except:
+            self.warning(logger, 'no valid positive bit')
+            return
+        user = self.get('user')
+        if key not in monitor.measurers:
+            monitor.measurers[key] = Measurer()
+        measurer = monitor.measurers[key]
+        measurer.add(value, user, pos)
+
+@taskT
+class ResetMeasurer(Task):
+    def act(self):
+        key = self.name
+        if not key:
+            self.warning(logger, 'no valid measurer name set')
+            return
+        if key in monitor.measurers:
+            monitor.measurers[key].clear()
+
+@taskT
+class RenameMeasurer(Task):
+    def act(self):
+        key = self.name
+        if not key:
+            self.warning(logger, 'no valid measurer name set')
+            return
+        newname = self.get('newname')
+        if key in monitor.measurers and newname:
+            monitor.measurers[newname] = monitor.measurers[key]
+            del monitor.measurers[key]
+
+# TODO: TrackerHandler
+# TODO: AggregatorHandler
+            
+class AccuracyHandler(RequestHandler):
+    def draw(self, p, accuracies, intervals, resolution, fillColor):
+        if accuracies:
+            m = accuracies.shape[0]
+            maxs   = accuracies[-1]
+            mins   = accuracies[0]
+            uppers = accuracies[-m/4]
+            lowers = accuracies[m/4]
+            p.segment(intervals, maxs, intervals, mins, color='black', toolbar_location='left')
+            p.rect(intervals, (uppers + lowers) / 2, resolution / 2, \
+                   abs(uppers - lowers), fill_color=fillColor, line_color='black')
+        
+    def get(self):
+        name = self.get_argument('name', None)
+        fillColor = self.get_argument('fillColor', "#F2583E")
+        resolution = self.get_argument('resolution', None)
+        accType = self.get_argument('accType', 'ROC')
+        if name and name in monitor.measurers:
+            measurer = monitor.measurers[name]
+            measurer.set_resolution(resolution)
+            if accType == 'ROC':
+                accuracies = measurer.get_ROCs()
+            elif accType == 'PRC':
+                accuracies = measurer.get_PRCs()
+            else:
+                accuracies = None
+            intervals = measurer.intervals()
+            resolution = measurer.resolution
+        else:
+            accuracies = None
+            intervals = None
+            resolution = 0.01
+        TOOLS = 'pan,wheel_zoom,box_zoom,reset,save'
+        p = figure(tools=TOOLS, plot_width=1000)
+        self.draw(p, accuracies, intervals, resolution, fillColor)
+        p.title = '{} for {}'.format(accType, name)
+        p.grid.grid_line_alpha = 0.3
+        response = file_html(p, INLINE, p.title)
+        self.write(decode_utf8(response))
+        self.set_header("Content-Type", "text/html")
+
+def main(argv):
+    global monitor
+    myname = 'monitor'
+    config = get_config(argv[1:], myname, 'monkmonitor.py')
+    monitor = MonkMonitor(myname, config)
+    monitor.add_application(r'/accuracy', AccuracyHandler)
+    monitor.run()
 
 if __name__=='__main__':
-    main()
+    main(sys.argv)

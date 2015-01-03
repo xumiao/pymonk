@@ -12,9 +12,7 @@ import constants as cons
 import base, crane
 import re
 import logging
-from monk.utils.utils import encodeMetric
 logger = logging.getLogger('monk.panda')
-metricLog = logging.getLogger("metric")
 
 class Panda(base.MONKObject):
     FUID  = 'uid'
@@ -225,7 +223,6 @@ class LinearPanda(Panda):
     
     def predict(self, entity):
         value = self.weights.dot(entity._features)
-        metricLog.info(encodeMetric(self, 'decision', value))
         entity[self.uid] = sigmoid(value)
         return entity[self.uid]
     

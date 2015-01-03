@@ -8,7 +8,7 @@ import base
 import constants as cons
 import crane
 from relation import MatchingRelation
-from monk.utils.utils import binary2decimal, translate
+from monk.utils.utils import binary2decimal, translate, monitor_accuracy
 from monk.math.cmath import sign0
 #from itertools import izip
 import logging
@@ -202,7 +202,8 @@ class Turtle(base.MONKObject):
             return False
 
     def predict(self, entity, fields=None):
-        predicted = self.invertedMapping[tuple([sign0(panda.predict(entity)) for panda in self.pandas])]
+        scores = [panda.predict(entity) for panda in self.pandas]
+        predicted = self.invertedMapping[tuple(map(sign0, scores))]
         self.tigress.measure(entity, predicted)
         return predicted
         
@@ -265,11 +266,14 @@ class SingleTurtle(Turtle):
     
     def predict(self, entity, fields=None):
         panda = self.pandas[0]
-        if sign0(panda.predict(entity)) > 0:
+        score = panda.predict(entity)
+        if sign0(score) > 0:
             self.tigress.measure(entity, panda.name)
+            monitor_accuracy(panda.name, self.creator, score, True)
             return panda.name
         else:
             self.tigress.measure(entity, cons.DEFAULT_NONE)
+            monitor_accuracy(panda.name, self.creator, score, False)
             return cons.DEFAULT_NONE
         
 class MultiLabelTurtle(Turtle):

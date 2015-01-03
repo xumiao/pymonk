@@ -21,3 +21,6 @@ BASE_NAME          = 'name'
 BASE_CREATOR       = 'creator'
 BASE_CREATED_TIME  = 'createdTime'
 BASE_LAST_MODIFIED = 'lastModified'
+
+POSITIVE_LABEL = '+'
+NEGATIVE_LABEL = '-'

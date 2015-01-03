@@ -21,7 +21,6 @@ encoder.FLOAT_REPR = lambda o: format(o, '.4f')
 
 logger = logging.getLogger('monk.utils.utils')
 
-
 import os
 import socket
 
@@ -67,6 +66,15 @@ def class_from(moduleName, className):
     m = importlib.import_module(moduleName)
     c = getattr(m, className)
     return c
+
+monitorLogger = None
+
+def get_monitor_logger():
+    return monitorLogger
+
+def set_monitor_logger(monitorLogger):
+    global monitorLogger
+    monitorLogger = monitorLogger
     
 class DateTimeEncoder(simplejson.JSONEncoder):
     def default(self, obj):
@@ -83,39 +91,20 @@ def currentTimeMillisecond():
     t = datetime.datetime.now()
     return time.mktime(t.timetuple()) * 1e3 + t.microsecond / 1e3
 
-def jsonMetric(monkobj, name, value):
-    return simplejson.dumps({"user":monkobj.creator,
-                             "time":currentTimeMillisecond(),
-                             name:value})
-                            
-def encodeMetric(monkobj, name, value):
-    return 'user={0},time={1},{2}={3}'.format(
-            monkobj.creator, currentTimeMillisecond(), name, value)
-
-def decodeMetric(message):
-    body = message.split(',')
-    # user 
-    monkuser = body[0].split('=')[1]
-    # time
-    t = float(body[1].split('=')[1])
-    # metric
-    name = body[2].split('=')[0]
-    value = float(body[2].split('=')[1])
-    return monkuser, t, name, value
-
-def metricValue(metricLogger, monkobj, name, v):
-    #metricLogger.info(encodeMetric(monkobj, name, v))
-    metricLogger.info(jsonMetric(monkobj, name, v))
+def metricValue(name, user, v):
+    monitorLogger.track(name, v, user)
     
-def metricAbs(metricLogger, monkobj, name, v):
-    #metricLogger.info(encodeMetric(monkobj, name, v.norm()))
-    metricLogger.info(jsonMetric(monkobj, name, v.norm()))
+def metricAbs(name, user, v):
+    monitorLogger.track(name, v.norm(), user)
     
-def metricRelAbs(metricLogger, monkobj, name, v1, v2):
+def metricRelAbs(name, user, v1, v2):
     dv = difference(v1, v2)
-    #metricLogger.info(encodeMetric(monkobj, name, sqrt((dv.norm2() + EPS) / (v1.norm() * v2.norm() + EPS))))
-    metricLogger.info(jsonMetric(monkobj, name, sqrt((dv.norm2() + EPS) / (v1.norm() * v2.norm() + EPS))))
+    v = sqrt((dv.norm2() + EPS) / (v1.norm() * v2.norm() + EPS))
+    monitorLogger.track(name, v, user)
     del dv
+
+def monitor_accuracy(name, v, pos, user):
+    monitorLogger.measure(name, v, pos, user)
     
 def binary2decimal(a):
     return reduce(lambda x,y: (x + y) << 1, 0) / 2

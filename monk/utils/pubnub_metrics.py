@@ -24,4 +24,4 @@ class PubnubLog(object):
         self.channel = "monkmetrics"
 
     def info(self, message):
-        print self.pubnub.publish(self.channel, message)
+        self.pubnub.publish(self.channel, message)

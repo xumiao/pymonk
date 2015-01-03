@@ -9,6 +9,7 @@ import logging
 from kafka.client import KafkaClient
 from kafka.producer.keyed import KeyedProducer
 from producer import FixedProducer
+from kafka.producer import SimpleProducer
 from kafka.consumer.simple import SimpleConsumer
 from kafka.common import KafkaError
 from partitioner import UserPartitioner
@@ -18,8 +19,11 @@ import traceback
 logger = logging.getLogger('monk.network.broker')
 
 class KafkaBroker(object):
+    USER_PRODUCER = 0
+    FIXED_PRODUCER = 1
+    SIMPLE_PRODUCER = 2
     
-    def __init__(self, kafkaHost=None, kafkaGroup=None, kafkaTopic=None, consumerPartitions=[], producerPartitions=[]):
+    def __init__(self, kafkaHost=None, kafkaGroup=None, kafkaTopic=None, consumerPartitions=[], producerPartitions=[], producerType=SIMPLE_PRODUCER):
         self.kafkaHost = kafkaHost
         self.kafkaGroup = kafkaGroup
         self.kafkaTopic = kafkaTopic
@@ -27,11 +31,16 @@ class KafkaBroker(object):
         self.producerPartitions = producerPartitions
         self.kafkaClient = KafkaClient(kafkaHost)
         try:
-            if self.producerPartitions:
+            if producerType == self.SIMPLE_PRODUCER:
+                self.producer = SimpleProducer(self.kafkaClient, async=False, req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
+            elif producerType == self.FIXED_PRODUCER:
                 self.producer = FixedProducer(self.kafkaClient, producerPartitions[0], async=False, ack_timeout=200)
-            else:
+            elif producerType == self.USER_PRODUCER:
                 self.producer = KeyedProducer(self.kafkaClient, partitioner=UserPartitioner, async=False,
                                           req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
+            else:
+                raise Exception("wrong producer type {}".format(producerType))
+                
             if consumerPartitions:
                 self.consumer = SimpleConsumer(self.kafkaClient, self.kafkaGroup, 
                                                self.kafkaTopic, partitions=self.consumerPartitions)

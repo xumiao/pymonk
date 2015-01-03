@@ -67,7 +67,7 @@ setup(
     # project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/technical.html#install-requires-vs-requirements-files
-    install_requires=['peppercorn','nltk','pymongo','simplejson','pubnub==3.5.2'],
+    install_requires=['peppercorn','nltk','pymongo','simplejson','bokeh==0.7.0','pubnub==3.5.2'],
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
@@ -92,7 +92,7 @@ setup(
         'console_scripts': [
             'monkworker=monk.roles.worker:main',
             'monkadmin=monk.roles.administrator:main',
-            #'monkmonitor=monk.roles.monitor:main',
+            'monkmonitor=monk.roles.monitor:main',
             #'monkscientist=monk.roles.scientist:main',
         ],
     },

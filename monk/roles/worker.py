@@ -6,8 +6,8 @@ Training models remotely in cloud
 """    
 from monk.roles.configuration import get_config
 from monk.roles.administrator import AdminBroker
+from monk.roles.monitor import MonitorBroker
 import monk.core.api as monkapi
-import monk.core.constants as cons
 import logging
 import sys
 from monk.network.broker import KafkaBroker
@@ -69,16 +69,19 @@ class MonkWorker(MonkServer):
     def init_brokers(self, config):
         monkapi.initialize(config)
         self.adminBroker = AdminBroker(config.kafkaConnectionString, config.administratorGroup, config.administratorTopic, 
-                                  config.administratorClientPartitions, config.administratorServerPartitions)
-        self.workerBroker = WorkerBroker(config.kafkaConnectionString, config.workerGroup, config.workerTopic)
+                                  config.administratorClientPartitions, config.administratorServerPartitions, producerType=KafkaBroker.FIXED_PRODUCER)
+        self.workerBroker = WorkerBroker(config.kafkaConnectionString, config.workerGroup, config.workerTopic, producerType=KafkaBroker.USER_PRODUCER)
+        self.monitorBroker = MonitorBroker(config.kafkaConnectionString, config.monitorGroup, config.monitorGroup, config.monitorTopic, 
+                                       config.monitorClientPartitions, config.monitorServerPartitions, producerType=KafkaBroker.SIMPLE_PRODUCER)
+        monkapi.set_monitor(self.monitorBroker)
+        
         self.MAINTAIN_INTERVAL = config.workerMaintenanceInterval
         self.POLL_INTERVAL = config.workerPollInterval
         self.EXECUTE_INTERVAL = config.workerExecuteInterval
         self.MAX_QUEUE_SIZE = config.workerMaxQueueSize
         
         self.adminBroker.register_worker(self.serverName, offsetSkip=config.workerConsumerOffsetSkip)
-        
-        return [self.adminBroker, worker.workerBroker]
+        return [self.adminBroker, self.workerBroker, self.monitorBroker]
     
 worker = MonkWorker()
 
