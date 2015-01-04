@@ -52,6 +52,7 @@ class TaskFactory(object):
 taskFactory = TaskFactory()
 
 def taskT(TaskClass):
+    logger.info('task {}'.format(TaskClass.__name__))
     taskFactory.register(TaskClass)
 
 @taskT
