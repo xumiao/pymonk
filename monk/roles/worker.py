@@ -213,12 +213,12 @@ class AcknowledgeRegistration(Task):
                 logger.warning('Can not seek to offset {}'.format(offsetSkip))
                 logger.warning(e.message)
 
-def main(argv):
+def main():
     global worker
-    myname = '_'.join([argv[1], ut.get_mac()])
-    config = get_config(argv[2:], myname, 'monkworker.py name')
+    myname = '_'.join([sys.argv[1], ut.get_mac()])
+    config = get_config(sys.argv[2:], myname, 'monkworker.py name')
     worker = MonkWorker(myname, config)
     worker.run()
     
 if __name__=='__main__':
-    main(sys.argv)
+    main()

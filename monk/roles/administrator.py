@@ -205,12 +205,12 @@ class UnregisterWorker(Task):
             engine._setattr(Engine.FENDTIME, datetime.datetime.now())
             engine.save()
         
-def main(argv):
+def main():
     global admin
     myname = 'administrator'
-    config = get_config(argv[1:], myname, 'monkadmin.py')
+    config = get_config(sys.argv[1:], myname, 'monkadmin.py')
     admin = MonkAdmin(myname, config)
     admin.run()
 
 if __name__=='__main__':
-    main(sys.argv)
+    main()

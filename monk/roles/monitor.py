@@ -462,13 +462,13 @@ class AccuracyHandler(RequestHandler):
         self.write(decode_utf8(response))
         self.set_header("Content-Type", "text/html")
 
-def main(argv):
+def main():
     global monitor
     myname = 'monitor'
-    config = get_config(argv[1:], myname, 'monkmonitor.py')
+    config = get_config(sys.argv[1:], myname, 'monkmonitor.py')
     monitor = MonkMonitor(myname, config)
     monitor.add_application(r'/accuracy', AccuracyHandler)
     monitor.run()
 
 if __name__=='__main__':
-    main(sys.argv)
+    main()

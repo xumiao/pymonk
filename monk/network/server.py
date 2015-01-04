@@ -52,10 +52,8 @@ class TaskFactory(object):
 taskFactory = TaskFactory()
 
 def taskT(TaskClass):
-    logger.info('task {}'.format(TaskClass.__name__))
     taskFactory.register(TaskClass)
 
-@taskT
 class Task(object):
     PRIORITY_HIGH = 1
     PRIORITY_LOW = 5
