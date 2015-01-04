@@ -32,9 +32,10 @@ class Configuration(object):
         
         self.kafkaConnectionString = 'localhost'
         
-        self.workerGroup = 'monkTestWorker'
-        self.workerTopic = 'monkTestWorker'
+        self.workerGroup = 'monkTest'
+        self.workerTopic = 'monkTest'
         self.workerConsumerOffsetSkip = -1 #from the end
+        self.workerMaxQueueSize = 100000
         self.workerPollInterval = 0.1 #wait 0.1s if no message received
         self.workerExecuteInterval = 0.1 #wait 0.1s if no task to execute
         self.workerMaintainInterval = 60 #1 update per minute
@@ -45,6 +46,7 @@ class Configuration(object):
         self.administratorClientPartitions = [1]
         self.administratorOffsetSkip = -1 #from the end
         self.administratorMaxNumWorkers = 32
+        self.administratorMaxQueueSize = 100000
         self.administratorMaintainInterval = 60 #1 update per minute
         self.administratorPollInterval = 0.1 #wait 0.1s if no message received
         self.administratorExecuteInterval = 0.1 #wait 0.1s if no task to execute
@@ -54,6 +56,7 @@ class Configuration(object):
         self.monitorServerPartitions = [0]
         self.monitorClientPartitions = [1]
         self.monitorOffsetSkip = -1
+        self.monitorMaxQueueSize = 100000
         self.monitorMaintainInterval = 60
         self.monitorPollInterval = 0.1
         self.monitorExecuteInterval = 0.1
