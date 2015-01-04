@@ -13,7 +13,6 @@ from __future__ import division
 cimport cython
 from libc.stdlib cimport malloc, free, calloc, rand
 from monk.math.flexible_vector import FlexibleVector
-from monk.utils.utils import encodeMetric
 import logging
 logger = logging.getLogger('monk.svm_solver_dual')
 
