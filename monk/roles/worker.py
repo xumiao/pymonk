@@ -215,7 +215,7 @@ class AcknowledgeRegistration(Task):
 
 def main(argv):
     global worker
-    myname = '_'.join([argv[1], ut.get_lan_ip()])
+    myname = '_'.join([argv[1], ut.get_mac()])
     config = get_config(argv[2:], myname, 'monkworker.py name')
     worker = MonkWorker(myname, config)
     worker.run()

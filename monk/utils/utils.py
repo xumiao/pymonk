@@ -10,6 +10,7 @@ import StringIO
 import simplejson
 import datetime
 import time
+from uuid import getnode
 from IPython.core.display import Image
 import logging
 from monk.core.constants import EPS
@@ -62,6 +63,9 @@ def get_host_name(address=None, pid=None):
         pid = os.getpid()
     return '{}-{}'.format(address, pid)
 
+def get_mac():
+    return getnode()
+    
 def class_from(moduleName, className):
     m = importlib.import_module(moduleName)
     c = getattr(m, className)
@@ -72,9 +76,9 @@ monitorLogger = None
 def get_monitor_logger():
     return monitorLogger
 
-def set_monitor_logger(monitorLogger):
+def set_monitor_logger(monitorBroker):
     global monitorLogger
-    monitorLogger = monitorLogger
+    monitorLogger = monitorBroker
     
 class DateTimeEncoder(simplejson.JSONEncoder):
     def default(self, obj):
