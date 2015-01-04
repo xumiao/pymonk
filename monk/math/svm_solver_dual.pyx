@@ -16,7 +16,6 @@ from monk.math.flexible_vector import FlexibleVector
 from monk.utils.utils import encodeMetric
 import logging
 logger = logging.getLogger('monk.svm_solver_dual')
-metricLog = logging.getLogger('metric')
 
 cdef inline _MEM_CHECK(void* p):
     if p == NULL:
