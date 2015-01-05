@@ -63,7 +63,7 @@ class MonkAdmin(MonkServer):
         self.adminBroker.seek(config.administratorOffsetSkip)
         self.monitorBroker = MonitorBroker(config.kafkaConnectionString, config.monitorGroup, config.monitorTopic, 
                                        config.monitorClientPartitions, config.monitorServerPartitions, producerType=KafkaBroker.SIMPLE_PRODUCER)
-        monkapi.set_monitor(self.monitorBroker)
+        ut.set_monitor(self.monitorBroker)
         return [self.adminBroker, self.monitorBroker]
 
 admin = MonkAdmin()
