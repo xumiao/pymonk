@@ -71,7 +71,7 @@ class MonkAdmin(MonkServer):
                                            config.monitorTopic,
                                            producerType=KafkaBroker.SIMPLE_PRODUCER)
         ut.set_monitor(self.monitorBroker)
-        return [self.adminBroker, self.monitorBroker]
+        return [self.adminBroker]
 
 admin = MonkAdmin()
 

@@ -57,6 +57,8 @@ class KafkaBroker(object):
                 logger.debug('consumer is listening on {}@{}'.format(self.kafkaTopic, self.consumerPartitions))
             elif consumerType == self.NON_CONSUMER:
                 self.consumer = None
+            else:
+                raise Exception("wrong consumer type {}".format(consumerType))
                 
         except Exception as e:
             logger.warning('Exception {}'.format(e))

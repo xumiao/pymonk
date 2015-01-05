@@ -92,7 +92,7 @@ class MonkWorker(MonkServer):
         self.MAX_QUEUE_SIZE = config.workerMaxQueueSize
         
         self.adminBroker.register_worker(self.serverName, offsetSkip=config.workerConsumerOffsetSkip)
-        return [self.adminBroker, self.workerBroker, self.monitorBroker]
+        return [self.adminBroker, self.workerBroker]
     
 worker = MonkWorker()
 
