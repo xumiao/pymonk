@@ -22,8 +22,8 @@ from itertools import cycle
 logger = logging.getLogger('monk.roles.administrator')
 
 class AdminBroker(KafkaBroker):
-    def acknowledge_registration(self, workerName, partition, offsetToEnd, **kwargs):
-        self.produce('AcknowledgeRegistration', workerName, partition=partition, offsetToEnd=offsetToEnd, **kwargs)
+    def acknowledge_registration(self, workerName, partition, offsetSkip, **kwargs):
+        self.produce('AcknowledgeRegistration', workerName, partition=partition, offsetSkip=offsetSkip, **kwargs)
         
     def add_user(self, userName, password='', **kwargs):
         self.produce('AddUser', userName, password=password, **kwargs)
