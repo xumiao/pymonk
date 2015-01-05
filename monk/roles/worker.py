@@ -96,7 +96,6 @@ class MonkWorker(MonkServer):
     
 worker = MonkWorker()
 
-@taskT
 class WorkerTask(Task):
     def __init__(self, decodedMessage):
         self.decodedMessage = decodedMessage

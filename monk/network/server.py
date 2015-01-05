@@ -40,6 +40,7 @@ class TaskFactory(object):
             generic = simplejson.loads(message)
             name = generic.get('op', None)
             if not name:
+                logger.warning('no task defined in op')
                 return None
             else:
                 return self.factory[name](generic)
