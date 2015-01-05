@@ -135,7 +135,7 @@ class MonkServer(object):
         
     def _maintain(self):
         self.maintain()
-        self.ioLoop.add_timeout(self.MAINTAIN_INTERVAL, self.maintain)
+        self.ioLoop.add_timeout(self.MAINTAIN_INTERVAL, self._maintain)
 
     def _poll(self):
         if self.pq.full():

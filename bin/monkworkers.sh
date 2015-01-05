@@ -1,5 +1,5 @@
 #!/bin/bash
-for (( i=0; i<=$2; i++ )) 
+for (( i=0; i <= $2; i++ )) 
 do
-    monkadmin $1.$i
+    monkworker $1_$i
 done
