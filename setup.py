@@ -27,7 +27,7 @@ setup(
     license='MIT',
     
     # Scripts to run
-    scripts=['bin/monkupgrade.sh'],
+    scripts=['bin/monkupgrade.sh', 'bin/monkworkers.sh'],
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
