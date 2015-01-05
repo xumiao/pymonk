@@ -184,6 +184,6 @@ class MonkServer(object):
             self.httpServer = tornado.httpserver.HTTPServer(application)
             self.httpServer.listen(self.port)
         
-        logger.info('{} is running'.format(self.schedulerName))        
+        logger.info('{} is running'.format(self.serverName))        
         self.ioLoop.start()        
         logger.info('{} is exiting'.format(self.serverName))
