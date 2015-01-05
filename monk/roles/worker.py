@@ -86,7 +86,7 @@ class MonkWorker(MonkServer):
                                            producerType=KafkaBroker.SIMPLE_PRODUCER)
         ut.set_monitor(self.monitorBroker)
         
-        self.MAINTAIN_INTERVAL = config.workerMaintenanceInterval
+        self.MAINTAIN_INTERVAL = config.workerMaintainInterval
         self.POLL_INTERVAL = config.workerPollInterval
         self.EXECUTE_INTERVAL = config.workerExecuteInterval
         self.MAX_QUEUE_SIZE = config.workerMaxQueueSize
