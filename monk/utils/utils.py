@@ -73,10 +73,10 @@ def class_from(moduleName, className):
 
 monitorLogger = None
 
-def get_monitor_logger():
+def get_monitor():
     return monitorLogger
-
-def set_monitor_logger(monitorBroker):
+    
+def set_monitor(monitorBroker):
     global monitorLogger
     monitorLogger = monitorBroker
     
