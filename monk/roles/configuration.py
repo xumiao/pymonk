@@ -54,7 +54,6 @@ class Configuration(object):
         self.monitorGroup = 'monkTestMonitor'
         self.monitorTopic = 'monkTestMonitor'
         self.monitorServerPartitions = [0]
-        self.monitorClientPartitions = [1]
         self.monitorOffsetSkip = -1
         self.monitorMaxQueueSize = 100000
         self.monitorMaintainInterval = 60

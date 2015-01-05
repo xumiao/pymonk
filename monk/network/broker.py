@@ -22,8 +22,13 @@ class KafkaBroker(object):
     USER_PRODUCER = 0
     FIXED_PRODUCER = 1
     SIMPLE_PRODUCER = 2
+    NON_PRODUCER = 3
+    SIMPLE_CONSUMER = 0
+    NON_CONSUMER = 1
     
-    def __init__(self, kafkaHost=None, kafkaGroup=None, kafkaTopic=None, consumerPartitions=[], producerPartitions=[], producerType=SIMPLE_PRODUCER):
+    def __init__(self, kafkaHost=None, kafkaGroup=None, kafkaTopic=None, 
+                 consumerType=NON_CONSUMER, consumerPartitions=[],
+                 producerType=NON_PRODUCER, producerPartitions=[]):
         self.kafkaHost = kafkaHost
         self.kafkaGroup = kafkaGroup
         self.kafkaTopic = kafkaTopic
@@ -38,15 +43,21 @@ class KafkaBroker(object):
             elif producerType == self.USER_PRODUCER:
                 self.producer = KeyedProducer(self.kafkaClient, partitioner=UserPartitioner, async=False,
                                           req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
+            elif producerType == self.NON_PRODUCER:
+                self.producer = None
             else:
                 raise Exception("wrong producer type {}".format(producerType))
-                
-            if consumerPartitions:
-                self.consumer = SimpleConsumer(self.kafkaClient, self.kafkaGroup, 
-                                               self.kafkaTopic, partitions=self.consumerPartitions)
+            
+            if consumerType == self.SIMPLE_CONSUMER:
+                if not consumerPartitions:
+                    self.consumer = SimpleConsumer(self.kafkaClient, self.kafkaGroup, self.kafkaTopic)
+                else:
+                    self.consumer = SimpleConsumer(self.kafkaClient, self.kafkaGroup, 
+                                                   self.kafkaTopic, partitions=self.consumerPartitions)
                 logger.debug('consumer is listening on {}@{}'.format(self.kafkaTopic, self.consumerPartitions))
-            else:
+            elif consumerType == self.NON_CONSUMER:
                 self.consumer = None
+                
         except Exception as e:
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())

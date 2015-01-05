@@ -62,8 +62,10 @@ class MonkMonitor(MonkServer):
         self.POLL_INTERVAL = config.monitorPollInterval
         self.EXECUTE_INTERVAL = config.monitorExecuteInterval
         self.MAX_QUEUE_SIZE = config.monitorMaxQueueSize
-        self.monitorBroker = MonitorBroker(config.kafkaConnectionString, config.monitorGroup, config.monitorTopic, 
-                                       config.monitorServerPartitions, config.monitorClientPartitions, KafkaBroker.SIMPLE_PRODUCER)
+        self.monitorBroker = MonitorBroker(config.kafkaConnectionString,
+                                           config.monitorGroup,
+                                           config.monitorTopic, 
+                                           KafkaBroker.SIMPLE_CONSUMER)
         return [self.monitorBroker]
 
 monitor = MonkMonitor()

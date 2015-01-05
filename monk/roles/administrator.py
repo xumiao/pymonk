@@ -58,11 +58,18 @@ class MonkAdmin(MonkServer):
         self.EXECUTE_INTERVAL = config.administratorExecuteInterval
         self.MAX_QUEUE_SIZE = config.administratorMaxQueueSize
         self.maxNumWorkers = config.administratorMaxNumWorkers
-        self.adminBroker = AdminBroker(config.kafkaConnectionString, config.administratorGroup, config.administratorTopic, 
-                                       config.administratorServerPartitions, config.administratorClientPartitions)
+        self.adminBroker = AdminBroker(config.kafkaConnectionString,
+                                       config.administratorGroup,
+                                       config.administratorTopic,
+                                       KafkaBroker.SIMPLE_CONSUMER,
+                                       config.administratorServerPartitions,
+                                       KafkaBroker.FIXED_PRODUCER,
+                                       config.administratorClientPartitions)
         self.adminBroker.seek(config.administratorOffsetSkip)
-        self.monitorBroker = MonitorBroker(config.kafkaConnectionString, config.monitorGroup, config.monitorTopic, 
-                                       config.monitorClientPartitions, config.monitorServerPartitions, producerType=KafkaBroker.SIMPLE_PRODUCER)
+        self.monitorBroker = MonitorBroker(config.kafkaConnectionString,
+                                           config.monitorGroup,
+                                           config.monitorTopic,
+                                           producerType=KafkaBroker.SIMPLE_PRODUCER)
         ut.set_monitor(self.monitorBroker)
         return [self.adminBroker, self.monitorBroker]
 
