@@ -36,6 +36,6 @@ class FixedProducer(Producer):
     def send(self, topic, name, *msg):
         logger.debug('sending message {} at {}@{}'.format(msg, topic, self.partition))
         return self.send_messages(topic, self.partition, *msg)
-        
+    
     def __repr__(self):
         return '<FixedProducer batch=%s>' % self.async

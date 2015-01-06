@@ -34,7 +34,7 @@ class KafkaBroker(object):
         self.kafkaTopic = kafkaTopic
         self.consumerPartitions = consumerPartitions
         self.producerPartitions = producerPartitions
-        self.kafkaClient = KafkaClient(kafkaHost)
+        self.kafkaClient = KafkaClient(kafkaHost, timeout=None)
         try:
             if producerType == self.SIMPLE_PRODUCER:
                 self.producer = SimpleProducer(self.kafkaClient, async=False, req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)

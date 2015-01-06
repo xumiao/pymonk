@@ -83,7 +83,8 @@ class MonkWorker(MonkServer):
         self.monitorBroker = MonitorBroker(config.kafkaConnectionString,
                                            config.monitorGroup,
                                            config.monitorTopic,
-                                           producerType=KafkaBroker.SIMPLE_PRODUCER)
+                                           producerType=KafkaBroker.FIXED_PRODUCER,
+                                           producerPartitions=[0])
         ut.set_monitor(self.monitorBroker)
         
         self.MAINTAIN_INTERVAL = config.workerMaintainInterval

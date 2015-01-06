@@ -269,11 +269,11 @@ class SingleTurtle(Turtle):
         score = panda.predict(entity)
         if sign0(score) > 0:
             self.tigress.measure(entity, panda.name)
-            monitor_accuracy(panda.name, self.creator, score, True)
+            monitor_accuracy(panda.name, self.creator, score, 'True')
             return panda.name
         else:
             self.tigress.measure(entity, cons.DEFAULT_NONE)
-            monitor_accuracy(panda.name, self.creator, score, False)
+            monitor_accuracy(panda.name, self.creator, score, 'False')
             return cons.DEFAULT_NONE
         
 class MultiLabelTurtle(Turtle):

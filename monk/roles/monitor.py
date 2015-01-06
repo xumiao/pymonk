@@ -28,8 +28,8 @@ class MonitorBroker(KafkaBroker):
     def aggregate(self, name, value, user=DEFAULT_MONITOR_USER):
         self.produce('Aggregate', name, user=user, value=value)
 
-    def measure(self, name, value, pos=True, user=DEFAULT_MONITOR_USER):
-        self.produce('MeasureAccuracy', name, user=user, value=value, pos=pos)
+    def measure(self, name, value, pos='True', user=DEFAULT_MONITOR_USER):
+        self.produce('Measure', name, user=user, value=value, pos=pos)
         
     def reset_tracker(self, name):
         self.produce('ResetTracker', name)
@@ -463,6 +463,7 @@ class AccuracyHandler(RequestHandler):
         response = file_html(p, INLINE, p.title)
         self.write(decode_utf8(response))
         self.set_header("Content-Type", "text/html")
+        
 
 def main():
     global monitor
