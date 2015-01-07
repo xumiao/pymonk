@@ -35,7 +35,7 @@ class KafkaBroker(object):
         self.kafkaTopic = kafkaTopic
         self.consumerPartitions = consumerPartitions
         self.producerPartitions = producerPartitions
-        self.kafkaClient = KafkaClient(kafkaHost, self.SOCKET_TIMEOUT)
+        self.connect(kafkaHost)
         try:
             if producerType == self.SIMPLE_PRODUCER:
                 self.producer = SimpleProducer(self.kafkaClient, async=False, req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
@@ -81,9 +81,20 @@ class KafkaBroker(object):
             self.kafkaClient = None
         logger.info('Kafka connection closed')
     
+    def connect(self, kafkaHost, countdown=5):
+        if countdown == 0:
+            logger.error('kafka server can not be connected in 5 times')
+            return
+            
+        try:
+            self.kafkaClient = KafkaClient(kafkaHost)
+        except:
+            self.connect(kafkaHost, countdown - 1)
+            
     def reconnect(self, countdown=5):
         if countdown == 0:
             logger.error('kafka server can not be connected in 5 times')
+            return
             
         try:
             self.kafkaClient.reinit()
