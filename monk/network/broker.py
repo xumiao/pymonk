@@ -87,7 +87,7 @@ class KafkaBroker(object):
             return
             
         try:
-            self.kafkaClient = KafkaClient(kafkaHost, self.SOCKET_TIMEOUT)
+            self.kafkaClient = KafkaClient(kafkaHost)
         except:
             logger.warning('try to connect kafka server again {}'.format(countdown))
             self.connect(kafkaHost, countdown - 1)

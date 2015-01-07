@@ -6,6 +6,7 @@ Created on Sun Mar 16 23:42:45 2014
 """
 import yaml
 import logging
+import logging.config
 import getopt, os, sys
 
 class Configuration(object):

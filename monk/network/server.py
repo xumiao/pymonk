@@ -143,6 +143,7 @@ class MonkServer(object):
         else:
             ready = filter(None, (broker.is_consumer_ready() for broker in self.brokers))
             if not ready:
+                self._onexit()
                 return
             taskScripts = filter(None, (broker.consume_one() for broker in self.brokers))
             for tscript in taskScripts:

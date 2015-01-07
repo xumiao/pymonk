@@ -5,7 +5,6 @@ Created on Sun Mar 02 12:29:03 2014
 @author: pacif_000
 """
 import logging
-import logging.config
 from constants import DEFAULT_CREATOR
 from bson.objectid import ObjectId
 # to register classes in base
