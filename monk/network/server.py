@@ -82,6 +82,11 @@ class Task(object):
     def act(self):
         self.warning(logger, 'no task is defined')
 
+@taskT
+class Echo(Task):
+    def act(self):
+        self.info(logger, 'received {}'.format(self.decodedMessage))
+        
 class MonkServer(object):    
     EXIT_WAIT_TIME=3
     MAX_QUEUE_SIZE=100000
@@ -143,6 +148,7 @@ class MonkServer(object):
 
     def _poll(self):
         if self.pq.full():
+            logger.debug('queue is full')
             self.ioLoop.add_timeout(self.POLL_INTERVAL, self._poll)
         else:
             ready = filter(None, (broker.is_consumer_ready() for broker in self.brokers))
@@ -154,8 +160,10 @@ class MonkServer(object):
                 t = taskFactory.create(tscript)
                 self.pq.put((t.priority, t), block=False)
             if taskScripts:
+                logger.debug('processing next task')
                 self.ioLoop.add_callback(self._poll)
             else:
+                logger.debug('waiting on the polling')
                 self.ioLoop.add_timeout(self.POLL_INTERVAL, self._poll)
     
     def _execute(self):
