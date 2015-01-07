@@ -104,6 +104,7 @@ class MonkServer(object):
         if platform.system() == 'Windows':
             win32api.SetConsoleCtrlHandler(self._sig_handler, 1)
         else:
+            signal.signal(signal.SIGKILL, self._sig_handler)
             signal.signal(signal.SIGINT,  self._sig_handler)
             signal.signal(signal.SIGTERM, self._sig_handler)
         self.ready = True
@@ -127,10 +128,10 @@ class MonkServer(object):
             if now < deadline and (self.ioLoop._callbacks or self.ioLoop._timeouts):
                 self.ioLoop.add_timeout(now + 1, stop_loop)
             else:
+                self.ioLoop.stop()
                 for broker in self.brokers:
                     broker.close()
                 monkapi.exits()
-                self.ioLoop.stop()
         stop_loop()
         
     def _maintain(self):
