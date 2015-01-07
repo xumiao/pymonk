@@ -32,8 +32,8 @@ class Configuration(object):
         
         self.kafkaConnectionString = 'localhost'
         
-        self.workerGroup = 'monkTest'
-        self.workerTopic = 'monkTest'
+        self.workerGroup = 'monkTestWorker'
+        self.workerTopic = 'monkTestWorker'
         self.workerConsumerOffsetSkip = -1 #from the end
         self.workerMaxQueueSize = 100000
         self.workerPollInterval = 0.1 #wait 0.1s if no message received
