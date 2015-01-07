@@ -378,6 +378,7 @@ class Measurer(object):
 @taskT
 class Measure(Task):
     def act(self):
+        logger.info('measure {}'.format(self.decodedMessage))
         key = self.name
         if not key:
             self.warning(logger, 'no valid measurer name set')
@@ -440,6 +441,7 @@ class AccuracyHandler(RequestHandler):
         fillColor = self.get_argument('fillColor', "#F2583E")
         resolution = self.get_argument('resolution', None)
         accType = self.get_argument('accType', 'ROC')
+        logger.info('request {} {} {}'.format(name, fillColor, resolution))
         if name and name in monitor.measurers:
             measurer = monitor.measurers[name]
             measurer.set_resolution(resolution)
