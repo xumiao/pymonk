@@ -7,20 +7,13 @@ Created on Tue Jan  6 20:44:58 2015
 
 from monk.roles.monitor import MonitorBroker
 import numpy as np
-
+import logging
+N = 1000
 print 'creating monitor broker'
-mb = MonitorBroker('monkbus.cloudapp.net:9092,monkbus.cloudapp.net:9093,monkbus.cloudapp.net:9094','monkTestMonitor',producerType=1,producerPartitions=[0])
+mb = MonitorBroker('monkbus.cloudapp.net:9092,monkbus.cloudapp.net:9093,monkbus.cloudapp.net:9094','monkTestMonitor',producerType=1)
 
-values = np.random.rand(1000)
-def choose_user(x):
-    if x >  0.5:
-        return 'user1'
-    else:
-        return 'user2'
-
-users = map(choose_user, np.random.rand(1000))
-for i in range(1000):
-    value = values[i]
+for i in range(N):
+    value = np.random.rand() 
     if np.random.rand() > 0.5:
         pos = 'True'
     else:

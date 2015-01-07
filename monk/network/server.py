@@ -119,19 +119,23 @@ class MonkServer(object):
         logger.info('exit in {} seconds'.format(self.EXIT_WAIT_TIME))
         
         deadline = time.time() + self.EXIT_WAIT_TIME
-
+        logger.info('onexit')
         self.onexit()
         
         def stop_loop():
+            logger.info('stopping loop')
             now = time.time()
             if now < deadline and (self.ioLoop._callbacks or self.ioLoop._timeouts):
                 self.ioLoop.add_timeout(now + 1, stop_loop)
             else:
                 self.ioLoop.stop()
                 for broker in self.brokers:
+                    logger.info('closing broker')
                     broker.close()
+                logger.info('exiting monkapi')
                 monkapi.exits()
         stop_loop()
+        logger.info('exited')
         
     def _maintain(self):
         self.maintain()

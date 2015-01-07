@@ -18,6 +18,7 @@ import traceback
 
 logger = logging.getLogger('monk.network.broker')
 
+COUNT_DOWN = 10
 class KafkaBroker(object):
     USER_PRODUCER = 0
     FIXED_PRODUCER = 1
@@ -25,7 +26,7 @@ class KafkaBroker(object):
     NON_PRODUCER = 3
     SIMPLE_CONSUMER = 0
     NON_CONSUMER = 1
-    SOCKET_TIMEOUT = 5 #second
+    SOCKET_TIMEOUT = 10 #second
     
     def __init__(self, kafkaHost=None, kafkaGroup=None, kafkaTopic=None, 
                  consumerType=NON_CONSUMER, consumerPartitions=[],
@@ -81,20 +82,20 @@ class KafkaBroker(object):
             self.kafkaClient = None
         logger.info('Kafka connection closed')
     
-    def connect(self, kafkaHost, countdown=5):
+    def connect(self, kafkaHost, countdown=COUNT_DOWN):
         if countdown == 0:
-            logger.error('kafka server can not be connected in 5 times')
+            logger.error('kafka server can not be connected in {} times'.format(COUNT_DOWN))
             return
             
         try:
-            self.kafkaClient = KafkaClient(kafkaHost)
+            self.kafkaClient = KafkaClient(kafkaHost, self.SOCKET_TIMEOUT)
         except:
             logger.warning('try to connect kafka server again {}'.format(countdown))
             self.connect(kafkaHost, countdown - 1)
             
-    def reconnect(self, countdown=5):
+    def reconnect(self, countdown=COUNT_DOWN):
         if countdown == 0:
-            logger.error('kafka server can not be connected in 5 times')
+            logger.error('kafka server can not be connected in {} times'.format(COUNT_DOWN))
             return
             
         try:
