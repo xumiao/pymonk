@@ -123,6 +123,9 @@ class KafkaBroker(object):
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
 
+    def echo(self):
+        self.produce('Echo', 'testing')
+        
     def set_consumer_partition(self, consumerPartitions):
         if not consumerPartitions:
             logger.warning('consumer partitions can not be empty')
