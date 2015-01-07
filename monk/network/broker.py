@@ -25,6 +25,7 @@ class KafkaBroker(object):
     NON_PRODUCER = 3
     SIMPLE_CONSUMER = 0
     NON_CONSUMER = 1
+    SOCKET_TIMEOUT = 5 #second
     
     def __init__(self, kafkaHost=None, kafkaGroup=None, kafkaTopic=None, 
                  consumerType=NON_CONSUMER, consumerPartitions=[],
@@ -34,7 +35,7 @@ class KafkaBroker(object):
         self.kafkaTopic = kafkaTopic
         self.consumerPartitions = consumerPartitions
         self.producerPartitions = producerPartitions
-        self.kafkaClient = KafkaClient(kafkaHost, timeout=None)
+        self.kafkaClient = KafkaClient(kafkaHost, self.SOCKET_TIMEOUT)
         try:
             if producerType == self.SIMPLE_PRODUCER:
                 self.producer = SimpleProducer(self.kafkaClient, async=False, req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
@@ -80,6 +81,15 @@ class KafkaBroker(object):
             self.kafkaClient = None
         logger.info('Kafka connection closed')
     
+    def reconnect(self, countdown=5):
+        if countdown == 0:
+            logger.error('kafka server can not be connected in 5 times')
+            
+        try:
+            self.kafkaClient.reinit()
+        except:
+            self.reconnect(countdown - 1)
+        
     def produce(self, op, name, **kwargs):
         # TODO: when name is None, the operation is propagated to all partitions 
         if not op or not name:
@@ -95,7 +105,7 @@ class KafkaBroker(object):
         except KafkaError as e:
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
-            self.kafkaClient.reinit()
+            self.reconnect()
         except Exception as e:
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
@@ -116,7 +126,7 @@ class KafkaBroker(object):
         except KafkaError as e:
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
-            self.kafkaClient.reinit()
+            self.reconnect()
         except Exception as e:
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
@@ -150,7 +160,7 @@ class KafkaBroker(object):
         except Exception as e:
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
-            self.kafkaClient.reinit()
+            self.reconnect()
         return None
         
     def consume(self, count=10):
@@ -163,5 +173,5 @@ class KafkaBroker(object):
         except Exception as e:
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
-            self.kafkaClient.reinit()
+            self.reconnect()
         return []
