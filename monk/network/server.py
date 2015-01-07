@@ -141,6 +141,9 @@ class MonkServer(object):
         if self.pq.full():
             self.ioLoop.add_timeout(self.POLL_INTERVAL, self._poll)
         else:
+            ready = filter(None, (broker.is_consumer_ready() for broker in self.brokers))
+            if not ready:
+                return
             taskScripts = filter(None, (broker.consume_one() for broker in self.brokers))
             for tscript in taskScripts:
                 t = taskFactory.create(tscript)
