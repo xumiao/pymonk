@@ -104,7 +104,6 @@ class MonkServer(object):
         if platform.system() == 'Windows':
             win32api.SetConsoleCtrlHandler(self._sig_handler, 1)
         else:
-            signal.signal(signal.SIGKILL, self._sig_handler)
             signal.signal(signal.SIGINT,  self._sig_handler)
             signal.signal(signal.SIGTERM, self._sig_handler)
         self.ready = True
