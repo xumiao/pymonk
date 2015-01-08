@@ -158,7 +158,8 @@ class MonkServer(object):
             taskScripts = filter(None, (broker.consume_one() for broker in self.brokers))
             for tscript in taskScripts:
                 t = taskFactory.create(tscript)
-                self.pq.put((t.priority, t), block=False)
+                if t:
+                    self.pq.put((t.priority, t), block=False)
             if taskScripts:
                 logger.debug('processing next task')
                 self.ioLoop.add_callback(self._poll)

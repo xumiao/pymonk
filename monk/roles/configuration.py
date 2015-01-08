@@ -70,20 +70,21 @@ class Configuration(object):
                 self.__dict__.update(yaml.load(conf))
         
         if 'loggingConfig' not in self.__dict__:
-            with open('log_config.yml', 'r') as logConf:
+            self.loggingConfig = 'log_config.yml'
+            
+        config_logging(self.loggingConfig, logFileMidName, self.logFileNameStub)
+        
+def config_logging(loggingConfig, logFileMidName='', logFileNameStub=''):
+        if isinstance(loggingConfig, str):
+            with open(loggingConfig, 'r') as logConf:
                 loggingConfig = yaml.load(logConf)
-        elif isinstance(self.loggingConfig, str):
-            with open(self.loggingConfig, 'r') as logConf:
-                loggingConfig = yaml.load(logConf)
-        else:
-            loggingConfig = self.loggingConfig
             
         if logFileMidName:
             loggingConfig['handlers']['files']['filename'] = \
-            '.'.join([self.logFileNameStub, logFileMidName, 'log'])
+            '.'.join([logFileNameStub, logFileMidName, 'log'])
         
         logging.config.dictConfig(loggingConfig)
-
+    
 DEFAULT_CONFIG_FILE = 'monk_config.yml'
 
 def print_help(helpString):
