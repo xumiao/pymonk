@@ -85,7 +85,7 @@ class Task(object):
 @taskT
 class Echo(Task):
     def act(self):
-        self.info(logger, 'received {}'.format(self.decodedMessage))
+        logger.info('received message {}'.format(self.decodedMessage))
         
 class MonkServer(object):    
     EXIT_WAIT_TIME=3

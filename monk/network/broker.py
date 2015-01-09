@@ -26,7 +26,7 @@ class KafkaBroker(object):
     NON_PRODUCER = 3
     SIMPLE_CONSUMER = 0
     NON_CONSUMER = 1
-    SOCKET_TIMEOUT = 10 #second
+    SOCKET_TIMEOUT = 60 #second
     
     def __init__(self, kafkaHost=None, kafkaGroup=None, kafkaTopic=None, 
                  consumerType=NON_CONSUMER, consumerPartitions=[],
@@ -123,8 +123,8 @@ class KafkaBroker(object):
             logger.warning('Exception {}'.format(e))
             logger.debug(traceback.format_exc())
 
-    def echo(self):
-        self.produce('Echo', 'testing')
+    def echo(self, message=''):
+        self.produce('Echo', 'testing', message=message)
         
     def set_consumer_partition(self, consumerPartitions):
         if not consumerPartitions:

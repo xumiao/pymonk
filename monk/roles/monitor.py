@@ -280,6 +280,7 @@ class Measurer(object):
     def compute_metrics(self):
         # the number of buckets for the curves
         num = int(1.0 /self.resolution) + 1
+        logger.debug('num = {}'.format(num))
         self.PRCs = None
         self.ROCs = None
         PRCn = np.zeros(num, dtype=int)
@@ -299,7 +300,9 @@ class Measurer(object):
                 continue
             # sort the scores
             score = self.scores[user]
+            logger.info('scores for {} : {}'.format(score, user))
             score.sort()
+            logger.info('scores for {} : {}'.format(score, user))
             # initialize PRC and ROC
             PRC = np.zeros(num)
             ROC = np.zeros(num)
@@ -327,6 +330,11 @@ class Measurer(object):
                 v = int(fpr / self.resolution)
                 ROC[v] += recall
                 ROCn[v] += 1
+            logger.info('PRC {}'.format(PRC))
+            logger.info('PRCn {}'.format(PRCn))
+            logger.info('ROC {}'.format(ROC))
+            logger.info('ROCn {}'.format(ROCn))
+            
             # averaging ROC and PRC since multiple recalls might fall into the same bucket
             # fill the missing buckets
             for v in reversed(range(num)):
@@ -356,6 +364,8 @@ class Measurer(object):
                 self.ROCs = np.vstack((self.ROCs, ROC))
         self.ROCs.sort(axis=0)
         self.PRCs.sort(axis=0)
+        logger.info('ROCs {}'.format(self.ROCs))
+        logger.info('PRCs {}'.format(self.PRCs))
         self.invalid = False
 
     def set_resolution(self, resolution):
@@ -444,6 +454,7 @@ class AccuracyHandler(RequestHandler):
         logger.info('request {} {} {}'.format(name, fillColor, resolution))
         if name and name in monitor.measurers:
             measurer = monitor.measurers[name]
+            logger.debug('set resolution {}'.format(resolution))
             measurer.set_resolution(resolution)
             if accType == 'ROC':
                 accuracies = measurer.get_ROCs()
@@ -457,6 +468,9 @@ class AccuracyHandler(RequestHandler):
             accuracies = None
             intervals = None
             resolution = 0.01
+        logger.info('accuracy {}'.format(accuracies))
+        logger.info('intervals {}'.format(intervals))
+        logger.info('resolution {}'.format(resolution))
         TOOLS = 'pan,wheel_zoom,box_zoom,reset,save'
         p = figure(tools=TOOLS, plot_width=1000)
         self.draw(p, accuracies, intervals, resolution, fillColor)

@@ -12,9 +12,9 @@ from monk.roles.configuration import config_logging
 
 config_logging('log_config.yml')
 
-N = 1000
+N = 10
 print 'creating monitor broker'
-mb = MonitorBroker('monkbus.cloudapp.net:9092,monkbus.cloudapp.net:9093,monkbus.cloudapp.net:9094','monkTestMonitor',producerType=1)
+mb = MonitorBroker('monkbus.cloudapp.net:9092,monkbus.cloudapp.net:9093,monkbus.cloudapp.net:9094','monkTestMonitor',producerType=1,producerPartitions=[0])
 
 for i in range(N):
     value = np.random.rand() 
@@ -26,6 +26,7 @@ for i in range(N):
         user = 'user1'
     else:
         user = 'user2'
-    mb.measure('test', value, pos, user)
+    mb.echo()
+    #mb.measure('test', value, pos, user)
     print 'test', value, pos, user
 mb.close()
