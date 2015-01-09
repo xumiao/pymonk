@@ -437,6 +437,7 @@ class RenameMeasurer(Task):
 class AccuracyHandler(RequestHandler):
     def draw(self, p, accuracies, intervals, resolution, fillColor):
         if accuracies:
+            logger.debug('accuracies = {}'.format(accuracies))
             m = accuracies.shape[0]
             logger.debug('m = {}'.format(m))
             maxs   = accuracies[-1]
@@ -444,9 +445,9 @@ class AccuracyHandler(RequestHandler):
             uppers = accuracies[-m/4]
             lowers = accuracies[m/4]
             logger.debug('maxs = {}'.format(maxs))
-            logger.debug('mins = {}'.format(maxs))
-            logger.debug('uppers = {}'.format(maxs))
-            logger.debug('lowers = {}'.format(maxs))
+            logger.debug('mins = {}'.format(mins))
+            logger.debug('uppers = {}'.format(uppers))
+            logger.debug('lowers = {}'.format(lowers))
             p.segment(intervals, maxs, intervals, mins, color='black', toolbar_location='left')
             p.rect(intervals, (uppers + lowers) / 2, resolution / 2, \
                    abs(uppers - lowers), fill_color=fillColor, line_color='black')
