@@ -337,7 +337,7 @@ class Measurer(object):
             
             # averaging ROC and PRC since multiple recalls might fall into the same bucket
             # fill the missing buckets
-            for v in reversed(range(num)):
+            for v in reversed(range(num-1)):
                 if PRCn[v] == 0:
                     # fill the missing values from high precision
                     # precision == 1 is assumed to exist all the time
@@ -345,7 +345,7 @@ class Measurer(object):
                 else:
                     # average over all recalls at this precision
                     PRC[v] /= PRCn[v]
-            for v in range(num):
+            for v in range(2,num):
                 if ROCn[v] == 0:
                     # fill the missing values from low fpr
                     # fpr == 0 is assumed to exist all the time
