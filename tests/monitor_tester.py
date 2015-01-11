@@ -11,7 +11,7 @@ from monk.roles.configuration import config_logging
 
 config_logging('log_config.yml')
 
-N = 10
+N = 10000
 print 'creating monitor broker'
 mb = MonitorBroker(kafkaHost='monkbus.cloudapp.net:9092,monkbus.cloudapp.net:9093,monkbus.cloudapp.net:9094',
                    kafkaGroup='monkTestMonitor',
@@ -25,10 +25,7 @@ for i in range(N):
         pos = 'True'
     else:
         pos = 'False'
-    if np.random.rand() > 0.5:
-        user = 'user1'
-    else:
-        user = 'user2'
+    user = ''.join(['user', str(int(np.random.rand() * 10))])
     mb.measure('test', value, pos, user)
     print 'test', value, pos, user
 mb.close()

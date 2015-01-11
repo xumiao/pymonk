@@ -22,7 +22,7 @@ loggers :
         propagate : True
         handlers : [console, files]
     kafka :
-        level : DEBUG 
+        level : ERROR 
         propagate : True
         handlers : [console, files]
 root :
