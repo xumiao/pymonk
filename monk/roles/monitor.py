@@ -269,8 +269,10 @@ class Measurer(object):
            self.totalNeg[user] = 0
            self.totalPos[user] = 0
         self.scores[user].append((value, pos))
-        self.totalNeg[user] += 1
-        self.totalPos[user] += 1
+        if pos == 'True':
+            self.totalPos[user] += 1
+        else:
+            self.totalNeg[user] += 1
         self.invalid = True
     
     def intervals(self):
@@ -353,15 +355,14 @@ class Measurer(object):
                 else:
                     # average over all recalls at this fpr
                     ROC[v] /= ROCn[v]
-            # next user
-            if self.PRCs is None:
-                self.PRCs = PRC
-            else:
-                self.PRCs = np.vstack((self.PRCs, PRC))
             if self.ROCs is None:
                 self.ROCs = ROC
             else:
                 self.ROCs = np.vstack((self.ROCs, ROC))
+            if self.PRCs is None:
+                self.PRCs = PRC
+            else:
+                self.PRCs = np.vstack((self.PRCs, PRC))
         self.ROCs.sort(axis=0)
         self.PRCs.sort(axis=0)
         logger.info('ROCs {}'.format(self.ROCs))
@@ -436,13 +437,12 @@ class RenameMeasurer(Task):
             
 class AccuracyHandler(RequestHandler):
     def draw(self, p, accuracies, intervals, resolution, fillColor):
-        if accuracies:
-            logger.debug('accuracies = {}'.format(accuracies))
+        if accuracies is not None:
             m = accuracies.shape[0]
             logger.debug('m = {}'.format(m))
             maxs   = accuracies[-1]
             mins   = accuracies[0]
-            uppers = accuracies[-m/4]
+            uppers = accuracies[-(1 + m/4)]
             lowers = accuracies[m/4]
             logger.debug('maxs = {}'.format(maxs))
             logger.debug('mins = {}'.format(mins))
@@ -478,11 +478,7 @@ class AccuracyHandler(RequestHandler):
         logger.debug('intervals {}'.format(intervals))
         logger.debug('resolution {}'.format(resolution))
         TOOLS = 'pan,wheel_zoom,box_zoom,reset,save'
-        try:
-            p = figure(tools=TOOLS, plot_width=1000)
-        except Exception as e:
-            logger.debug(e.message)
-        logger.debug('here')
+        p = figure(tools=TOOLS, plot_width=1000)
         self.draw(p, accuracies, intervals, resolution, fillColor)
         p.title = '{} for {}'.format(accType, name)
         p.grid.grid_line_alpha = 0.3
