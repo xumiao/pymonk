@@ -28,8 +28,8 @@ class MonitorBroker(KafkaBroker):
     def aggregate(self, name, value, user=DEFAULT_MONITOR_USER):
         self.produce('Aggregate', name, user=user, value=value)
 
-    def measure(self, name, value, pos='True', user=DEFAULT_MONITOR_USER):
-        self.produce('Measure', name, user=user, value=value, pos=pos)
+    def measure(self, name, value, label=1, user=DEFAULT_MONITOR_USER):
+        self.produce('Measure', name, user=user, value=value, label=label)
         
     def reset_tracker(self, name):
         self.produce('ResetTracker', name)
@@ -263,13 +263,13 @@ class Measurer(object):
         self.ROCs = None
         self.invalid = True
     
-    def add(self, value, user, pos):
+    def add(self, value, user, label):
         if user not in self.scores:
            self.scores[user] = []
            self.totalNeg[user] = 0
            self.totalPos[user] = 0
-        self.scores[user].append((value, pos))
-        if pos == 'True':
+        self.scores[user].append((value, label))
+        if label > 0:
             self.totalPos[user] += 1
         else:
             self.totalNeg[user] += 1
@@ -297,6 +297,7 @@ class Measurer(object):
             fn = 0
             totalP = tp
             totalN = fp
+            logger.debug('totalP={}, totalN={}'.format(totalP, totalN))
             # ignore incomplete user
             if totalP == 0 or totalN == 0:
                 continue
@@ -311,8 +312,8 @@ class Measurer(object):
             PRCn.fill(0)
             ROCn.fill(0)
             # loop through scores
-            for s, pos in score:
-                if pos: # positive example
+            for s, label in score:
+                if label > 0: # positive example
                     fn += 1
                     tp -= 1
                 else:   # negative example
@@ -400,9 +401,9 @@ class Measure(Task):
             self.warning(logger, 'no valid value set')
             return
         try:
-            pos = bool(self.get('pos'))
+            pos = int(self.get('label'))
         except:
-            self.warning(logger, 'no valid positive bit')
+            self.warning(logger, 'no valid label')
             return
         user = self.get('user')
         if key not in monitor.measurers:

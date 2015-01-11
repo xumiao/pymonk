@@ -22,10 +22,10 @@ mb = MonitorBroker(kafkaHost='monkbus.cloudapp.net:9092,monkbus.cloudapp.net:909
 for i in range(N):
     value = np.random.rand() 
     if np.random.rand() > 0.5:
-        pos = 'True'
+        label = 1
     else:
-        pos = 'False'
+        label = -1
     user = ''.join(['user', str(int(np.random.rand() * 10))])
-    mb.measure('test', value, pos, user)
-    print 'test', value, pos, user
+    mb.measure('test', value, label, user)
+    print 'test', value, label, user
 mb.close()
