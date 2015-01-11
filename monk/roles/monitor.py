@@ -474,11 +474,15 @@ class AccuracyHandler(RequestHandler):
             accuracies = None
             intervals = None
             resolution = 0.01
-        logger.info('accuracy {}'.format(accuracies))
-        logger.info('intervals {}'.format(intervals))
-        logger.info('resolution {}'.format(resolution))
+        logger.debug('accuracies {}'.format(accuracies))
+        logger.debug('intervals {}'.format(intervals))
+        logger.debug('resolution {}'.format(resolution))
         TOOLS = 'pan,wheel_zoom,box_zoom,reset,save'
-        p = figure(tools=TOOLS, plot_width=1000)
+        try:
+            p = figure(tools=TOOLS, plot_width=1000)
+        except Exception as e:
+            logger.debug(e.message)
+        logger.debug('here')
         self.draw(p, accuracies, intervals, resolution, fillColor)
         p.title = '{} for {}'.format(accType, name)
         p.grid.grid_line_alpha = 0.3
