@@ -6,14 +6,13 @@ Created on Sun Sep 28 09:17:38 2014
 """
 import base
 import crane
-import entity
 import datetime
 from constants import DEFAULT_NONE, DEFAULT_EMPTY
 import logging
 
 logger = logging.getLogger("monk.user")
 
-class User(entity.Entity):
+class User(base.MONKObject):
     FPASSWORD = 'password'
     FGENDER   = 'gender'
     FYEAR     = 'year'

@@ -7,7 +7,6 @@ Created on Wed Oct  1 00:16:27 2014
 
 import base
 import crane
-import entity
 import datetime
 import time
 import constants as cons
@@ -15,7 +14,7 @@ import logging
 
 logger = logging.getLogger("monk.engine")
 
-class Engine(entity.Entity):
+class Engine(base.MONKObject):
     IDLE_TIME   = 300 # 5 minutes
     FADDRESS    = 'address'
     FPID        = 'pid'
