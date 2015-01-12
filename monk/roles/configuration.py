@@ -74,7 +74,7 @@ class Configuration(object):
         if 'dataConnectionString' not in self.__dict__:
             self.dataConnectionString = self.mongoConnectionString
         if 'sysConnectionString' not in self.__dict__:
-            self.sysConectionString = self.mongoConnectionString
+            self.sysConnectionString = self.mongoConnectionString
                         
         if 'loggingConfig' not in self.__dict__:
             self.loggingConfig = 'log_config.yml'
