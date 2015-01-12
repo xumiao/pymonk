@@ -8,6 +8,7 @@ import yaml
 import logging
 import logging.config
 import getopt, os, sys
+logger = logging.getLogger('monk.roles.configuration')
 
 class Configuration(object):
 
@@ -84,6 +85,7 @@ def config_logging(loggingConfig, logFileMidName='test', logFileDir='.'):
         '{}/monk.{}.log'.format(logFileDir, logFileMidName)
         
         logging.config.dictConfig(loggingConfig)
+        logger.info('configuration done')
     
 DEFAULT_CONFIG_FILE = 'monk_config.yml'
 DEFAULT_LOG_FILE_DIR = '.'

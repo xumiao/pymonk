@@ -171,8 +171,10 @@ class MonkServer(object):
         if self.pq.queue:
             priority, task = self.pq.get()
             task.act()
+            logger.debug('executing {}'.format(task.name))
             self.ioLoop.add_callback(self._execute)
         else:
+            logger.debug('waiting for tasks')
             self.ioLoop.add_timeout(self.EXECUTE_INTERVAL, self._execute)
 
     def add_application(self, regx, handler):
