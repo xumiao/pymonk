@@ -11,11 +11,12 @@ import getopt, os, sys
 
 class Configuration(object):
 
-    def __init__(self, configurationFileName=None, logFileMidName='', pid=''):
-        self.uidConnectionString   = 'localhost'
+    def __init__(self, configurationFileName=None, logFileDir='.', roleName='', pid=''):
+        self.mongoConnectionString = 'localhost'
+        self.uidConnectionString   = self.mongoConnectionString
         self.uidDataBaseName       = 'UIDDB'
         
-        self.modelConnectionString = 'localhost'
+        self.modelConnectionString = self.mongoConnectionString
         self.modelDataBaseName     = 'MONKModelTest'
         self.userCollectionName    = 'UserStore'
         self.pandaCollectionName   = 'PandaStore'
@@ -23,11 +24,11 @@ class Configuration(object):
         self.mantisCollectionName  = 'MantisStore'
         self.tigressCollectionName = 'TigressStore'
         
-        self.dataConnectionString  = 'localhost'
+        self.dataConnectionString  = self.mongoConnectionString
         self.dataDataBaseName      = 'MONKDataTest'
         self.entityCollectionName  = 'EntityStore'
         
-        self.sysConnectionString   = 'localhost'
+        self.sysConnectionString   = self.mongoConnectionString
         self.sysDataBaseName       = 'MONKSysTest'
         self.engineCollectionName  = 'EngineStore'
         
@@ -63,37 +64,38 @@ class Configuration(object):
         
         self.brokerTimeout = 200
         
-        self.logFileNameStub = 'logs/monk'
-        
+        self.roleName = roleName
+        self.logFileDir = logFileDir
         if configurationFileName:
             with open(configurationFileName, 'r') as conf:
                 self.__dict__.update(yaml.load(conf))
         
         if 'loggingConfig' not in self.__dict__:
             self.loggingConfig = 'log_config.yml'
-            
-        config_logging(self.loggingConfig, logFileMidName, self.logFileNameStub)
         
-def config_logging(loggingConfig, logFileMidName='', logFileNameStub=''):
+        config_logging(self.loggingConfig, self.roleName, self.logFileDir)
+        
+def config_logging(loggingConfig, logFileMidName='test', logFileDir='.'):
         if isinstance(loggingConfig, str):
             with open(loggingConfig, 'r') as logConf:
                 loggingConfig = yaml.load(logConf)
-            
-        if logFileMidName:
-            loggingConfig['handlers']['files']['filename'] = \
-            '.'.join([logFileNameStub, logFileMidName, 'log'])
+        
+        loggingConfig['handlers']['files']['filename'] = \
+        '{}/monk.{}.log'.format(logFileDir, logFileMidName)
         
         logging.config.dictConfig(loggingConfig)
     
 DEFAULT_CONFIG_FILE = 'monk_config.yml'
+DEFAULT_LOG_FILE_DIR = '.'
 
 def print_help(helpString):
-    print helpString, '-c <configFile>'
+    print helpString, '-c <configFile> -l <logFileDir>'
     
 def get_config(argvs, name, helpString):
     configFile = DEFAULT_CONFIG_FILE
+    logFileDir = DEFAULT_LOG_FILE_DIR
     try:
-        opts, args = getopt.getopt(argvs, 'hc:',['configFile='])
+        opts, args = getopt.getopt(argvs, 'hc:l:',['configFile=','logFileDir'])
     except getopt.GetoptError:
         print_help(helpString)
         sys.exit(2)
@@ -103,5 +105,7 @@ def get_config(argvs, name, helpString):
             sys.exit()
         elif opt in ('-c', '--configFile'):
             configFile = arg
-    return Configuration(configFile, name, str(os.getpid()))
+        elif opt in ('-l', '--logFileDir'):
+            logFileDir = arg
+    return Configuration(configFile, logFileDir, name, str(os.getpid()))
     

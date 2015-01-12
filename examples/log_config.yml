@@ -1,0 +1,33 @@
+version : 1
+disable_existing_loggers : True
+formatters : 
+    verbose : 
+        format : '[%(asctime)s][%(process)-5d][%(name)-12s][%(levelname)-8s][%(lineno)-4d][%(filename)-8s] : %(message)s'
+    simple :
+        format : '[%(name)-12s][%(levelname)-8s][%(process)s] : %(message)s'
+handlers :
+    console_simple :
+        class : logging.StreamHandler
+        formatter : simple
+        stream : ext://sys.stdout
+    console :
+        class : logging.StreamHandler
+        formatter : verbose 
+        stream : ext://sys.stdout
+    files :
+        formatter : verbose
+        class : logging.handlers.RotatingFileHandler
+        filename : monk.log
+        maxBytes : 1000000
+        backupCount: 10
+loggers :
+    monk :
+        level : DEBUG
+        propagate : True
+        handlers : [console, files]
+    kafka :
+        level : ERROR 
+        propagate : True
+        handlers : [console, files]
+root :
+    level : ERROR 
