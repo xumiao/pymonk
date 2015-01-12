@@ -14,10 +14,8 @@ class Configuration(object):
 
     def __init__(self, configurationFileName=None, logFileDir='.', roleName='', pid=''):
         self.mongoConnectionString = 'localhost'
-        self.uidConnectionString   = self.mongoConnectionString
         self.uidDataBaseName       = 'UIDDB'
         
-        self.modelConnectionString = self.mongoConnectionString
         self.modelDataBaseName     = 'MONKModelTest'
         self.userCollectionName    = 'UserStore'
         self.pandaCollectionName   = 'PandaStore'
@@ -25,11 +23,9 @@ class Configuration(object):
         self.mantisCollectionName  = 'MantisStore'
         self.tigressCollectionName = 'TigressStore'
         
-        self.dataConnectionString  = self.mongoConnectionString
         self.dataDataBaseName      = 'MONKDataTest'
         self.entityCollectionName  = 'EntityStore'
         
-        self.sysConnectionString   = self.mongoConnectionString
         self.sysDataBaseName       = 'MONKSysTest'
         self.engineCollectionName  = 'EngineStore'
         
@@ -70,7 +66,16 @@ class Configuration(object):
         if configurationFileName:
             with open(configurationFileName, 'r') as conf:
                 self.__dict__.update(yaml.load(conf))
-        
+                
+        if not self.modelConnectionString:
+            self.modelConnectionString = self.mongoConnectionString
+        if not self.uidConnectionString:
+            self.uidConnectionString = self.mongoConnectionString
+        if not self.dataConnectionString:
+            self.dataConnectionString = self.mongoConnectionString
+        if not self.sysConnectionString :
+            self.sysConectionString = self.mongoConnectionString
+                        
         if 'loggingConfig' not in self.__dict__:
             self.loggingConfig = 'log_config.yml'
         
