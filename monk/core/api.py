@@ -99,6 +99,8 @@ def create_engine(engineScript):
     if 'monkType' not in engineScript:
         engineScript['monkType'] = 'Engine'
     _engine = crane.engineStore.load_or_create(engineScript, True)
+    logger.debug('creating engine {}'.format(engineScript))
+    logger.debug('_engine created {}'.format(_engine is not None))
     if _engine is None:
         logger.error('failed to load or create engine {}'.format(engineScript))
         return None

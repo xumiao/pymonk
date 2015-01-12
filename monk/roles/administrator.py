@@ -179,6 +179,7 @@ class RegisterWorker(Task):
                                 Engine.FSTARTTIME: datetime.datetime.now(),\
                                 Engine.FPID: self.get(Engine.FPID),\
                                 Engine.FSTATUS: cons.STATUS_ACTIVE}
+                logger.info('creating worker {}'.format(engineScript))
                 engine = monkapi.create_engine(engineScript)
             admin.workers[workerName] = engine
         else:

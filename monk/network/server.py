@@ -22,6 +22,8 @@ import traceback
 
 logger = logging.getLogger('monk.network.server')
 
+now = time.time
+
 class TaskFactory(object):
 
     def __init__(self):
@@ -100,7 +102,7 @@ class MonkServer(object):
             return
         self.pq = PriorityQueue(self.MAX_QUEUE_SIZE)
         self.serverName = serverName
-        self.lastMaintenance = time.time()
+        self.lastMaintenance = now()
         self.ioLoop = tornado.ioloop.IOLoop.instance()        
         self.httpServer = None
         self.port = 8888
@@ -123,33 +125,40 @@ class MonkServer(object):
             self.httpServer.stop()
         logger.info('exit in {} seconds'.format(self.EXIT_WAIT_TIME))
         
-        deadline = time.time() + self.EXIT_WAIT_TIME
+        #deadline = now() + self.EXIT_WAIT_TIME
         logger.info('onexit')
         self.onexit()
         
-        def stop_loop():
-            logger.info('stopping loop')
-            now = time.time()
-            if now < deadline and (self.ioLoop._callbacks or self.ioLoop._timeouts):
-                self.ioLoop.add_timeout(now + 1, stop_loop)
-            else:
-                self.ioLoop.stop()
-                for broker in self.brokers:
-                    logger.info('closing broker')
-                    broker.close()
-                logger.info('exiting monkapi')
-                monkapi.exits()
-        stop_loop()
+        logger.info('stopping ioloop')
+        self.ioLoop.stop()
+        for broker in self.brokers:
+            logger.info('closing broker {}'.format(broker))
+            broker.close()
+        logger.info('stopping monkapi')
+        monkapi.exits()
+        #def stop_loop():
+        #    logger.info('stopping loop')
+        #    nowt = now()
+        #    if nowt < deadline and (self.ioLoop._callbacks or self.ioLoop._timeouts):
+        #        self.ioLoop.add_timeout(nowt + 1, stop_loop)
+        #    else:
+        #        self.ioLoop.stop()
+        #        for broker in self.brokers:
+        #            logger.info('closing broker')
+        #            broker.close()
+        #        logger.info('exiting monkapi')
+        #        monkapi.exits()
+        #stop_loop()
         logger.info('exited')
         
     def _maintain(self):
         self.maintain()
-        self.ioLoop.add_timeout(self.MAINTAIN_INTERVAL, self._maintain)
+        self.ioLoop.add_timeout(now() + self.MAINTAIN_INTERVAL, self._maintain)
 
     def _poll(self):
         if self.pq.full():
             logger.debug('queue is full')
-            self.ioLoop.add_timeout(self.POLL_INTERVAL, self._poll)
+            self.ioLoop.add_timeout(now() + self.POLL_INTERVAL, self._poll)
         else:
             ready = filter(None, (broker.is_consumer_ready() for broker in self.brokers))
             if not ready:
@@ -165,7 +174,7 @@ class MonkServer(object):
                 self.ioLoop.add_callback(self._poll)
             else:
                 logger.debug('waiting on the polling')
-                self.ioLoop.add_timeout(self.POLL_INTERVAL, self._poll)
+                self.ioLoop.add_timeout(now() + self.POLL_INTERVAL, self._poll)
     
     def _execute(self):
         if self.pq.queue:
@@ -175,7 +184,7 @@ class MonkServer(object):
             self.ioLoop.add_callback(self._execute)
         else:
             logger.debug('waiting for tasks')
-            self.ioLoop.add_timeout(self.EXECUTE_INTERVAL, self._execute)
+            self.ioLoop.add_timeout(now() + self.EXECUTE_INTERVAL, self._execute)
 
     def add_application(self, regx, handler):
         self.webApps.append((regx, handler))
@@ -194,9 +203,9 @@ class MonkServer(object):
             logger.info('server {} is not intialized properly'.format(self.serverName))
             return
             
-        self.ioLoop.add_timeout(self.MAINTAIN_INTERVAL, self._maintain)
-        self.ioLoop.add_timeout(self.POLL_INTERVAL, self._poll)
-        self.ioLoop.add_timeout(self.EXECUTE_INTERVAL, self._execute)
+        self.ioLoop.add_timeout(now() + self.MAINTAIN_INTERVAL, self._maintain)
+        self.ioLoop.add_timeout(now() + self.POLL_INTERVAL, self._poll)
+        self.ioLoop.add_timeout(now() + self.EXECUTE_INTERVAL, self._execute)
         
         if self.webApps:
             # fail immediately if http server can not run
