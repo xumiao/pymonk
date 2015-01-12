@@ -67,13 +67,13 @@ class Configuration(object):
             with open(configurationFileName, 'r') as conf:
                 self.__dict__.update(yaml.load(conf))
                 
-        if not self.modelConnectionString:
+        if 'modelConnectionString' not in self.__dict__:
             self.modelConnectionString = self.mongoConnectionString
-        if not self.uidConnectionString:
+        if 'uidConnectionString' not in self.__dict__:
             self.uidConnectionString = self.mongoConnectionString
-        if not self.dataConnectionString:
+        if 'dataConnectionString' not in self.__dict__:
             self.dataConnectionString = self.mongoConnectionString
-        if not self.sysConnectionString :
+        if 'sysConnectionString' not in self.__dict__:
             self.sysConectionString = self.mongoConnectionString
                         
         if 'loggingConfig' not in self.__dict__:
