@@ -89,24 +89,26 @@ def load_entity(entity, collectionName=None):
 
 # engine APIs
 def has_engine_in_store(engineName):
+    logger.debug('engineStore {}@{}'.format(crane.engineStore._defaultCollectionName, crane.engineStore._database))
     return crane.engineStore.has_name_user(engineName, DEFAULT_CREATOR)
 
 def find_engine(query):
+    logger.debug('engineStore {}@{}'.format(crane.engineStore._defaultCollectionName, crane.engineStore._database))
     ids = [_engine['_id'] for _engine in crane.engineStore.load_all_in_ids(query, 0, 0)]
     return crane.engineStore.load_all_by_ids(ids)
 
 def create_engine(engineScript):
+    logger.debug('engineStore {}@{}'.format(crane.engineStore._defaultCollectionName, crane.engineStore._database))
     if 'monkType' not in engineScript:
         engineScript['monkType'] = 'Engine'
     _engine = crane.engineStore.load_or_create(engineScript, True)
-    logger.debug('creating engine {}'.format(engineScript))
-    logger.debug('_engine created {}'.format(_engine is not None))
     if _engine is None:
         logger.error('failed to load or create engine {}'.format(engineScript))
         return None
     return _engine
 
 def load_engine(engineName):
+    logger.debug('engineStore {}@{}'.format(crane.engineStore._defaultCollectionName, crane.engineStore._database))
     _engine = crane.engineStore.load_or_create({'name':engineName, 'creator':DEFAULT_CREATOR})
     if _engine is None:
         logger.error('engine {} does not exist'.format(engineName))
@@ -114,6 +116,7 @@ def load_engine(engineName):
     return _engine
 
 def save_engine(engineName):
+    logger.debug('engineStore {}@{}'.format(crane.engineStore._defaultCollectionName, crane.engineStore._database))
     _engine = load_engine(engineName)
     if _engine:
         _engine.save()
@@ -121,6 +124,7 @@ def save_engine(engineName):
     return False
 
 def delete_engine(engineName):
+    logger.debug('engineStore {}@{}'.format(crane.engineStore._defaultCollectionName, crane.engineStore._database))
     _engine = load_engine(engineName)
     if _engine:
         crane.engineStore.delete_by_id(_engine._id)
