@@ -178,10 +178,15 @@ class MonkServer(object):
     
     def _execute(self):
         if self.pq.queue:
-            priority, task = self.pq.get()
-            task.act()
-            logger.debug('executing {}'.format(task.name))
-            self.ioLoop.add_callback(self._execute)
+            try:
+                priority, task = self.pq.get()
+                task.act()
+                logger.debug('executing {}'.format(task.name))
+            except Exception as e:
+                logger.debug(e.message)
+                logger.debug(traceback.format_exc())
+            finally:
+                self.ioLoop.add_callback(self._execute)
         else:
             logger.debug('waiting for tasks')
             self.ioLoop.add_timeout(now() + self.EXECUTE_INTERVAL, self._execute)
