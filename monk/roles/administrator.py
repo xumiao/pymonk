@@ -205,7 +205,7 @@ class UpdateWorker(Task):
             engine = admin.workers[workerName]
         engine._setattr(Engine.FADDRESS, self.get(Engine.FADDRESS))
         engine._setattr(Engine.FPID,     self.get(Engine.FPID))
-        engine._setattr(Engine.FSTATUS,  self.get(Engine.FSTATUS))
+        engine._setattr(Engine.FSTATUS,  cons.STATUS_ACTIVE)
         engine.save()
 
 @taskT
