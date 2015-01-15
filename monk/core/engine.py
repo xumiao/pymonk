@@ -54,6 +54,7 @@ class Engine(base.MONKObject):
             return False
         currTime = time.mktime(datetime.datetime.now().timetuple())
         lastTime = time.mktime(self.lastModified.timetuple())
+        logger.debug('currTime={}, lastTime={}, idleTime={}'.format(currTime, lastTime, self.IDLE_TIME))
         if currTime - lastTime > self.IDLE_TIME:
             self.status = cons.STATUS_INACTIVE
             self.update_fields({self.FSTATUS:cons.STATUS_INACTIVE})
