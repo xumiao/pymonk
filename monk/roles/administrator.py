@@ -194,19 +194,18 @@ class RegisterWorker(Task):
 @taskT
 class UpdateWorker(Task):
     def act(self):
-        workerName = self.get('name', '')
+        workerName = self.get(Engine.NAME, '')
         if workerName not in admin.workers:
-            logger.info('register new worker {}'.format(workerName))
-            self.decodedMessage['op'] = 'RegisterWorker'
-            t = taskFactory.create(self.decodedMessage)
-            if t:
-                admin.pq.put((t.priority, t), block=False)
+            engine = monkapi.load_engine(workerName)
+            if not engine:
+                logger.info('worker {} not registered'.format(workerName))
+                return
         else:
             engine = admin.workers[workerName]
-            engine._setattr(Engine.FADDRESS, self.get(Engine.FADDRESS))
-            engine._setattr(Engine.FPID,     self.get(Engine.FPID))
-            engine._setattr(Engine.FSTATUS,  self.get(Engine.FSTATUS))
-            engine.save()
+        engine._setattr(Engine.FADDRESS, self.get(Engine.FADDRESS))
+        engine._setattr(Engine.FPID,     self.get(Engine.FPID))
+        engine._setattr(Engine.FSTATUS,  self.get(Engine.FSTATUS))
+        engine.save()
 
 @taskT
 class UnregisterWorker(Task):
