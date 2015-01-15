@@ -172,6 +172,7 @@ class KafkaBroker(object):
             message = self.consumer.get_message()
             if not message:
                 return None
+            logger.debug('received message {}'.format(message.message.value))
             return message.message.value
         except Exception as e:
             logger.warning('Exception {}'.format(e))

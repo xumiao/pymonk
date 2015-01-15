@@ -140,6 +140,7 @@ def find_users(query):
     return crane.userStore.load_all_by_ids(ids)
     
 def create_user(userScript):
+    logger.debug('userScript {}'.format(userScript))
     if 'monkType' not in userScript:
         userScript['monkType'] = 'User'
     _user = crane.userStore.load_or_create(userScript, True)

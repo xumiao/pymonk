@@ -106,6 +106,7 @@ class AddUser(Task):
                           User.FYEAR     : int(self.get(User.FYEAR, '1900'))}
             user = monkapi.create_user(userScript)
             leastLoadedEngine.add_user(userName)
+            logger.debug('{} add user {}'.format(leastLoadedEngine.name, leastLoadedEngine.users))
 
 @taskT
 class DeleteUser(Task):
@@ -113,6 +114,8 @@ class DeleteUser(Task):
         userName = self.get(User.NAME, '')
         if not userName or not monkapi.delete_user(userName):
             logger.info('trying to delete non-existant user {}'.format(userName))
+        else:
+            logger.debug('{} deleted'.format(userName))
 
 @taskT
 class UpdateUser(Task):
@@ -132,6 +135,7 @@ class UpdateUser(Task):
         user._setattr(User.FPASSWORD, self.get(User.FPASSWORD))
         user._setattr(User.FYEAR,     self.get(User.FYEAR), lambda x: int(x))
         user.save()
+        logger.debug('{} updated'.format(user.generic()))
 
 @taskT
 class RebalanceUsers(Task):

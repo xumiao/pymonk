@@ -170,10 +170,10 @@ class MonkServer(object):
                 if t:
                     self.pq.put((t.priority, t), block=False)
             if taskScripts:
-                logger.debug('processing next task')
+                #logger.debug('processing next task')
                 self.ioLoop.add_callback(self._poll)
             else:
-                logger.debug('waiting on the polling')
+                #logger.debug('waiting on the polling')
                 self.ioLoop.add_timeout(now() + self.POLL_INTERVAL, self._poll)
     
     def _execute(self):
