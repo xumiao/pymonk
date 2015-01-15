@@ -16,7 +16,7 @@ class User(base.MONKObject):
     FPASSWORD = 'password'
     FGENDER   = 'gender'
     FYEAR     = 'year'
-    FPART     = 'parition'
+    FPART     = 'partition'
     FTURTLES  = 'turtles'
     FFNAME    = 'firstName'
     FLNAME    = 'lastName'

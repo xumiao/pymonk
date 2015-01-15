@@ -41,8 +41,8 @@ class Engine(base.MONKObject):
         
     def generic(self):
         result = super(Engine, self).generic()
-        result[self.FSTARTTIME] = self.starttime.isoformat()
-        result[self.FENDTIME] = self.endtime.isoformat()
+        result[self.FSTARTTIME] = self.starttime
+        result[self.FENDTIME] = self.endtime
         return result
 
     def clone(self, userName):

@@ -200,6 +200,7 @@ class UpdateWorker(Task):
             if not engine:
                 logger.info('worker {} not registered'.format(workerName))
                 return
+            admin.workers[workerName] = engine
         else:
             engine = admin.workers[workerName]
         engine._setattr(Engine.FADDRESS, self.get(Engine.FADDRESS))
