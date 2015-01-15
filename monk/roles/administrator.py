@@ -196,13 +196,15 @@ class UpdateWorker(Task):
     def act(self):
         workerName = self.get('name', '')
         if workerName not in admin.workers:
-            logger.error('worker {} not registered yet'.format(workerName))
-            return
-        engine = admin.workers[workerName]
-        engine._setattr(Engine.FADDRESS, self.get(Engine.FADDRESS))
-        engine._setattr(Engine.FPID,     self.get(Engine.FPID))
-        engine._setattr(Engine.FSTATUS,  self.get(Engine.FSTATUS))
-        engine.save()
+            logger.info('register new worker {}'.format(workerName))
+            task = RegisterWorker(self.decodedMessage)
+            task.act()
+        else:
+            engine = admin.workers[workerName]
+            engine._setattr(Engine.FADDRESS, self.get(Engine.FADDRESS))
+            engine._setattr(Engine.FPID,     self.get(Engine.FPID))
+            engine._setattr(Engine.FSTATUS,  self.get(Engine.FSTATUS))
+            engine.save()
 
 @taskT
 class UnregisterWorker(Task):
