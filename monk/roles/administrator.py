@@ -9,7 +9,7 @@ from monk.roles.configuration import get_config
 import monk.core.api as monkapi
 import logging
 from monk.network.broker import KafkaBroker
-from monk.network.server import taskT, Task, MonkServer
+from monk.network.server import taskT, Task, MonkServer, taskFactory
 from monk.roles.monitor import MonitorBroker
 from monk.core.user import User
 from monk.core.engine import Engine
@@ -197,8 +197,10 @@ class UpdateWorker(Task):
         workerName = self.get('name', '')
         if workerName not in admin.workers:
             logger.info('register new worker {}'.format(workerName))
-            task = RegisterWorker(self.decodedMessage)
-            task.act()
+            self.decodedMessage['op'] = 'RegisterWorker'
+            t = taskFactory.create(self.decodedMessage)
+            if t:
+                admin.pq.put((t.priority, t), block=False)
         else:
             engine = admin.workers[workerName]
             engine._setattr(Engine.FADDRESS, self.get(Engine.FADDRESS))
