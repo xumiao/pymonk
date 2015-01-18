@@ -15,7 +15,7 @@ import logging
 logger = logging.getLogger("monk.engine")
 
 class Engine(base.MONKObject):
-    IDLE_TIME   = 300 # 5 minutes
+    IDLE_TIME   = 1200 # 20 minutes
     FADDRESS    = 'address'
     FPID        = 'pid'
     FPARTITION  = 'partition'

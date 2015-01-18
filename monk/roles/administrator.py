@@ -9,7 +9,7 @@ from monk.roles.configuration import get_config
 import monk.core.api as monkapi
 import logging
 from monk.network.broker import KafkaBroker
-from monk.network.server import taskT, Task, MonkServer, taskFactory
+from monk.network.server import taskT, Task, MonkServer
 from monk.roles.monitor import MonitorBroker
 from monk.core.user import User
 from monk.core.engine import Engine
@@ -79,8 +79,10 @@ admin = MonkAdmin()
 @taskT
 class AddUser(Task):
     def get_least_loaded_engine(self):
-        lengine = None
-        lload = 100000 # a big integer
+        if len(admin.workers) == 0:
+            return None
+        lengine = admin.workers[0]
+        lload = len(lengine.users) # a big integer
         for engine in admin.workers.itervalues():
             if engine.is_active() and len(engine.users) < lload:
                 lload = len(engine.users)
@@ -95,6 +97,9 @@ class AddUser(Task):
         user = monkapi.load_user(userName)
         if not user:
             leastLoadedEngine = self.get_least_loaded_engine()
+            if leastLoadedEngine is None:
+                logger.debug('no engine is active')
+                return
             userScript = {User.NAME      : userName,\
                           User.CREATOR   : cons.DEFAULT_CREATOR,\
                           User.FPART     : leastLoadedEngine.partition,\
@@ -133,6 +138,7 @@ class UpdateUser(Task):
         user._setattr(User.FLNAME,    self.get(User.FLNAME))
         user._setattr(User.FMName,    self.get(User.FMName))
         user._setattr(User.FPASSWORD, self.get(User.FPASSWORD))
+        user._setattr(User.FPART,     self.get(User.FPART))
         user._setattr(User.FYEAR,     self.get(User.FYEAR), lambda x: int(x))
         user.save()
         logger.debug('{} updated'.format(user.generic()))
