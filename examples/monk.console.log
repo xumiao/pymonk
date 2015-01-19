@@ -562,3 +562,64 @@ TypeError: slice indices must be integers or None or have an __index__ method
 [2015-01-19 07:59:36,156][6666 ][monk.network.broker][DEBUG   ][116 ][broker.py] : Sending {"turtleName": "movielens-binary", "follower": "mluser1", "name": "monk", "op": "AddClone"} to monk at monkTestWorker
 [2015-01-19 07:59:36,156][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is monk
 [2015-01-19 07:59:36,326][6666 ][monk.network.partitioner][DEBUG   ][41  ][partitioner.py] : found partition 2
+[2015-01-19 08:13:56,822][6666 ][monk.network.broker][DEBUG   ][116 ][broker.py] : Sending {"turtleName": "movielens-binary", "follower": "mluser1", "name": "monk", "op": "AddClone"} to monk at monkTestWorker
+[2015-01-19 08:13:56,822][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is monk
+[2015-01-19 08:14:54,786][6666 ][monk.api    ][INFO    ][48  ][api.py  ] : ------end-----------
+[2015-01-19 08:14:55,851][6666 ][monk.api    ][INFO    ][40  ][api.py  ] : ------start up------
+[2015-01-19 08:14:55,988][6666 ][monk.uid    ][INFO    ][32  ][uid.py  ] : initializing uid store
+[2015-01-19 08:14:55,989][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EntityStore 
+[2015-01-19 08:14:55,990][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing UserStore 
+[2015-01-19 08:14:55,990][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EngineStore 
+[2015-01-19 08:14:55,991][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing PandaStore 
+[2015-01-19 08:14:55,991][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing MantisStore 
+[2015-01-19 08:14:55,992][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TurtleStore 
+[2015-01-19 08:14:55,992][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TigressStore 
+[2015-01-19 08:15:03,137][6666 ][monk.network.broker][DEBUG   ][116 ][broker.py] : Sending {"turtleName": "movielens-binary", "follower": "mluser1", "name": "monk", "op": "AddClone"} to monk at monkTestWorker
+[2015-01-19 08:15:03,139][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is monk
+[2015-01-19 08:15:03,295][6666 ][monk.network.partitioner][DEBUG   ][41  ][partitioner.py] : found partition 2
+[2015-01-19 08:18:20,283][6666 ][monk.network.broker][DEBUG   ][116 ][broker.py] : Sending {"turtleName": "movielens-binary", "follower": "mluser2", "name": "monk", "op": "AddClone"} to monk at monkTestWorker
+[2015-01-19 08:18:20,283][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is monk
+[2015-01-19 08:18:20,310][6666 ][monk.network.partitioner][DEBUG   ][41  ][partitioner.py] : found partition 2
+[2015-01-19 10:05:22,791][6666 ][monk.api    ][INFO    ][48  ][api.py  ] : ------end-----------
+[2015-01-19 10:05:23,240][6666 ][monk.api    ][INFO    ][40  ][api.py  ] : ------start up------
+[2015-01-19 10:05:23,373][6666 ][monk.uid    ][INFO    ][32  ][uid.py  ] : initializing uid store
+[2015-01-19 10:05:23,374][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EntityStore 
+[2015-01-19 10:05:23,376][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing UserStore 
+[2015-01-19 10:05:23,377][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EngineStore 
+[2015-01-19 10:05:23,378][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing PandaStore 
+[2015-01-19 10:05:23,379][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing MantisStore 
+[2015-01-19 10:05:23,381][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TurtleStore 
+[2015-01-19 10:05:23,382][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TigressStore 
+[2015-01-19 10:05:47,018][6666 ][monk.network.broker][DEBUG   ][116 ][broker.py] : Sending {"turtleName": "movielens-binary", "follower": "mluser2", "name": "monk", "op": "AddClone"} to monk at monkTestWorker
+[2015-01-19 10:05:47,019][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is monk
+[2015-01-19 10:05:47,090][6666 ][monk.network.partitioner][DEBUG   ][41  ][partitioner.py] : found partition 2
+[2015-01-19 10:05:54,318][6666 ][monk.network.broker][DEBUG   ][116 ][broker.py] : Sending {"turtleName": "movielens-binary", "follower": "mluser2", "name": "monk", "op": "AddClone"} to monk at monkTestWorker
+[2015-01-19 10:05:54,319][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is monk
+[2015-01-19 10:05:54,369][6666 ][monk.network.partitioner][DEBUG   ][41  ][partitioner.py] : found partition 2
+[2015-01-19 10:19:43,919][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"message": "notebook", "name": "testing", "op": "Echo"}',) at monkTestAdmin@0
+[2015-01-19 10:20:33,315][6666 ][monk.network.broker][DEBUG   ][116 ][broker.py] : Sending {"message": "notebook", "name": "testing", "op": "Echo"} to testing at monkTestWorker
+[2015-01-19 10:20:33,317][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is testing
+[2015-01-19 10:20:55,815][6666 ][monk.network.broker][DEBUG   ][116 ][broker.py] : Sending {"message": "notebook", "name": "testing", "op": "Echo"} to testing at monkTestWorker
+[2015-01-19 10:20:55,816][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is testing
+[2015-01-19 10:20:55,955][6666 ][monk.api    ][ERROR   ][158 ][api.py  ] : user testing does not exists
+[2015-01-19 10:21:53,463][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"password": "", "name": "testing", "op": "AddUser"}',) at monkTestAdmin@0
+[2015-01-19 10:22:02,198][6666 ][monk.network.broker][DEBUG   ][116 ][broker.py] : Sending {"message": "notebook", "name": "testing", "op": "Echo"} to testing at monkTestWorker
+[2015-01-19 10:22:02,199][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is testing
+[2015-01-19 10:22:02,251][6666 ][monk.api    ][ERROR   ][158 ][api.py  ] : user testing does not exists
+[2015-01-19 10:22:08,359][6666 ][monk.network.broker][DEBUG   ][116 ][broker.py] : Sending {"message": "notebook", "name": "testing", "op": "Echo"} to testing at monkTestWorker
+[2015-01-19 10:22:08,360][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is testing
+[2015-01-19 10:22:08,411][6666 ][monk.api    ][ERROR   ][158 ][api.py  ] : user testing does not exists
+[2015-01-19 10:22:28,621][6666 ][monk.api    ][INFO    ][48  ][api.py  ] : ------end-----------
+[2015-01-19 10:22:29,677][6666 ][monk.api    ][INFO    ][40  ][api.py  ] : ------start up------
+[2015-01-19 10:22:29,859][6666 ][monk.uid    ][INFO    ][32  ][uid.py  ] : initializing uid store
+[2015-01-19 10:22:29,860][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EntityStore 
+[2015-01-19 10:22:29,862][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing UserStore 
+[2015-01-19 10:22:29,864][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EngineStore 
+[2015-01-19 10:22:29,866][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing PandaStore 
+[2015-01-19 10:22:29,867][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing MantisStore 
+[2015-01-19 10:22:29,868][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TurtleStore 
+[2015-01-19 10:22:29,868][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TigressStore 
+[2015-01-19 10:22:38,660][6666 ][monk.api    ][ERROR   ][158 ][api.py  ] : user testing does not exists
+[2015-01-19 10:28:13,407][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"password": "", "name": "mluser8000", "op": "AddUser"}',) at monkTestAdmin@0
+[2015-01-19 10:28:55,112][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"password": "", "name": "mluser8000", "op": "AddUser"}',) at monkTestAdmin@0
+[2015-01-19 10:43:23,439][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"password": "", "name": "mluser8000", "op": "AddUser"}',) at monkTestAdmin@0

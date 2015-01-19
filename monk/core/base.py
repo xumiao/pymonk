@@ -75,7 +75,8 @@ class MONKObject(object):
         and make neccessary conversion as needed"""
         result = {}
         result.update(self.__dict__)
-        result[self.LAST_MODIFIED] = datetime.now()
+        self.lastModified = datetime.now()
+        result[self.LAST_MODIFIED] = self.lastModified
         del result[self.ID]
         return result
     

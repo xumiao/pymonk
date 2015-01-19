@@ -194,6 +194,11 @@ class RegisterWorker(Task):
             admin.workers[workerName] = engine
         else:
             engine = admin.workers[workerName]
+            engine._setattr(Engine.FSTARTTIME, datetime.datetime.now())
+            engine._setattr(Engine.FSTATUS, cons.STATUS_ACTIVE)
+            engine._setattr(Engine.FADDRESS, self.get(Engine.FADDRESS))
+            engine._setattr(Engine.FPID,     self.get(Engine.FPID))
+            engine.save()
         offsetSkip = self.get('offsetSkip', -1)
         admin.adminBroker.acknowledge_registration(workerName, engine.partition, offsetSkip)
 
