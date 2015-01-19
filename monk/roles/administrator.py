@@ -81,8 +81,8 @@ class AddUser(Task):
     def get_least_loaded_engine(self):
         if len(admin.workers) == 0:
             return None
-        lengine = admin.workers[0]
-        lload = len(lengine.users) # a big integer
+        lengine = None
+        lload = sys.maxint
         for engine in admin.workers.itervalues():
             if engine.is_active() and len(engine.users) < lload:
                 lload = len(engine.users)

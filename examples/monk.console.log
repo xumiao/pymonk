@@ -489,3 +489,4 @@ ConnectionError: Kafka @ monkbus.cloudapp.net:90932 went away
 [2015-01-18 20:19:42,709][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"password": "", "name": "monk", "op": "AddUser"}',) at monkTestAdmin@0
 [2015-01-18 20:21:16,066][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"password": "", "name": "monk", "op": "AddUser"}',) at monkTestAdmin@0
 [2015-01-18 20:21:36,120][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"password": "", "name": "monk", "op": "AddUser"}',) at monkTestAdmin@0
+[2015-01-18 23:00:29,365][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"password": "", "name": "monk", "op": "AddUser"}',) at monkTestAdmin@0
