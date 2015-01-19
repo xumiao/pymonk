@@ -18,7 +18,7 @@ logger = logging.getLogger("monk.roles.worker")
 
 class WorkerBroker(KafkaBroker):
     def add_clone(self, userName, turtleName, follower, **kwargs):
-        self.producer.produce('AddClone', userName, turtleName=turtleName, follower=follower, **kwargs)
+        self.produce('AddClone', userName, turtleName=turtleName, follower=follower, **kwargs)
     
     def remove_clone(self, userName, turtleName, **kwargs):
         self.produce('RemoveClone', userName, turtleName=turtleName, **kwargs)

@@ -207,6 +207,7 @@ class UpdateWorker(Task):
                 logger.info('worker {} not registered'.format(workerName))
                 return
             admin.workers[workerName] = engine
+            logger.debug('workers {}'.format(admin.workers.keys()))
         else:
             engine = admin.workers[workerName]
         engine._setattr(Engine.FADDRESS, self.get(Engine.FADDRESS))
