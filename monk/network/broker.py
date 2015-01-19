@@ -113,7 +113,6 @@ class KafkaBroker(object):
             dictMessage['op'] = op
             dictMessage['name'] = name
             encodedMessage = simplejson.dumps(dictMessage)
-            logger.debug('Sending {} to {} at {}'.format(encodedMessage, name, self.kafkaTopic))
             self.producer.send(self.kafkaTopic, name, encodedMessage)
         except KafkaError as e:
             logger.warning('Exception {}'.format(e))
