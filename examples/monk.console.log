@@ -490,3 +490,75 @@ ConnectionError: Kafka @ monkbus.cloudapp.net:90932 went away
 [2015-01-18 20:21:16,066][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"password": "", "name": "monk", "op": "AddUser"}',) at monkTestAdmin@0
 [2015-01-18 20:21:36,120][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"password": "", "name": "monk", "op": "AddUser"}',) at monkTestAdmin@0
 [2015-01-18 23:00:29,365][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"password": "", "name": "monk", "op": "AddUser"}',) at monkTestAdmin@0
+[2015-01-18 23:08:05,473][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"password": "", "name": "monk", "op": "AddUser"}',) at monkTestAdmin@0
+[2015-01-18 23:08:32,720][6666 ][monk.api    ][INFO    ][48  ][api.py  ] : ------end-----------
+[2015-01-18 23:08:34,084][6666 ][monk.api    ][INFO    ][40  ][api.py  ] : ------start up------
+[2015-01-18 23:08:34,222][6666 ][monk.uid    ][INFO    ][32  ][uid.py  ] : initializing uid store
+[2015-01-18 23:08:34,224][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EntityStore 
+[2015-01-18 23:08:34,225][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing UserStore 
+[2015-01-18 23:08:34,228][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EngineStore 
+[2015-01-18 23:08:34,230][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing PandaStore 
+[2015-01-18 23:08:34,232][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing MantisStore 
+[2015-01-18 23:08:34,234][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TurtleStore 
+[2015-01-18 23:08:34,235][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TigressStore 
+[2015-01-18 23:10:05,444][6666 ][monk.roles.configuration][INFO    ][93  ][configuration.py] : configuration done
+[2015-01-19 07:42:45,130][6666 ][monk.network.broker][WARNING ][93  ][broker.py] : try to connect kafka server again 10
+[2015-01-19 07:43:07,897][6666 ][monk.api    ][INFO    ][48  ][api.py  ] : ------end-----------
+[2015-01-19 07:43:08,901][6666 ][monk.api    ][INFO    ][40  ][api.py  ] : ------start up------
+[2015-01-19 07:43:08,999][6666 ][monk.uid    ][INFO    ][32  ][uid.py  ] : initializing uid store
+[2015-01-19 07:43:09,000][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EntityStore 
+[2015-01-19 07:43:09,002][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing UserStore 
+[2015-01-19 07:43:09,003][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EngineStore 
+[2015-01-19 07:43:09,005][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing PandaStore 
+[2015-01-19 07:43:09,006][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing MantisStore 
+[2015-01-19 07:43:09,007][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TurtleStore 
+[2015-01-19 07:43:09,008][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TigressStore 
+[2015-01-19 07:43:32,918][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is monk
+[2015-01-19 07:43:33,054][6666 ][monk.network.partitioner][DEBUG   ][41  ][partitioner.py] : found partition 2
+[2015-01-19 07:47:17,265][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is monk
+[2015-01-19 07:47:17,315][6666 ][monk.network.partitioner][DEBUG   ][41  ][partitioner.py] : found partition 2
+[2015-01-19 07:53:06,857][6666 ][monk.network.broker][WARNING ][93  ][broker.py] : try to connect kafka server again 10
+[2015-01-19 07:53:17,737][6666 ][monk.api    ][INFO    ][48  ][api.py  ] : ------end-----------
+[2015-01-19 07:53:18,614][6666 ][monk.api    ][INFO    ][40  ][api.py  ] : ------start up------
+[2015-01-19 07:53:18,744][6666 ][monk.uid    ][INFO    ][32  ][uid.py  ] : initializing uid store
+[2015-01-19 07:53:18,746][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EntityStore 
+[2015-01-19 07:53:18,747][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing UserStore 
+[2015-01-19 07:53:18,749][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EngineStore 
+[2015-01-19 07:53:18,750][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing PandaStore 
+[2015-01-19 07:53:18,751][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing MantisStore 
+[2015-01-19 07:53:18,753][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TurtleStore 
+[2015-01-19 07:53:18,754][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TigressStore 
+[2015-01-19 07:53:25,921][6666 ][monk.network.broker][WARNING ][124 ][broker.py] : Exception slice indices must be integers or None or have an __index__ method
+[2015-01-19 07:53:25,922][6666 ][monk.network.broker][DEBUG   ][125 ][broker.py] : Traceback (most recent call last):
+  File "/home/xm/Workspace/pymonk/monk/network/broker.py", line 117, in produce
+    logger.debug('Sending {} to {}@{}'.find(encodedMessage, name, self.kafkaTopic))
+TypeError: slice indices must be integers or None or have an __index__ method
+
+[2015-01-19 07:57:21,272][6666 ][monk.network.broker][WARNING ][93  ][broker.py] : try to connect kafka server again 10
+[2015-01-19 07:57:29,938][6666 ][monk.api    ][INFO    ][48  ][api.py  ] : ------end-----------
+[2015-01-19 07:57:30,906][6666 ][monk.api    ][INFO    ][40  ][api.py  ] : ------start up------
+[2015-01-19 07:57:31,427][6666 ][monk.uid    ][INFO    ][32  ][uid.py  ] : initializing uid store
+[2015-01-19 07:57:31,428][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EntityStore 
+[2015-01-19 07:57:31,429][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing UserStore 
+[2015-01-19 07:57:31,430][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EngineStore 
+[2015-01-19 07:57:31,430][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing PandaStore 
+[2015-01-19 07:57:31,431][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing MantisStore 
+[2015-01-19 07:57:31,432][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TurtleStore 
+[2015-01-19 07:57:31,433][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TigressStore 
+[2015-01-19 07:57:39,213][6666 ][monk.network.broker][WARNING ][124 ][broker.py] : Exception slice indices must be integers or None or have an __index__ method
+[2015-01-19 07:57:39,215][6666 ][monk.network.broker][DEBUG   ][125 ][broker.py] : Traceback (most recent call last):
+  File "/home/xm/Workspace/pymonk/monk/network/broker.py", line 117, in produce
+    logger.debug('Sending {} to {} at {}'.find(encodedMessage, name, self.kafkaTopic))
+TypeError: slice indices must be integers or None or have an __index__ method
+
+[2015-01-19 07:58:30,317][6666 ][monk.network.broker][DEBUG   ][111 ][broker.py] : here
+[2015-01-19 07:58:30,318][6666 ][monk.network.broker][WARNING ][124 ][broker.py] : Exception slice indices must be integers or None or have an __index__ method
+[2015-01-19 07:58:30,319][6666 ][monk.network.broker][DEBUG   ][125 ][broker.py] : Traceback (most recent call last):
+  File "/home/xm/Workspace/pymonk/monk/network/broker.py", line 117, in produce
+    self.producer.send(self.kafkaTopic, name, encodedMessage)
+TypeError: slice indices must be integers or None or have an __index__ method
+
+[2015-01-19 07:59:25,680][6666 ][monk.network.broker][WARNING ][93  ][broker.py] : try to connect kafka server again 10
+[2015-01-19 07:59:36,156][6666 ][monk.network.broker][DEBUG   ][116 ][broker.py] : Sending {"turtleName": "movielens-binary", "follower": "mluser1", "name": "monk", "op": "AddClone"} to monk at monkTestWorker
+[2015-01-19 07:59:36,156][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is monk
+[2015-01-19 07:59:36,326][6666 ][monk.network.partitioner][DEBUG   ][41  ][partitioner.py] : found partition 2

@@ -157,21 +157,15 @@ class MonkReload(WorkerTask):
 class Follow(WorkerTask):
     def act(self):
         leader = self.get('leader')
-        if leader:
-            monkapi.follow_turtle_follower(self.turtleName, self.userName, leader)
         follower = self.get('follower')
-        if follower:
-            monkapi.follow_turtle_leader(self.turtleName, self.userName, follower)
+        monkapi.follow_turtle(self.turtleName, self.userName, leader=leader, follower=follower)
 
 @taskT
 class UnFollow(WorkerTask):
     def act(self):
         leader = self.get('leader')
-        if leader:
-            monkapi.unfollow_turtle_follower(self.turtleName, self.userName, leader)
         follower = self.get('follower')
-        if follower:
-            monkapi.follow_turtle_leader(self.turtleName, self.userName, follower)
+        monkapi.unfollow_turtle(self.turtleName, self.userName, leader=leader, follower=follower)
 
 @taskT
 class AddClone(WorkerTask):
@@ -179,7 +173,7 @@ class AddClone(WorkerTask):
         follower = self.get('follower')
         if follower:
             monkapi.clone_turtle(self.turtleName, self.userName, follower)
-            monkapi.follow_turtle_leader(self.turtleName, self.userName, follower)
+            monkapi.follow_turtle(self.turtleName, self.userName, follower=follower)
 
 @taskT
 class RemoveClone(WorkerTask):
