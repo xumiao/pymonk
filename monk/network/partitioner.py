@@ -33,6 +33,7 @@ class UserPartitioner(Partitioner):
          # Refresh the partition list if necessary
         if self.partitions != partitions:
             self._set_partitions(partitions)
+        logger.debug('key {}'.format(key))
         user = monkapi.load_user(key)
         if not user:
             return self.iterpart.next()

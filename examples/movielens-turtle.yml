@@ -1,0 +1,19 @@
+# movie lens turtle
+---
+monkType: SingleTurtle
+name:  movielens-binary
+creator: monk
+description:  classify if the user likes the movie (rating > 3 is like, otherwise unlike)
+requires:
+    uids: range(1,81)
+mapping:
+    like: [1]
+pandas:
+   - monkType: LinearPanda
+     name: movielens
+tigress:
+    monkType: PatternTigress
+    fields: [labels]
+    patterns: 
+      like: like
+    defaulting: True
