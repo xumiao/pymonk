@@ -172,7 +172,9 @@ class AddClone(WorkerTask):
     def act(self):
         follower = self.get('follower')
         if follower:
+            logger.debug('cloning turtle {}@{} to {}'.format(self.turtleName, self.userName, follower))
             monkapi.clone_turtle(self.turtleName, self.userName, follower)
+            logger.debug('{} is following {}'.format(follower, self.userName))
             monkapi.follow_turtle(self.turtleName, self.userName, follower=follower)
 
 @taskT

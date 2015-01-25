@@ -8,7 +8,7 @@ Created on Sun Nov 16 11:34:27 2014
 from __future__ import absolute_import
 import logging
 from kafka.producer.base import Producer, BATCH_SEND_DEFAULT_INTERVAL, BATCH_SEND_MSG_COUNT
-from partitioner import UserPartitioner
+from monk.network.partitioner import UserPartitioner
 
 logger = logging.getLogger("monk.network.producer")
 

@@ -706,3 +706,55 @@ TypeError: the key must be type bytes
     raise TypeError("the key must be type bytes")
 TypeError: the key must be type bytes
 
+[2015-01-24 17:02:18,787][26580][monk.roles.configuration][INFO    ][93  ][configuration.py] : configuration done
+[2015-01-24 17:03:17,446][26580][monk.network.broker][WARNING ][64  ][broker.py] : Exception 'NoneType' object is not iterable
+[2015-01-24 17:03:17,448][26580][monk.network.broker][DEBUG   ][65  ][broker.py] : Traceback (most recent call last):
+  File "/home/xm/Workspace/pymonk/monk/network/broker.py", line 45, in __init__
+    self.producer = UserProducer(self.kafkaClient, async=False, req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
+  File "/home/xm/Workspace/pymonk/monk/network/producer.py", line 61, in __init__
+    self.partitioner = UserPartitioner(None)
+  File "/home/xm/Workspace/pymonk/monk/network/partitioner.py", line 26, in __init__
+    self.iterpart = cycle(partitions)
+TypeError: 'NoneType' object is not iterable
+
+[2015-01-24 17:07:14,489][26580][monk.network.broker][WARNING ][64  ][broker.py] : Exception 'NoneType' object is not iterable
+[2015-01-24 17:07:14,491][26580][monk.network.broker][DEBUG   ][65  ][broker.py] : Traceback (most recent call last):
+  File "/home/xm/Workspace/pymonk/monk/network/broker.py", line 45, in __init__
+    self.producer = UserProducer(self.kafkaClient, async=False, req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
+  File "/home/xm/Workspace/pymonk/monk/network/producer.py", line 61, in __init__
+    self.partitioner = UserPartitioner(None)
+  File "/home/xm/Workspace/pymonk/monk/network/partitioner.py", line 26, in __init__
+    if self.partitions:
+TypeError: 'NoneType' object is not iterable
+
+[2015-01-24 17:07:30,091][26580][monk.network.broker][WARNING ][64  ][broker.py] : Exception 'NoneType' object is not iterable
+[2015-01-24 17:07:30,091][26580][monk.network.broker][DEBUG   ][65  ][broker.py] : Traceback (most recent call last):
+  File "/home/xm/Workspace/pymonk/monk/network/broker.py", line 45, in __init__
+    self.producer = UserProducer(self.kafkaClient, async=False, req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
+  File "/home/xm/Workspace/pymonk/monk/network/producer.py", line 61, in __init__
+    self.partitioner = UserPartitioner(None)
+  File "/home/xm/Workspace/pymonk/monk/network/partitioner.py", line 26, in __init__
+    if self.partitions:
+TypeError: 'NoneType' object is not iterable
+
+[2015-01-24 17:10:21,226][26580][monk.network.broker][WARNING ][64  ][broker.py] : Exception 'NoneType' object is not iterable
+[2015-01-24 17:10:21,227][26580][monk.network.broker][DEBUG   ][65  ][broker.py] : Traceback (most recent call last):
+  File "/home/xm/Workspace/pymonk/monk/network/broker.py", line 45, in __init__
+    self.producer = UserProducer(self.kafkaClient, async=False, req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
+  File "/home/xm/Workspace/pymonk/monk/network/producer.py", line 61, in __init__
+    self.partitioner = UserPartitioner(None)
+  File "/home/xm/Workspace/pymonk/monk/network/partitioner.py", line 26, in __init__
+TypeError: 'NoneType' object is not iterable
+
+[2015-01-24 17:10:48,060][26733][monk.roles.configuration][INFO    ][93  ][configuration.py] : configuration done
+[2015-01-24 17:11:02,295][26733][monk.api    ][INFO    ][40  ][api.py  ] : ------start up------
+[2015-01-24 17:11:02,393][26733][monk.uid    ][INFO    ][32  ][uid.py  ] : initializing uid store
+[2015-01-24 17:11:02,468][26733][monk.crane  ][INFO    ][48  ][crane.py] : initializing EntityStore 
+[2015-01-24 17:11:02,469][26733][monk.crane  ][INFO    ][48  ][crane.py] : initializing UserStore 
+[2015-01-24 17:11:02,470][26733][monk.crane  ][INFO    ][48  ][crane.py] : initializing EngineStore 
+[2015-01-24 17:11:02,471][26733][monk.crane  ][INFO    ][48  ][crane.py] : initializing PandaStore 
+[2015-01-24 17:11:02,472][26733][monk.crane  ][INFO    ][48  ][crane.py] : initializing MantisStore 
+[2015-01-24 17:11:02,474][26733][monk.crane  ][INFO    ][48  ][crane.py] : initializing TurtleStore 
+[2015-01-24 17:11:02,476][26733][monk.crane  ][INFO    ][48  ][crane.py] : initializing TigressStore 
+[2015-01-24 17:11:20,030][26733][monk.network.partitioner][DEBUG   ][38  ][partitioner.py] : key monk
+[2015-01-24 17:11:20,080][26733][monk.network.producer][INFO    ][66  ][producer.py] : sending message ('{"turtleName": "movielens-binary", "follower": "mluser2", "name": "monk", "op": "AddClone"}',) at monkTestWorker@2

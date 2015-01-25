@@ -17,21 +17,23 @@ class UserPartitioner(Partitioner):
     With fixed partition output for the key (user)
     Assumption: monkapi is initialized first
     """
-    def __init__(self, partitions):
+    def __init__(self, partitions=[0]):
         """
         Initialize the partitioner
         partitions - A list of available partitions to round robin when no partition found for the user
         """
-        self.partitions = partitions
-        self.iterpart = cycle(partitions)
-    
+        self._set_partition(partitions)
+            
     def _set_partition(self, partitions):
         self.partitions = partitions
-        self.iterpart = cycle(partitions)        
-
-    def partition(self, key, partitions):
+        if partitions:
+            self.iterpart = cycle(partitions)        
+        else:
+            self.iterpart = cycle([0])
+            
+    def partition(self, key, partitions=None):
          # Refresh the partition list if necessary
-        if self.partitions != partitions:
+        if partitions and self.partitions != partitions:
             self._set_partitions(partitions)
         logger.debug('key {}'.format(key))
         user = monkapi.load_user(key)
