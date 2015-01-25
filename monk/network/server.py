@@ -65,6 +65,8 @@ class Task(object):
         self.name = self.decodedMessage.get('name')
         if self.name and isinstance(self.name, list):
             self.name = tuple(self.name)
+        self.turtleName = self.decodedMessage.get('turtleName')
+        self.userName = self.name
     
     def info(self, logger, message):
         logger.info('{} for {}'.format(message, self.decodedMessage))
