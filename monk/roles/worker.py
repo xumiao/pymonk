@@ -204,8 +204,8 @@ class Predict(WorkerTask):
         #isPersonalized = decodedMessage.get('isPersonalized',1)
         if entity:
             monkapi.predict(self.turtleName, self.userName, entity)
+taskT(Predict)
 
-@taskT
 class AcknowledgeRegistration(Task):
     def act(self):
         workerName = self.get('name')
@@ -220,6 +220,7 @@ class AcknowledgeRegistration(Task):
             except Exception as e:
                 logger.warning('Can not seek to offset {}'.format(offsetSkip))
                 logger.warning(e.message)
+taskT(AcknowledgeRegistration)
 
 def main():
     global worker

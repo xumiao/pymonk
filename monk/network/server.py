@@ -25,13 +25,13 @@ logger = logging.getLogger('monk.network.server')
 now = time.time
 
 class TaskFactory(object):
-
     def __init__(self):
         self.factory = {}
 
     def register(self, TaskClass):
         className = TaskClass.__name__
         if className not in self.factory:
+            logger.debug('className {} is registering'.format(className))
             self.factory[TaskClass.__name__] = TaskClass
  
     def find(self, name):

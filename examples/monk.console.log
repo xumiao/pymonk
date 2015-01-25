@@ -764,3 +764,6 @@ TypeError: 'NoneType' object is not iterable
 [2015-01-24 17:28:46,564][26733][monk.network.partitioner][DEBUG   ][38  ][partitioner.py] : key monk
 [2015-01-24 17:28:52,647][26733][monk.network.partitioner][DEBUG   ][38  ][partitioner.py] : key monk
 [2015-01-24 17:28:52,735][26733][monk.network.producer][INFO    ][66  ][producer.py] : sending message ('{"turtleName": "movielens-binary", "follower": "mluser2", "name": "monk", "op": "AddClone"}',) at monkTestWorker@2
+[2015-01-24 17:40:45,146][26733][monk.network.partitioner][DEBUG   ][38  ][partitioner.py] : key monk
+[2015-01-24 17:40:49,982][26733][monk.network.partitioner][DEBUG   ][38  ][partitioner.py] : key monk
+[2015-01-24 17:40:50,072][26733][monk.network.producer][INFO    ][66  ][producer.py] : sending message ('{"turtleName": "movielens-binary", "follower": "mluser2", "name": "monk", "op": "AddClone"}',) at monkTestWorker@2
