@@ -91,6 +91,8 @@ class KafkaBroker(object):
             logger.warning('try to connect kafka server again {}'.format(countdown))
             self.connect(kafkaHost, countdown - 1)
             
+        logger.info('Kafka client connected {}'.format(self.kafkaClient))
+        
     def reconnect(self, countdown=COUNT_DOWN):
         if countdown == 0:
             logger.error('kafka server can not be connected in {} times'.format(COUNT_DOWN))
