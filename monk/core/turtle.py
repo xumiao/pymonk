@@ -131,7 +131,7 @@ class Turtle(base.MONKObject):
             [pa.increment() for pa in self.pandas]
             return True
         else:
-            logger.info('user {} is already a follower'.format(follower))
+            logger.info('user {} is already a follower of {}'.format(follower, self.creator))
             return False
             
     def add_leader(self, leader):
@@ -140,7 +140,7 @@ class Turtle(base.MONKObject):
             self.store.update_one_in_fields(self, {'leader': leader})
             return True
         else:
-            logger.info('user {} is already the leader'.format(leader))
+            logger.info('user {} is already the leader of {}'.format(leader, self.creator))
             return False
             
     def remove_leader(self, leader):

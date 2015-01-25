@@ -38,11 +38,11 @@ class KafkaBroker(object):
         self.connect(kafkaHost)
         try:
             if producerType == self.SIMPLE_PRODUCER:
-                self.producer = SimpleProducer(self.kafkaClient, async=False, req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
+                self.producer = SimpleProducer(self.kafkaClient, async=False, req_acks=KeyedProducer.ACK_NOT_REQUIRED)
             elif producerType == self.FIXED_PRODUCER:
-                self.producer = FixedProducer(self.kafkaClient, producerPartitions[0], async=False, ack_timeout=200)
+                self.producer = FixedProducer(self.kafkaClient, producerPartitions[0], async=False, req_acks=KeyedProducer.ACK_NOT_REQUIRED)
             elif producerType == self.USER_PRODUCER:
-                self.producer = UserProducer(self.kafkaClient, async=False, req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
+                self.producer = UserProducer(self.kafkaClient, async=False, req_acks=KeyedProducer.ACK_NOT_REQUIRED)
             elif producerType == self.NON_PRODUCER:
                 self.producer = None
             else:
@@ -153,7 +153,7 @@ class KafkaBroker(object):
     def seek(self, skip):
         if self.is_consumer_ready():
             if skip == -1:
-                self.consumer.seek(0,2)
+                self.consumer.seek(0, 2)
             else:
                 self.consumer.seek(skip, 1)
             
