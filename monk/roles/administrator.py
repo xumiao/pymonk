@@ -76,7 +76,6 @@ class MonkAdmin(MonkServer):
 
 admin = MonkAdmin()
 
-@taskT
 class AddUser(Task):
     def get_least_loaded_engine(self):
         if len(admin.workers) == 0:
@@ -112,8 +111,8 @@ class AddUser(Task):
             user = monkapi.create_user(userScript)
             leastLoadedEngine.add_user(userName)
             logger.debug('{} add user {}'.format(leastLoadedEngine.name, leastLoadedEngine.users))
+taskT(AddUser)
 
-@taskT
 class DeleteUser(Task):
     def act(self):
         userName = self.get(User.NAME, '')
@@ -121,8 +120,8 @@ class DeleteUser(Task):
             logger.info('trying to delete non-existant user {}'.format(userName))
         else:
             logger.debug('{} deleted'.format(userName))
+taskT(DeleteUser)
 
-@taskT
 class UpdateUser(Task):
     def act(self):
         userName = self.get(User.NAME, '')
@@ -142,8 +141,8 @@ class UpdateUser(Task):
         user._setattr(User.FYEAR,     self.get(User.FYEAR), lambda x: int(x))
         user.save()
         logger.debug('{} updated'.format(user.generic()))
+taskT(UpdateUser)
 
-@taskT
 class RebalanceUsers(Task):
     def act(self):
         activeEngines = filter(lambda engine: engine.is_active(), admin.workers.itervalues())
@@ -159,8 +158,8 @@ class RebalanceUsers(Task):
             user.partition = engine.partition
             user.save()
             engine.add_user(userName)
+taskT(RebalanceUsers)
     
-@taskT
 class RegisterWorker(Task):
     def next_partition(self):
         if len(admin.workers) < admin.maxNumWorkers:
@@ -201,8 +200,8 @@ class RegisterWorker(Task):
             engine.save()
         offsetSkip = self.get('offsetSkip', -1)
         admin.adminBroker.acknowledge_registration(workerName, engine.partition, offsetSkip)
+taskT(RegisterWorker)
 
-@taskT
 class UpdateWorker(Task):
     def act(self):
         workerName = self.get(Engine.NAME, '')
@@ -219,8 +218,8 @@ class UpdateWorker(Task):
         engine._setattr(Engine.FPID,     self.get(Engine.FPID))
         engine._setattr(Engine.FSTATUS,  cons.STATUS_ACTIVE)
         engine.save()
+taskT(UpdateWorker)
 
-@taskT
 class UnregisterWorker(Task):
     def act(self):
         workerName = self.get('name', '')
@@ -233,6 +232,7 @@ class UnregisterWorker(Task):
             engine._setattr(Engine.FSTATUS,  cons.STATUS_INACTIVE)
             engine._setattr(Engine.FENDTIME, datetime.datetime.now())
             engine.save()
+taskT(UnregisterWorker)
         
 def main():
     global admin

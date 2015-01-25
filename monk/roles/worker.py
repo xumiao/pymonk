@@ -102,82 +102,83 @@ class WorkerTask(Task):
         self.decodedMessage = decodedMessage
         self.turtleName = decodedMessage.get('turtleName')
         self.userName = decodedMessage.get('name')
+taskT(WorkerTask)
 
-@taskT
 class Train(WorkerTask):
     def act(self):
         monkapi.train(self.turtleName, self.userName)
         leader = monkapi.get_leader(self.turtleName, self.userName)
         worker.workerBroker.merge(leader, self.turtleName, self.userName)
+taskT(Train)
 
-@taskT
 class Merge(WorkerTask):
     def act(self):
         follower = self.get('follower')
         if monkapi.merge(self.turtleName, self.userName, follower):
             for follower in monkapi.get_followers(self.turtleName, self.userName):
                 worker.workerBroker.train(follower, self.turtleName)
+taskT(Merge)
 
-@taskT
 class Reset(WorkerTask):
     def act(self):
         logger.debug('reset turtle {} for user {}'.format(self.turtleName, self.userName))
         monkapi.reset(self.turtleName, self.userName)
+taskT(Reset)
 
-@taskT
 class SaveTurtle(WorkerTask):
     def act(self):
         monkapi.save_turtle(self.turtleName, self.userName)
+taskT(SaveTurtle)
 
-@taskT
 class ResetAllData(WorkerTask):
     def act(self):
         logger.debug('reset_all_data turtle {0} of user {1} '.format(self.turtleName, self.userName))
         monkapi.reset_all_data(self.turtleName, self.userName)
+taskT(ResetAllData)
 
-@taskT
 class OffsetCommit(WorkerTask):
     def act(self):
         worker.workerBroker.commit()
+taskT(OffsetCommit)
 
-@taskT
 class SetMantisParameter(WorkerTask):
     def act(self):
         para = self.get('para', '')
         value = self.get('value', 0)
         logger.debug('set_mantis_parameter {} to {}'.format(para, value))
         monkapi.set_mantis_parameter(self.turtleName, self.userName, para, value)
+taskT(SetMantisParameter)
 
-@taskT        
 class MonkReload(WorkerTask):
     def act(self):
         monkapi.reloads()
+taskT(MonkReload)
 
-@taskT
 class Follow(WorkerTask):
     def act(self):
         leader = self.get('leader')
         follower = self.get('follower')
         monkapi.follow_turtle(self.turtleName, self.userName, leader=leader, follower=follower)
+taskT(Follow)
 
-@taskT
 class UnFollow(WorkerTask):
     def act(self):
         leader = self.get('leader')
         follower = self.get('follower')
         monkapi.unfollow_turtle(self.turtleName, self.userName, leader=leader, follower=follower)
+taskT(UnFollow)
 
-@taskT
 class AddClone(WorkerTask):
     def act(self):
         follower = self.get('follower')
+        logger.debug('follower = {}'.format(follower))
         if follower:
             logger.debug('cloning turtle {}@{} to {}'.format(self.turtleName, self.userName, follower))
             monkapi.clone_turtle(self.turtleName, self.userName, follower)
             logger.debug('{} is following {}'.format(follower, self.userName))
             monkapi.follow_turtle(self.turtleName, self.userName, follower=follower)
+taskT(AddClone)
 
-@taskT
 class RemoveClone(WorkerTask):
     def act(self):
         leader = monkapi.get_leader(self.turtleName, self.userName)
@@ -187,15 +188,15 @@ class RemoveClone(WorkerTask):
             worker.workerBroker.follow(follower, self.turtleName, leader=leader)
         monkapi.remove_turtle(self.turtleName, self.userName)
         worker.workerBroker.unfollow(leader, self.turtleName, follower=self.userName)
+taskT(RemoveClone)
 
-@taskT
 class AddData(WorkerTask):
     def act(self):
         entity = self.get('entity')
         if entity:
             monkapi.add_data(self.turtleName, self.userName, entity)
+taskT(AddData)
 
-@taskT
 class Predict(WorkerTask):
     def act(self):
         logger.debug('test on data from {}'.format(self.userName))

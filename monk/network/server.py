@@ -54,9 +54,6 @@ class TaskFactory(object):
 
 taskFactory = TaskFactory()
 
-def taskT(TaskClass):
-    taskFactory.register(TaskClass)
-
 class Task(object):
     PRIORITY_HIGH = 1
     PRIORITY_LOW = 5
@@ -84,10 +81,13 @@ class Task(object):
     def act(self):
         self.warning(logger, 'no task is defined')
 
-@taskT
+def taskT(TaskClass):
+    taskFactory.register(TaskClass)
+    
 class Echo(Task):
     def act(self):
         logger.info('received message {}'.format(self.decodedMessage))
+taskT(Echo)
         
 class MonkServer(object):    
     EXIT_WAIT_TIME=3

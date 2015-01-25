@@ -113,7 +113,6 @@ class Tracker(object):
         self.valuesTimed.clear()
         self.numTimed.clear()
         
-@taskT
 class Track(Task):
     def act(self):
         key = self.name
@@ -135,8 +134,8 @@ class Track(Task):
             monitor.trackers[key] = Tracker()
         tracker = monitor.trackers[key]
         tracker.add(t, value, user)
+taskT(Track)
         
-@taskT
 class ResetTracker(Task):
     def act(self):
         key = self.name
@@ -145,8 +144,8 @@ class ResetTracker(Task):
             return
         if key in monitor.trackers:
             monitor.trackers[key].clear()
+taskT(ResetTracker)
 
-@taskT
 class RenameTracker(Task):
     def act(self):
         key = self.name
@@ -157,8 +156,8 @@ class RenameTracker(Task):
         if key in monitor.trackers and newname:
             monitor.trackers[newname] = monitor.trackers[key]
             del monitor.trackers[key]
+taskT(RenameTracker)
 
-@taskT
 class AnnotateTracker(Task):
     def act(self):
         key = self.name
@@ -174,6 +173,7 @@ class AnnotateTracker(Task):
         if annotator and key in monitor.trackers:
             tracker = monitor.trackers[key]
             tracker.annotate(t, annotator)
+taskT(AnnotateTracker)
             
 class Aggregator(object):
     def __init__(self, resolution=0.01):
@@ -205,7 +205,6 @@ class Aggregator(object):
             self.hist[user] = {vL:wL, vH:wH}
             self.num[user] = 1.0
         
-@taskT
 class Aggregate(Task):
     def act(self):
         key = self.name
@@ -222,8 +221,8 @@ class Aggregate(Task):
             monitor.aggregators[key] = Aggregator()
         aggregator = monitor.aggregators[key]
         aggregator.add(value, user)
+taskT(Aggregate)
 
-@taskT
 class ResetAggregator(Task):
     def act(self):
         key = self.name
@@ -232,8 +231,8 @@ class ResetAggregator(Task):
             return
         if key in monitor.aggregators:
             monitor.aggregators[key].clear()
+taskT(ResetAggregator)
 
-@taskT
 class RenameAggregator(Task):
     def act(self):
         key = self.name
@@ -244,6 +243,7 @@ class RenameAggregator(Task):
         if key in monitor.aggregators and newname:
             monitor.aggregators[newname] = monitor.aggregators[key]
             del monitor.aggregators[key]
+taskT(RenameAggregator)
 
 class Measurer(object):
     def __init__(self, resolution=0.01):
@@ -387,7 +387,6 @@ class Measurer(object):
             self.compute_metrics()
         return self.PRCs
         
-@taskT
 class Measure(Task):
     def act(self):
         logger.info('measure {}'.format(self.decodedMessage))
@@ -410,8 +409,8 @@ class Measure(Task):
             monitor.measurers[key] = Measurer()
         measurer = monitor.measurers[key]
         measurer.add(value, user, pos)
+taskT(Measure)
 
-@taskT
 class ResetMeasurer(Task):
     def act(self):
         key = self.name
@@ -420,8 +419,8 @@ class ResetMeasurer(Task):
             return
         if key in monitor.measurers:
             monitor.measurers[key].clear()
+taskT(ResetMeasurer)
 
-@taskT
 class RenameMeasurer(Task):
     def act(self):
         key = self.name
@@ -432,6 +431,7 @@ class RenameMeasurer(Task):
         if key in monitor.measurers and newname:
             monitor.measurers[newname] = monitor.measurers[key]
             del monitor.measurers[key]
+taskT(RenameMeasurer)
 
 # TODO: TrackerHandler
 # TODO: AggregatorHandler
