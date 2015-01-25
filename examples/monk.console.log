@@ -667,3 +667,42 @@ TypeError: the key must be type bytes
 [2015-01-21 18:45:47,805][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"message": "notebook", "name": "testing", "op": "Echo"}',) at monkTestAdmin@0
 [2015-01-21 18:45:54,884][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"message": "notebook", "name": "testing", "op": "Echo"}',) at monkTestAdmin@0
 [2015-01-21 18:46:06,948][6666 ][monk.network.producer][INFO    ][37  ][producer.py] : sending message ('{"password": "", "name": "monk", "op": "AddUser"}',) at monkTestAdmin@0
+[2015-01-24 16:12:56,915][6666 ][monk.roles.configuration][INFO    ][93  ][configuration.py] : configuration done
+[2015-01-24 16:13:34,430][6666 ][monk.api    ][INFO    ][48  ][api.py  ] : ------end-----------
+[2015-01-24 16:13:35,253][6666 ][monk.api    ][INFO    ][40  ][api.py  ] : ------start up------
+[2015-01-24 16:13:35,419][6666 ][monk.uid    ][INFO    ][32  ][uid.py  ] : initializing uid store
+[2015-01-24 16:13:35,421][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EntityStore 
+[2015-01-24 16:13:35,422][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing UserStore 
+[2015-01-24 16:13:35,424][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EngineStore 
+[2015-01-24 16:13:35,427][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing PandaStore 
+[2015-01-24 16:13:35,428][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing MantisStore 
+[2015-01-24 16:13:35,430][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TurtleStore 
+[2015-01-24 16:13:35,432][6666 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TigressStore 
+[2015-01-24 16:13:54,653][6666 ][monk.network.broker][DEBUG   ][116 ][broker.py] : Sending {"turtleName": "movielens-binary", "follower": "mluser2", "name": "monk", "op": "AddClone"} to monk at monkTestWorker
+[2015-01-24 16:13:54,654][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is monk
+[2015-01-24 16:13:54,703][6666 ][monk.network.partitioner][DEBUG   ][41  ][partitioner.py] : found partition 2
+[2015-01-24 16:13:54,704][6666 ][monk.network.broker][WARNING ][123 ][broker.py] : Exception the key must be type bytes
+[2015-01-24 16:13:54,704][6666 ][monk.network.broker][DEBUG   ][124 ][broker.py] : Traceback (most recent call last):
+  File "/home/xm/Workspace/pymonk/monk/network/broker.py", line 117, in produce
+    except KafkaError as e:
+  File "build/bdist.linux-x86_64/egg/kafka/producer/keyed.py", line 63, in send
+    return self._send_messages(topic, partition, msg, key=key)
+  File "build/bdist.linux-x86_64/egg/kafka/producer/base.py", line 187, in _send_messages
+    raise TypeError("the key must be type bytes")
+TypeError: the key must be type bytes
+
+[2015-01-24 16:20:38,724][6666 ][monk.network.broker][DEBUG   ][116 ][broker.py] : Sending {"turtleName": "movielens-binary", "follower": "mluser2", "name": "monk", "op": "AddClone"} to monk at monkTestWorker
+[2015-01-24 16:20:38,725][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is monk
+[2015-01-24 16:20:55,372][6666 ][monk.network.broker][DEBUG   ][116 ][broker.py] : Sending {"turtleName": "movielens-binary", "follower": "mluser2", "name": "monk", "op": "AddClone"} to monk at monkTestWorker
+[2015-01-24 16:20:55,372][6666 ][monk.network.partitioner][DEBUG   ][36  ][partitioner.py] : user is monk
+[2015-01-24 16:20:55,549][6666 ][monk.network.partitioner][DEBUG   ][41  ][partitioner.py] : found partition 2
+[2015-01-24 16:20:55,550][6666 ][monk.network.broker][WARNING ][123 ][broker.py] : Exception the key must be type bytes
+[2015-01-24 16:20:55,551][6666 ][monk.network.broker][DEBUG   ][124 ][broker.py] : Traceback (most recent call last):
+  File "/home/xm/Workspace/pymonk/monk/network/broker.py", line 117, in produce
+    self.producer.send(self.kafkaTopic, name, encodedMessage)
+  File "build/bdist.linux-x86_64/egg/kafka/producer/keyed.py", line 63, in send
+    return self._send_messages(topic, partition, msg, key=key)
+  File "build/bdist.linux-x86_64/egg/kafka/producer/base.py", line 187, in _send_messages
+    raise TypeError("the key must be type bytes")
+TypeError: the key must be type bytes
+

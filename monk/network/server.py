@@ -188,7 +188,7 @@ class MonkServer(object):
             finally:
                 self.ioLoop.add_callback(self._execute)
         else:
-            logger.debug('waiting for tasks')
+            logger.debug('waiting for tasks {}'.format(now()))
             self.ioLoop.add_timeout(now() + self.EXECUTE_INTERVAL, self._execute)
 
     def add_application(self, regx, handler):

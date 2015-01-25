@@ -1,2 +1,2 @@
-kafkaConnectionString : monkbus.cloudapp.net:9092,monkbus.cloudapp.net:90932,monkbus.cloudapp.net:9094
+kafkaConnectionString : monkbus.cloudapp.net:9092,monkbus.cloudapp.net:9093,monkbus.cloudapp.net:9094
 mongoConnectionString : monkdb.cloudapp.net:27017

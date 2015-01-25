@@ -8,11 +8,10 @@ Created on Sat Sep 27 16:17:12 2014
 import logging
 from kafka.client import KafkaClient
 from kafka.producer.keyed import KeyedProducer
-from producer import FixedProducer
+from producer import FixedProducer, UserProducer
 from kafka.producer import SimpleProducer
 from kafka.consumer.simple import SimpleConsumer
 from kafka.common import KafkaError
-from partitioner import UserPartitioner
 import simplejson
 import traceback
 
@@ -43,8 +42,7 @@ class KafkaBroker(object):
             elif producerType == self.FIXED_PRODUCER:
                 self.producer = FixedProducer(self.kafkaClient, producerPartitions[0], async=False, ack_timeout=200)
             elif producerType == self.USER_PRODUCER:
-                self.producer = KeyedProducer(self.kafkaClient, partitioner=UserPartitioner, async=False,
-                                          req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
+                self.producer = UserProducer(self.kafkaClient, async=False, req_acks=KeyedProducer.ACK_AFTER_LOCAL_WRITE, ack_timeout=200)
             elif producerType == self.NON_PRODUCER:
                 self.producer = None
             else:
