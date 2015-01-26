@@ -22,7 +22,7 @@ class MongoClientPool(object):
     
     def getDataBase(self, connectionString, databaseName):
         key = (connectionString, databaseName)
-        if key in self.__cleints:
+        if key in self.__clients:
             return self.__clients[key][databaseName]
         else:
             try:
