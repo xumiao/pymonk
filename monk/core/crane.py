@@ -26,7 +26,7 @@ class MongoClientPool(object):
             return self.__clients[key][databaseName]
         else:
             try:
-                client = MongoClient(connectionString, socketKeepAlive=True, connectTimeoutMS=30)
+                client = MongoClient(connectionString, connectTimeoutMS=30)
                 self.__clients[key] = client
                 return client[databaseName]
             except Exception as e:
@@ -39,7 +39,7 @@ class MongoClientPool(object):
             return self.__clients[connectionString]
         else:
             try:
-                client = MongoClient(connectionString, socketKeepAlive=True, connectTimeoutMS=30)
+                client = MongoClient(connectionString, connectTimeoutMS=30)
                 self.__clients[connectionString] = client
                 return client
             except Exception as e:
