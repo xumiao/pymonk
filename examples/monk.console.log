@@ -584,3 +584,19 @@
 [2015-01-25 08:40:27,591][3007 ][monk.network.server][DEBUG   ][34  ][server.py] : className RegisterWorker is registering
 [2015-01-25 08:40:27,591][3007 ][monk.network.server][DEBUG   ][34  ][server.py] : className UpdateWorker is registering
 [2015-01-25 08:40:27,592][3007 ][monk.network.server][DEBUG   ][34  ][server.py] : className UnregisterWorker is registering
+[2015-01-25 19:39:04,273][9351 ][monk.roles.configuration][INFO    ][93  ][configuration.py] : configuration done
+[2015-01-25 19:39:18,914][9351 ][monk.api    ][INFO    ][40  ][api.py  ] : ------start up------
+[2015-01-25 19:39:19,091][9351 ][monk.uid    ][INFO    ][32  ][uid.py  ] : initializing uid store
+[2015-01-25 19:39:24,141][9351 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EntityStore 
+[2015-01-25 19:39:24,143][9351 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing UserStore 
+[2015-01-25 19:39:24,144][9351 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing EngineStore 
+[2015-01-25 19:39:24,145][9351 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing PandaStore 
+[2015-01-25 19:39:24,147][9351 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing MantisStore 
+[2015-01-25 19:39:24,148][9351 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TurtleStore 
+[2015-01-25 19:39:24,149][9351 ][monk.crane  ][INFO    ][48  ][crane.py] : initializing TigressStore 
+[2015-01-25 19:39:30,948][9351 ][monk.network.partitioner][DEBUG   ][38  ][partitioner.py] : key monk
+[2015-01-25 19:39:31,014][9351 ][monk.network.producer][INFO    ][66  ][producer.py] : sending message ('{"turtleName": "movielens-binary", "follower": "mluser1000", "name": "monk", "op": "AddClone"}',) at monkTestWorker@2
+[2015-01-25 19:39:37,226][9351 ][monk.network.partitioner][DEBUG   ][38  ][partitioner.py] : key monk
+[2015-01-25 19:39:37,268][9351 ][monk.network.producer][INFO    ][66  ][producer.py] : sending message ('{"turtleName": "movielens-binary", "follower": "mluser1000", "name": "monk", "op": "AddClone"}',) at monkTestWorker@2
+[2015-01-25 19:39:40,532][9351 ][monk.network.partitioner][DEBUG   ][38  ][partitioner.py] : key monk
+[2015-01-25 19:39:40,561][9351 ][monk.network.producer][INFO    ][66  ][producer.py] : sending message ('{"turtleName": "movielens-binary", "follower": "mluser1000", "name": "monk", "op": "AddClone"}',) at monkTestWorker@2

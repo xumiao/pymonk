@@ -168,7 +168,7 @@ class KafkaBroker(object):
             return None
             
         try:
-            message = self.consumer.get_message(block=False)
+            message = self.consumer.get_message()
             if not message:
                 return None
             logger.debug('received message {}'.format(message.message.value))

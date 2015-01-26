@@ -17,16 +17,29 @@ from uid import UID
 logger = logging.getLogger("monk.crane")
 
 class MongoClientPool(object):
-    
     def __init__(self):
         self.__clients = {}
+    
+    def getDataBase(self, connectionString, databaseName):
+        key = (connectionString, databaseName)
+        if key in self.__cleints:
+            return self.__clients[key][databaseName]
+        else:
+            try:
+                client = MongoClient(connectionString, socketKeepAlive=True, connectTimeoutMS=30)
+                self.__clients[key] = client
+                return client[databaseName]
+            except Exception as e:
+                logger.warning(e.message)
+                logger.warning('failed to connect {}@{}'.format(databaseName, connectionString))
+        return None
         
     def getClient(self, connectionString):
         if connectionString in self.__clients:
             return self.__clients[connectionString]
         else:
             try:
-                client = MongoClient(connectionString)
+                client = MongoClient(connectionString, socketKeepAlive=True, connectTimeoutMS=30)
                 self.__clients[connectionString] = client
                 return client
             except Exception as e:
@@ -44,11 +57,12 @@ class Crane(object):
         if connectionString is None or database is None or collectionName is None:
             return
         
-        client = self.mongoClientPool.getClient(connectionString)
+        #client = self.mongoClientPool.getClient(connectionString)
         logger.info('initializing {0} '.format(collectionName))
         self._defaultCollectionName = collectionName
         self._currentCollectionName = collectionName
-        self._database = client[database]
+        #self._database = client[database]
+        self._database = self.mongoClientPool.getDataBase(connectionString, database)
         self._coll = self._database[collectionName]
         self._cache = {}
 
