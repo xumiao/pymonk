@@ -1,0 +1,11 @@
+kafkaConnectionString : monkbus.cloudapp.net:9092,monkbus.cloudapp.net:9093,monkbus.cloudapp.net:9094
+mongoConnectionString : localhost
+workerGroup: expWorker
+workerTopic: expWorker
+administratorGroup: expAdmin
+administratorTopic: expAdmin
+monitorGroup: expMonitor
+monitorTopic: expMonitor
+workerConsumerOffsetSkip: -1
+dataDataBaseName: DataSet
+entityCollectionName: PMLExpression

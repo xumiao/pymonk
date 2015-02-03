@@ -86,6 +86,10 @@ def save_entities(entities, collectionName=None):
 def load_entity(entity, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)
     return crane.entityStore.load_or_create(entity)
+    
+def load_entities_in_ids(query={}, skip=0, num=100):
+    ids = [ent['_id'] for ent in crane.entityStore.load_all_in_ids(query, skip, num)]
+    return ids
 
 # engine APIs
 def has_engine_in_store(engineName):
