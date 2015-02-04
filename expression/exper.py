@@ -7,12 +7,14 @@ from monk.roles.worker import WorkerBroker
 from monk.roles.monitor import MonitorBroker
 import pymongo as pm
 import logging
+import pickle
 logger = logging.getLogger('exper')
 
 MonkConfigFile = 'monk_config.yml'
 MouthOpenTurtleFile = 'mouthOpen-turtle.yml'
 MouthOpenTurtle = 'mouthOpenTurtle'
 MouthOpenEntityNumber = 151413
+MasterName = 'monk'
 
 users = {}              # the list of users' names
 trainData = {}          # the ObjectID of the selected data in DB
@@ -21,65 +23,105 @@ ab = {}
 wb = {}
 mb = {}
 
-#def readline(f):
-#    line = f.readline()
-#    while line.strip() == '':
-#        line = f.readline()
-#    return line
-#
-#def readVector(f):
-#    size = int(readline(f))
-#    v = np.zeros(size)
-#    for i in range(size):
-#        v[i] = float(readline(f))
-#    return v
-#
-#def readMatrix(f):
-#    ns = readline(f).split()
-#    nr = int(ns[0])
-#    nc = int(ns[1])
-#    m = np.zeros((nr,nc))
-#    for i in range(nr*nc):
-#        fs = readline(f).split()
-#        r = int(fs[0])
-#        c = int(fs[1])
-#        v = float(fs[2])
-#        m[r,c] = v
-#    return m
-#
-#def readModel(filename):
-#    userFactors = None
-#    itemFactors = None
-#    with open(filename) as f:
-#        modelname = readline(f)
-#        version = readline(f)
-#        globalbias = float(readline(f))
-#        minRate = int(readline(f))
-#        maxRate = int(readline(f))
-#        userBias = readVector(f)
-#        userFactors = readMatrix(f)
-#        itemBias = readVector(f)
-#        itemFactors = readMatrix(f)
-#    return userFactors, itemFactors
-#
-#def addUser(ab, num=6100, nameStub='mluser'):
-#    ab.reconnect()
-#    for i in range(num):
-#        ab.add_user('{}{}'.format(nameStub, i))
-#
-#def cloneMovieLensTurtle(wb, master='monk', turtleName='movielens-binary', num=6100, nameStub='mluser'):
-#    wb.reconnect()
-#    for i in range(num):
-#        wb.add_clone(master, turtleName, nameStub+str(i))
-#
-#def addRatingData(filename, itemFactors, turtleName, wb):
-#    with open(filename) as f:
-#        sts = readline(f).split()
-#        userid = int(sts[0])
-#        itemid = int(sts[1])
-#        rating = int(sts[2])
-#        # add data to user, turtleName
-#        print userid, itemid, rating
+def prepareData():
+    global trainData    
+    global testData
+    originalData = retrieveData()
+    splitData(originalData)
+    
+    destfile = open("trainData", 'w')       # save trainData _id
+    pickle.dump(trainData, destfile)
+    destfile.close()
+    
+    destfile = open("testData", 'w')       # save testData _id
+    pickle.dump(testData, destfile)
+    destfile.close()
+
+def loadPreparedData(file1, file2 = None):
+    global trainData    
+    global testData
+    
+    destfile = open(file1, 'r')       # load trainData _id
+    trainData = pickle.load(destfile)
+    destfile.close()
+    
+    if(file2):
+        destfile = open(file2, 'r')       # load testData _id
+        testData = pickle.load(destfile)
+        destfile.close()
+
+#========================================== Data Preparation ======================================
+
+def retrieveData():
+    global UoI
+    mcl = pm.MongoClient('10.137.172.201:27017')        
+    coll = mcl.DataSet['PMLExpression']
+    originalData = {}
+    for user in UoI.keys():
+        originalData[user] = {'0':[], '1':[]}
+    
+    #for ent in coll.find({'userId': {'$in': UoI.keys()}}, {'_id':True, 'userId':True, 'labels':True}, timeout=False):
+    for ent in coll.find({}, {'_id':True, 'userId':True, 'labels':True}, timeout=False):
+        userId = ent['userId'] 
+
+        if not userId in originalData:
+            #if len(originalData.keys()) >= 8:    # control the number of total users
+                #break
+            originalData[userId] = {'0':[], '1':[]} 
+            UoI[userId] = 0
+            
+#        if (stop_add_data(userId)):
+#            continue
+#        UoI[userId] += 1   
+            
+        if not len(ent['labels']) == 0:
+            originalData[userId]['1'].append(ent['_id'])        # in the format of ObjectId
+        else:
+            originalData[userId]['0'].append(ent['_id'])             
+        
+    return originalData           
+    
+
+def splitData(originalData):
+    global trainData
+    global testData
+    global fracTrain
+    for user in originalData.keys():
+        trainData[user] = []
+        testData[user] = []
+        numOfPosData = len(originalData[user]['1'])
+        numOfNegData = len(originalData[user]['0'])
+        pos = range(numOfPosData)
+        neg = range(numOfNegData)
+        selectedPos, selectedNeg = stratifiedSelection(pos, neg, fracTrain)        
+        for i in range(numOfPosData):
+            if i in selectedPos:
+                trainData[user].append(originalData[user]['1'][i])                
+            else:
+                testData[user].append(originalData[user]['1'][i])
+        for i in range(numOfNegData):
+            if i in selectedNeg:
+                trainData[user].append(originalData[user]['0'][i])                
+            else:
+                testData[user].append(originalData[user]['0'][i])      
+
+def stratifiedSelection(posindex, negindex, fracTrain): 
+    
+    num = int(len(posindex)*fracTrain)
+#    if len(posindex) > 0:
+#        num = 1
+#    else:
+#        num = 0
+    selectPosIndex = sample(posindex, num)    
+    num = int(len(negindex)*fracTrain)
+#    if len(negindex) > 0:
+#        num = 1
+#    else:
+#        num = 0
+    selectNegIndex = sample(negindex, num)    
+    
+    return selectPosIndex, selectNegIndex
+
 
 def initialize():
     global ab
@@ -106,8 +148,8 @@ def add_users():
             users[follower] = -1
             ab.add_user(follower)
     
-    ab.add_user('monk')        
-    users['monk'] = -1
+    ab.add_user(MasterName)        
+    users[MasterName] = -1
     
 #    ab.reconnect()
 #    for ent in monkapi.load_entities_in_ids(num=MouthOpenEntityNumber):        #monkapi.load_entities(num=MouthOpenEntityNumber):
@@ -119,7 +161,8 @@ def cloneTurtle():
     global users
     wb.reconnect()
     for user in users:
-        wb.add_clone('monk', MouthOpenTurtle, user)         
+        if user is not MasterName:
+            wb.add_clone(MasterName, MouthOpenTurtle, user)         
 
 def load_users():
     global users
@@ -146,7 +189,7 @@ def add_data():
             wb.add_data(user, MouthOpenTurtle, entity)
     save_turtles()
 
-def train(wb, nIter, master='monk', turtleName='movielens-binary', num=6100, nameStub='mluser'):
+def train(wb, nIter, master=MasterName, turtleName='movielens-binary', num=6100, nameStub='mluser'):
     wb.reconnect()
     for j in range(nIter):
         for i in range(num):
@@ -163,10 +206,10 @@ def prepareTurtles():
     global users
    
     #add userto DB (Usually needs to do it at very first time)
-    add_users()
+#    add_users()
 
     #load user from DB
-#    users = load_users()
+    users = load_users()
     
     #load turtle of monk from script and create a master turtle   
 #    turtleScript = monkapi.yaml2json(MouthOpenTurtleFile)
@@ -175,7 +218,7 @@ def prepareTurtles():
 #    #moTurtle.save()        
     
     #clone turtle for all the users
-    #cloneTurtle()
+    cloneTurtle()
     
 if __name__=='__main__':
     ab,wb,mb=initialize()    
