@@ -8,6 +8,7 @@ from monk.roles.monitor import MonitorBroker
 import pymongo as pm
 import logging
 import pickle
+from random import sample
 logger = logging.getLogger('exper')
 
 MonkConfigFile = 'monk_config.yml'
@@ -15,10 +16,12 @@ MouthOpenTurtleFile = 'mouthOpen-turtle.yml'
 MouthOpenTurtle = 'mouthOpenTurtle'
 MouthOpenEntityNumber = 151413
 MasterName = 'monk'
+FracTrain = 0.5
 
 users = {}              # the list of users' names
 trainData = {}          # the ObjectID of the selected data in DB
 testData = {}           # the ObjectID of the selected data in DB
+UoI = {}
 ab = {}
 wb = {}
 mb = {}
@@ -54,7 +57,7 @@ def loadPreparedData(file1, file2 = None):
 
 def retrieveData():
     global UoI
-    mcl = pm.MongoClient('10.137.172.201:27017')        
+    mcl = pm.MongoClient('localhost')        
     coll = mcl.DataSet['PMLExpression']
     originalData = {}
     for user in UoI.keys():
@@ -93,7 +96,7 @@ def splitData(originalData):
         numOfNegData = len(originalData[user]['0'])
         pos = range(numOfPosData)
         neg = range(numOfNegData)
-        selectedPos, selectedNeg = stratifiedSelection(pos, neg, fracTrain)        
+        selectedPos, selectedNeg = stratifiedSelection(pos, neg, FracTrain)        
         for i in range(numOfPosData):
             if i in selectedPos:
                 trainData[user].append(originalData[user]['1'][i])                
@@ -175,6 +178,7 @@ def load_users():
     return users
     
 def save_turtles():
+    global users
     for user in users:
         wb.save_turtle(user, MouthOpenTurtle)
         
@@ -182,21 +186,26 @@ def add_data():
     global users
     global trainData
     global wb
-    for ent in monkapi.load_entities():
+    mcl = pm.MongoClient('localhost')        
+    coll = mcl.DataSet['PMLExpression']
+    
+    #for ent in monkapi.load_entities():
+    for ent in coll.find(None, {'_id':True, 'userId':True}, timeout=False):
         entity = str(ent['_id'])
         user = ent['userId']
         if ent['_id'] in trainData[user]:
             wb.add_data(user, MouthOpenTurtle, entity)
     save_turtles()
 
-def train(wb, nIter, master=MasterName, turtleName='movielens-binary', num=6100, nameStub='mluser'):
+def train(nIter, master, turtleName):
+    global wb
+    global users
     wb.reconnect()
     for j in range(nIter):
-        for i in range(num):
-            user = nameStub+str(i)
+        for user in users:
             wb.train(user, turtleName)
             wb.merge(master, turtleName, user)
-        logger.info('iteration {}'.format(i))
+        logger.info('iteration {}'.format(j))
         
 def reset_gamma(gamma):
     for user in users:
@@ -207,9 +216,6 @@ def prepareTurtles():
    
     #add userto DB (Usually needs to do it at very first time)
 #    add_users()
-
-    #load user from DB
-    users = load_users()
     
     #load turtle of monk from script and create a master turtle   
 #    turtleScript = monkapi.yaml2json(MouthOpenTurtleFile)
@@ -222,13 +228,19 @@ def prepareTurtles():
     
 if __name__=='__main__':
     ab,wb,mb=initialize()    
-    prepareTurtles()
+    #prepareTurtles()
     #prepareData()
     
-    #add Data
+    #load user from DB
+    users = load_users()
+    
+    #load data
+    #loadPreparedData("trainData", "testData")
+    
+    #add data
     #add_data()
 
     #train
-    #train()
+    train(10, MasterName, MouthOpenTurtle)
     
 #localhost:8888/accuracy?name=mouthOpenTurtle&accType=ROC
