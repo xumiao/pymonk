@@ -36,7 +36,7 @@ def initialize(config=None):
         
     if config is not None:
         _config = config
-    
+
     logger.info('------start up------')
     _initialized = crane.initialize_storage(_config)
     return _initialized
@@ -73,6 +73,10 @@ def dummy(duration):
     time.sleep(duration)
     
 # entity APIs
+def convert_entities(collectionName=None):
+    crane.entityStore.set_collection_name(collectionName)
+    crane.entityStore.convert_to_MONKObject('Entity')
+        
 def load_entities(entities=[], query={}, skip=0, num=100, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)
     if not entities:

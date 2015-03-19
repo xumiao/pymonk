@@ -6,10 +6,6 @@ formatters :
     simple :
         format : '[%(name)-12s][%(levelname)-8s][%(process)s] : %(message)s'
 handlers :
-    console_simple :
-        class : logging.StreamHandler
-        formatter : simple
-        stream : ext://sys.stdout
     console :
         class : logging.StreamHandler
         formatter : verbose 
@@ -17,7 +13,7 @@ handlers :
     files :
         formatter : verbose
         class : logging.handlers.RotatingFileHandler
-        filename : monk.log
+        filename : tests.log
         maxBytes : 1000000
         backupCount: 10
 loggers :
@@ -26,7 +22,7 @@ loggers :
         propagate : True
         handlers : [console, files]
     kafka :
-        level : ERROR 
+        level : DEBUG 
         propagate : True
         handlers : [console, files]
 root :

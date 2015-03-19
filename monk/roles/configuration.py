@@ -97,6 +97,9 @@ DEFAULT_LOG_FILE_DIR = '.'
 
 def print_help(helpString):
     print helpString, '-c <configFile> -l <logFileDir>'
+
+def default_config():
+    return Configuration(DEFAULT_CONFIG_FILE, DEFAULT_LOG_FILE_DIR, 'console', str(os.getpid()))
     
 def get_config(argvs, name, helpString):
     configFile = DEFAULT_CONFIG_FILE
