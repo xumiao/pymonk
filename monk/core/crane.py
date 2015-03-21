@@ -26,7 +26,7 @@ class MongoClientPool(object):
             return self.__clients[key][databaseName]
         else:
             try:
-                client = MongoClient(connectionString, connectTimeoutMS=30)
+                client = MongoClient(connectionString, connectTimeoutMS=5000)
                 self.__clients[key] = client
                 return client[databaseName]
             except Exception as e:
@@ -107,10 +107,14 @@ class Crane(object):
         self._currentCollectionName = self._defaultCollectionName
     
     def convert_to_MONKObject(self, monkType):
-        for obj in self._coll.find():
+        objs = self._coll.find()
+        rets = []
+        for obj in objs:
             obj['monkType'] = monkType
             obj = self.create_one(obj)
-            obj.save()
+            rets.append(obj)
+        self.save_all(rets)
+        return rets
             
     def delete_by_id(self, obj):
         if not obj:
@@ -234,10 +238,10 @@ class Crane(object):
             return None
     
     def save_one(self, obj):
-        obj.save()
+        self.update_one_in_fields(obj, obj.generic())
     
     def save_all(self, objs):
-        [obj.save() for obj in objs]
+        [self.update_one_in_fields(obj, obj.generic()) for obj in objs]
         
     def create_one(self, obj):
         obj = base.monkFactory.decode(obj)

@@ -75,7 +75,7 @@ def dummy(duration):
 # entity APIs
 def convert_entities(collectionName=None):
     crane.entityStore.set_collection_name(collectionName)
-    crane.entityStore.convert_to_MONKObject('Entity')
+    return crane.entityStore.convert_to_MONKObject('Entity')
         
 def load_entities(entities=[], query={}, skip=0, num=100, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)
