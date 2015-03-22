@@ -2345,3 +2345,5 @@
 [2015-03-21 09:02:01,510][5328 ][monk.tigress][DEBUG   ][109 ][tigress.py] : combinedField Y
 [2015-03-21 09:03:06,357][5328 ][monk.tigress][DEBUG   ][109 ][tigress.py] : combinedField Y
 [2015-03-21 09:03:44,708][5328 ][monk.tigress][DEBUG   ][109 ][tigress.py] : combinedField 
+[2015-03-21 14:03:11,598][5328 ][monk.roles.configuration][INFO    ][93  ][configuration.py] : configuration done
+[2015-03-21 14:03:18,301][5328 ][monk.roles.configuration][INFO    ][93  ][configuration.py] : configuration done
