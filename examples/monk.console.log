@@ -2347,3 +2347,24 @@
 [2015-03-21 09:03:44,708][5328 ][monk.tigress][DEBUG   ][109 ][tigress.py] : combinedField 
 [2015-03-21 14:03:11,598][5328 ][monk.roles.configuration][INFO    ][93  ][configuration.py] : configuration done
 [2015-03-21 14:03:18,301][5328 ][monk.roles.configuration][INFO    ][93  ][configuration.py] : configuration done
+[2015-03-27 23:25:32,696][19717][monk.roles.configuration][INFO    ][93  ][configuration.py] : configuration done
+[2015-03-27 23:25:34,661][19717][monk.roles.configuration][INFO    ][93  ][configuration.py] : configuration done
+[2015-03-27 23:25:34,661][19717][monk.api    ][INFO    ][40  ][api.py  ] : ------start up------
+[2015-03-27 23:25:34,668][19717][monk.uid    ][INFO    ][32  ][uid.py  ] : initializing uid store
+[2015-03-27 23:25:34,669][19717][monk.crane  ][INFO    ][61  ][crane.py] : initializing Seattle 
+[2015-03-27 23:25:34,671][19717][monk.crane  ][INFO    ][61  ][crane.py] : initializing UserStore 
+[2015-03-27 23:25:34,675][19717][monk.crane  ][INFO    ][61  ][crane.py] : initializing EngineStore 
+[2015-03-27 23:25:34,677][19717][monk.crane  ][INFO    ][61  ][crane.py] : initializing PandaStore 
+[2015-03-27 23:25:34,679][19717][monk.crane  ][INFO    ][61  ][crane.py] : initializing MantisStore 
+[2015-03-27 23:25:34,679][19717][monk.crane  ][INFO    ][61  ][crane.py] : initializing TurtleStore 
+[2015-03-27 23:25:34,680][19717][monk.crane  ][INFO    ][61  ][crane.py] : initializing TigressStore 
+[2015-03-27 23:29:41,714][19717][monk.tigress][DEBUG   ][109 ][tigress.py] : combinedField Y
+[2015-03-27 23:29:54,326][19717][monk.tigress][DEBUG   ][109 ][tigress.py] : combinedField 
+[2015-03-27 23:30:56,534][19717][monk.mantis ][DEBUG   ][102 ][mantis.py] : gamma in mantis 1
+[2015-03-27 23:30:56,535][19717][monk.svm_solver_dual][DEBUG   ][138 ][mantis.py] : rho0 in svm_solver_dual.trainModel 0.25
+[2015-03-27 23:30:56,535][19717][monk.svm_solver_dual][DEBUG   ][138 ][mantis.py] : num_instances 2
+[2015-03-27 23:30:56,536][19717][monk.mantis ][DEBUG   ][155 ][mantis.py] : q = * * * 4097:0.1309 4098:0.1309 4099:0.1309 4100:0.1309 ...
+[4103:-0.0595660060644,4097:0.13090929389]
+[2015-03-27 23:30:56,536][19717][monk.mantis ][DEBUG   ][156 ][mantis.py] : w = * * * 4097:0.1929 4098:0.1929 4099:0.1929 4100:0.1929 ...
+[4103:-0.188097715378,4097:0.192854225636]
+[2015-03-27 23:30:56,539][19717][monk.turtle ][DEBUG   ][230 ][turtle.py] : training clock 1
