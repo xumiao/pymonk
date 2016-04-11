@@ -106,6 +106,16 @@ class Crane(object):
         self._coll = self._database[self._defaultCollectionName]
         self._currentCollectionName = self._defaultCollectionName
     
+    def convert_to_MONKObject(self, monkType):
+        objs = self._coll.find()
+        rets = []
+        for obj in objs:
+            obj['monkType'] = monkType
+            obj = self.create_one(obj)
+            rets.append(obj)
+        self.save_all(rets)
+        return rets
+            
     def delete_by_id(self, obj):
         if not obj:
             return False
@@ -228,10 +238,10 @@ class Crane(object):
             return None
     
     def save_one(self, obj):
-        obj.save()
+        self.update_one_in_fields(obj, obj.generic())
     
     def save_all(self, objs):
-        [obj.save() for obj in objs]
+        [self.update_one_in_fields(obj, obj.generic()) for obj in objs]
         
     def create_one(self, obj):
         obj = base.monkFactory.decode(obj)

@@ -93,7 +93,8 @@ class Turtle(base.MONKObject):
 
     def generic(self):
         result = super(Turtle, self).generic()
-        result[self.FTIGRESS]   = self.tigress.signature()
+        if self.tigress:
+            result[self.FTIGRESS] = self.tigress.signature()
         result[self.FPANDAS]    = [panda.signature() for panda in self.pandas]
         result[self.FFOLLOWERS] = list(self.followers)
         # invertedMapping is created from mapping
@@ -363,8 +364,11 @@ class DictionaryTurtle(Turtle):
         
     def generic(self):
         result = super(DictionaryTurtle, self).generic()
-        del result['tigress']
-        del result['dictionary']
+        try:
+            del result['tigress']
+            del result['dictionary']
+        except:
+            pass
         return result
     
     def clone(self, userName):
@@ -378,7 +382,7 @@ class DictionaryTurtle(Turtle):
     def _get_or_new_panda(self, name):
         if name not in self.dictionary:
             panda = {self.MONK_TYPE: 'ExistPanda',
-                     self.FNAME: name,
+                     self.NAME: name,
                      self.CREATOR: self.creator}
             panda = crane.pandaStore.load_or_create(panda, tosave=True)
             self.add_panda(panda)

@@ -96,19 +96,23 @@ def currentTimeMillisecond():
     return time.mktime(t.timetuple()) * 1e3 + t.microsecond / 1e3
 
 def metricValue(name, user, v):
-    monitorLogger.track(name, v, user)
+    if monitorLogger:
+        monitorLogger.track(name, v, user)
     
 def metricAbs(name, user, v):
-    monitorLogger.track(name, v.norm(), user)
+    if monitorLogger:
+        monitorLogger.track(name, v.norm(), user)
     
 def metricRelAbs(name, user, v1, v2):
-    dv = difference(v1, v2)
-    v = sqrt((dv.norm2() + EPS) / (v1.norm() * v2.norm() + EPS))
-    monitorLogger.track(name, v, user)
-    del dv
+    if monitorLogger:
+        dv = difference(v1, v2)
+        v = sqrt((dv.norm2() + EPS) / (v1.norm() * v2.norm() + EPS))
+        monitorLogger.track(name, v, user)
+        del dv
 
 def monitor_accuracy(name, v, pos, user):
-    monitorLogger.measure(name, v, pos, user)
+    if monitorLogger:
+        monitorLogger.measure(name, v, pos, user)
     
 def binary2decimal(a):
     return reduce(lambda x,y: (x + y) << 1, 0) / 2

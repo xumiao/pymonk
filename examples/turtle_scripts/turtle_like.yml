@@ -1,0 +1,14 @@
+monkType : SingleTurtle
+name : likeTravel
+description : predicting if one likes the item or not
+requires : {turtles : [travel_stem]}
+mapping : {likeTravel : [1]}
+tigress : 
+   monkType : PatternTigress
+   name : likeTravel 
+   description : binary like or dislike classifier
+   fields : [likeTravel]
+   patterns : {likeTravel : Y}
+   defaulting : True
+pandas : 
+   - {monkType : LinearPanda, name : likeTravel, mantis : { monkType : Mantis }} 

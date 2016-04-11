@@ -100,16 +100,17 @@ worker = MonkWorker()
 class Train(Task):
     def act(self):
         monkapi.train(self.turtleName, self.userName)
-        leader = monkapi.get_leader(self.turtleName, self.userName)
-        worker.workerBroker.merge(leader, self.turtleName, self.userName)
+        #leader = monkapi.get_leader(self.turtleName, self.userName)
+        #worker.workerBroker.merge(leader, self.turtleName, self.userName)
 taskT(Train)
 
 class Merge(Task):
     def act(self):
         follower = self.get('follower')
-        if monkapi.merge(self.turtleName, self.userName, follower):
-            for follower in monkapi.get_followers(self.turtleName, self.userName):
-                worker.workerBroker.train(follower, self.turtleName)
+        monkapi.merge(self.turtleName, self.userName, follower)
+        #if monkapi.merge(self.turtleName, self.userName, follower):
+            #for follower in monkapi.get_followers(self.turtleName, self.userName):
+               #worker.workerBroker.train(follower, self.turtleName)
 taskT(Merge)
 
 class Reset(Task):

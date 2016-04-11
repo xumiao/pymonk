@@ -24,7 +24,7 @@ class MONKObject(object):
         
         if generic:
             try:
-                self.__dict__.update({k:v for k,v in generic.iteritems() if k and v})
+                self.__dict__.update({k:v for k,v in generic.iteritems() if ((k is not None) and (v is not None))})
             except Exception as e:
                 logger.debug('trying to deserialize {0}'.format(generic))
                 logger.warning('deserializatin failed. {0}'.format(e.message))

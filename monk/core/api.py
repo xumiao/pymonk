@@ -36,7 +36,7 @@ def initialize(config=None):
         
     if config is not None:
         _config = config
-    
+
     logger.info('------start up------')
     _initialized = crane.initialize_storage(_config)
     return _initialized
@@ -73,6 +73,10 @@ def dummy(duration):
     time.sleep(duration)
     
 # entity APIs
+def convert_entities(collectionName=None):
+    crane.entityStore.set_collection_name(collectionName)
+    return crane.entityStore.convert_to_MONKObject('Entity')
+        
 def load_entities(entities=[], query={}, skip=0, num=100, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)
     if not entities:
@@ -86,6 +90,10 @@ def save_entities(entities, collectionName=None):
 def load_entity(entity, collectionName=None):
     crane.entityStore.set_collection_name(collectionName)
     return crane.entityStore.load_or_create(entity)
+    
+def load_entities_in_ids(query={}, skip=0, num=100):
+    ids = [ent['_id'] for ent in crane.entityStore.load_all_in_ids(query, skip, num)]
+    return ids
 
 # engine APIs
 def has_engine_in_store(engineName):
